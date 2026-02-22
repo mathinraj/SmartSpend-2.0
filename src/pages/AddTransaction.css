@@ -1,0 +1,213 @@
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.amount-input-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  transition: border-color 0.3s;
+}
+
+.amount-wrap-income {
+  border-left-color: var(--success);
+}
+
+.amount-wrap-expense {
+  border-left-color: var(--danger);
+}
+
+.amount-wrap-transfer {
+  border-left-color: var(--primary);
+}
+
+.amount-currency {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.amount-input {
+  border: none;
+  background: transparent;
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-align: center;
+  width: 200px;
+  color: var(--text);
+}
+
+.amount-input::-webkit-outer-spin-button,
+.amount-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.amount-input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Account Picker Cards */
+.acct-picker-grid {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.acct-picker-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.acct-picker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+  padding: 14px 10px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.acct-picker-card:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.acct-picker-card.selected {
+  border-color: var(--primary);
+  background: rgba(108, 92, 231, 0.04);
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.15);
+}
+
+.acct-picker-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.acct-picker-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.acct-picker-bal {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.acct-picker-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+/* Transfer arrow */
+.transfer-arrow-divider {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+/* Date Picker */
+.date-picker-card {
+  position: relative;
+  cursor: pointer;
+}
+
+.date-picker-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s;
+}
+
+.date-picker-card:hover .date-picker-display {
+  border-color: var(--primary-light);
+}
+
+.date-picker-icon {
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.date-picker-text {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.date-picker-arrow {
+  font-size: 0.7rem;
+  color: var(--text-light);
+}
+
+.date-picker-native {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.add-submit {
+  margin-top: 8px;
+  padding: 16px;
+  font-size: 1.05rem;
+}
+
+.btn-income {
+  background: var(--success);
+  color: white;
+}
+
+.btn-income:hover {
+  background: #00A383;
+}
+
+.btn-expense {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-expense:hover {
+  background: #E55A5A;
+}

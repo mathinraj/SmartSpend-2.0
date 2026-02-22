@@ -1,0 +1,62 @@
+import { generateId, toDateInputValue } from './helpers';
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return toDateInputValue(d);
+}
+
+export const SAMPLE_ACCOUNT_IDS = ['acc_hdfc', 'acc_sbi', 'acc_icici_cc', 'acc_cash', 'acc_paytm'];
+
+export function hasSampleData(accounts) {
+  return SAMPLE_ACCOUNT_IDS.some((id) => accounts.some((a) => a.id === id));
+}
+
+export function generateSampleData() {
+  const accounts = [
+    { id: 'acc_hdfc', name: 'HDFC Savings', type: 'bank', balance: 45230.50 },
+    { id: 'acc_sbi', name: 'SBI Salary', type: 'bank', balance: 128500.00 },
+    { id: 'acc_icici_cc', name: 'ICICI Credit Card', type: 'card', balance: -12340.00 },
+    { id: 'acc_cash', name: 'Cash in Hand', type: 'cash', balance: 3200.00 },
+    { id: 'acc_paytm', name: 'Paytm Wallet', type: 'wallet', balance: 1850.00 },
+  ];
+
+  const now = new Date().toISOString();
+  const txns = [
+    { type: 'expense', amount: 450, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_delivery', note: 'Swiggy dinner', date: daysAgo(0) },
+    { type: 'expense', amount: 85, accountId: 'acc_cash', categoryId: 'transport', subcategoryId: 'transport_taxi', note: 'Auto to office', date: daysAgo(0) },
+    { type: 'income', amount: 75000, accountId: 'acc_sbi', categoryId: 'income_salary', note: 'February Salary', date: daysAgo(1) },
+    { type: 'expense', amount: 2340, accountId: 'acc_hdfc', categoryId: 'shopping', subcategoryId: 'shopping_clothes', note: 'Myntra order', date: daysAgo(1) },
+    { type: 'transfer', amount: 5000, fromAccountId: 'acc_sbi', toAccountId: 'acc_paytm', note: 'Top up wallet', date: daysAgo(1) },
+    { type: 'expense', amount: 180, accountId: 'acc_cash', categoryId: 'food', subcategoryId: 'food_cafe', note: 'Starbucks coffee', date: daysAgo(2) },
+    { type: 'expense', amount: 1200, accountId: 'acc_hdfc', categoryId: 'bills', subcategoryId: 'bills_internet', note: 'Jio fiber bill', date: daysAgo(2) },
+    { type: 'expense', amount: 3500, accountId: 'acc_icici_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Amazon - wireless earbuds', date: daysAgo(3) },
+    { type: 'expense', amount: 650, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_restaurant', note: 'Lunch at Haldirams', date: daysAgo(3) },
+    { type: 'expense', amount: 4500, accountId: 'acc_hdfc', categoryId: 'health', subcategoryId: 'health_gym', note: 'Gym monthly', date: daysAgo(5) },
+    { type: 'expense', amount: 350, accountId: 'acc_cash', categoryId: 'transport', subcategoryId: 'transport_fuel', note: 'Petrol', date: daysAgo(5) },
+    { type: 'income', amount: 12000, accountId: 'acc_hdfc', categoryId: 'income_freelance', note: 'Logo design project', date: daysAgo(5) },
+    { type: 'expense', amount: 8500, accountId: 'acc_icici_cc', categoryId: 'bills', subcategoryId: 'bills_rent', note: 'Room rent share', date: daysAgo(7) },
+    { type: 'expense', amount: 250, accountId: 'acc_paytm', categoryId: 'entertainment', subcategoryId: 'ent_subscriptions', note: 'Netflix monthly', date: daysAgo(7) },
+    { type: 'expense', amount: 1800, accountId: 'acc_hdfc', categoryId: 'food', subcategoryId: 'food_groceries', note: 'BigBasket groceries', date: daysAgo(10) },
+    { type: 'expense', amount: 500, accountId: 'acc_cash', categoryId: 'personal', subcategoryId: 'personal_grooming', note: 'Haircut', date: daysAgo(10) },
+    { type: 'transfer', amount: 10000, fromAccountId: 'acc_sbi', toAccountId: 'acc_hdfc', note: 'Monthly transfer', date: daysAgo(10) },
+    { type: 'expense', amount: 2200, accountId: 'acc_icici_cc', categoryId: 'entertainment', subcategoryId: 'ent_movies', note: 'PVR IMAX tickets', date: daysAgo(14) },
+    { type: 'expense', amount: 750, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_snacks', note: 'Movie snacks', date: daysAgo(14) },
+    { type: 'expense', amount: 1500, accountId: 'acc_hdfc', categoryId: 'education', subcategoryId: 'edu_books', note: 'Programming books', date: daysAgo(18) },
+    { type: 'income', amount: 5000, accountId: 'acc_hdfc', categoryId: 'income_gift', note: 'Birthday gift from uncle', date: daysAgo(18) },
+    { type: 'expense', amount: 6800, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_flights', note: 'Flight to Goa', date: daysAgo(22) },
+    { type: 'expense', amount: 3200, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_hotel', note: 'Hotel booking Goa', date: daysAgo(22) },
+    { type: 'expense', amount: 420, accountId: 'acc_cash', categoryId: 'transport', subcategoryId: 'transport_parking', note: 'Airport parking', date: daysAgo(25) },
+    { type: 'income', amount: 75000, accountId: 'acc_sbi', categoryId: 'income_salary', note: 'January Salary', date: daysAgo(25) },
+    { type: 'expense', amount: 2100, accountId: 'acc_hdfc', categoryId: 'bills', subcategoryId: 'bills_electricity', note: 'Electricity bill', date: daysAgo(30) },
+    { type: 'expense', amount: 890, accountId: 'acc_hdfc', categoryId: 'bills', subcategoryId: 'bills_water', note: 'Water bill', date: daysAgo(30) },
+    { type: 'expense', amount: 1950, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_groceries', note: 'Zepto grocery', date: daysAgo(35) },
+    { type: 'expense', amount: 15000, accountId: 'acc_hdfc', categoryId: 'bills', subcategoryId: 'bills_insurance', note: 'Health insurance premium', date: daysAgo(35) },
+    { type: 'income', amount: 8500, accountId: 'acc_hdfc', categoryId: 'income_investment', note: 'Mutual fund dividend', date: daysAgo(40) },
+    { type: 'expense', amount: 3400, accountId: 'acc_icici_cc', categoryId: 'shopping', subcategoryId: 'shopping_personal', note: 'Nykaa order', date: daysAgo(40) },
+  ];
+
+  const transactions = txns.map((t) => ({ ...t, id: generateId(), createdAt: now }));
+
+  return { accounts, transactions };
+}

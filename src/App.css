@@ -1,0 +1,89 @@
+/* Desktop vs Mobile layout */
+
+.app-layout {
+  min-height: 100vh;
+}
+
+/* Mobile: single column, max-width container */
+.app-layout.mobile {
+  display: flex;
+  justify-content: center;
+}
+
+.app-layout.mobile .app-main {
+  max-width: 480px;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* Desktop: sidebar + wide content area */
+.app-layout.desktop {
+  display: flex;
+}
+
+.app-main.with-sidebar {
+  margin-left: 260px;
+  flex: 1;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.app-layout.desktop .page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 40px;
+  padding-bottom: 40px;
+}
+
+.app-layout.desktop .page-title {
+  font-size: 1.8rem;
+}
+
+/* Desktop modals center properly */
+.app-layout.desktop .modal-overlay {
+  align-items: center;
+}
+
+.app-layout.desktop .modal-content {
+  border-radius: var(--radius);
+  max-width: 500px;
+}
+
+/* Desktop: wider grids */
+.app-layout.desktop .category-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.app-layout.desktop .account-mini-card {
+  flex: 0 0 170px;
+  min-width: 170px;
+}
+
+/* Desktop: summary cards can be bigger */
+.app-layout.desktop .summary-cards {
+  gap: 16px;
+}
+
+.app-layout.desktop .summary-card {
+  padding: 20px;
+}
+
+/* Desktop: balance card can be wider */
+.app-layout.desktop .balance-card {
+  padding: 32px;
+}
+
+.app-layout.desktop .balance-amount {
+  font-size: 2.5rem;
+}
+
+/* Desktop: transaction list is wider */
+.app-layout.desktop .txn-item {
+  padding: 16px 20px;
+}
+
+/* Desktop: charts get more space */
+.app-layout.desktop .chart-card {
+  padding: 24px;
+}
