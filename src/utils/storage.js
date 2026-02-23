@@ -1,8 +1,8 @@
 const STORAGE_KEYS = {
-  SETTINGS: 'smartspend_settings',
-  ACCOUNTS: 'smartspend_accounts',
-  TRANSACTIONS: 'smartspend_transactions',
-  CATEGORIES: 'smartspend_categories',
+  SETTINGS: 'spendimeter_settings',
+  ACCOUNTS: 'spendimeter_accounts',
+  TRANSACTIONS: 'spendimeter_transactions',
+  CATEGORIES: 'spendimeter_categories',
 };
 
 export function loadFromStorage(key) {

@@ -72,7 +72,7 @@ export default function Home() {
       <div className="home-header">
         <div>
           <p className="home-greeting">Welcome back</p>
-          <h1 className="home-title">SmartSpend</h1>
+          <h1 className="home-title">Spendimeter</h1>
         </div>
         <Link to="/preferences" className="home-settings-btn" title="Preferences">
           <i className="fa-solid fa-gear" />

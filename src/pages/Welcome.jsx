@@ -24,7 +24,7 @@ export default function Welcome() {
           <div className="welcome-logo-ring">
             <span className="welcome-logo">💰</span>
           </div>
-          <h1 className="welcome-title">SmartSpend</h1>
+          <h1 className="welcome-title">Spendimeter</h1>
           <p className="welcome-tagline">Your money, your rules.</p>
           <p className="welcome-desc">
             The smartest way to track expenses, manage accounts, and take control of your finances.

@@ -212,7 +212,7 @@ export default function Preferences() {
         <div className="pref-card">
           <div className="pref-row">
             <div className="pref-row-info">
-              <p className="pref-row-label">SmartSpend</p>
+              <p className="pref-row-label">Spendimeter</p>
               <p className="pref-row-desc">Version 1.0 · Your money, your rules.</p>
             </div>
             <span className="pref-badge">v1.0</span>
