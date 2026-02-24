@@ -121,3 +121,69 @@
   border-color: var(--primary);
   background: rgba(108, 92, 231, 0.05);
 }
+
+.section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ghost {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-card);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.account-card.reorder-active {
+  cursor: grab;
+  border: 1.5px dashed var(--primary-light);
+}
+
+.account-card.reorder-active:active {
+  cursor: grabbing;
+  opacity: 0.7;
+}
+
+.reorder-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.reorder-btn {
+  width: 26px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  transition: all 0.15s;
+}
+
+.reorder-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+}
+
+.reorder-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.reorder-handle {
+  color: var(--text-light);
+  font-size: 0.75rem;
+  cursor: grab;
+}

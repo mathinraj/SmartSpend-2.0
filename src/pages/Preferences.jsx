@@ -1,15 +1,45 @@
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../components/Toast';
 import { CURRENCIES } from '../utils/currencies';
 import { hasSampleData } from '../utils/sampleData';
 import './Preferences.css';
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function Preferences() {
   const { state, dispatch } = useApp();
   const { settings, accounts, transactions } = state;
   const sampleLoaded = hasSampleData(accounts);
+  const toast = useToast();
+  const [notifStatus, setNotifStatus] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+  );
 
   function updatePref(key, value) {
     dispatch({ type: 'UPDATE_SETTINGS', payload: { [key]: value } });
+  }
+
+  async function handleEnableReminder() {
+    if (!('Notification' in window)) {
+      toast('Your browser does not support notifications.', 'error');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      toast('Notifications are blocked. Please enable them in your browser settings.', 'error', 5000);
+      return;
+    }
+    toast('Please click "Allow" when your browser asks for notification permission.', 'info', 5000);
+    const perm = await Notification.requestPermission();
+    setNotifStatus(perm);
+    if (perm === 'granted') {
+      updatePref('reminderEnabled', true);
+      if (!settings.reminderTime) updatePref('reminderTime', '20:00');
+      if (!settings.reminderFrequency) updatePref('reminderFrequency', 'daily');
+      toast('Reminders enabled successfully!', 'success');
+    } else if (perm === 'denied') {
+      toast('Notifications were denied. You can change this in your browser settings.', 'warning', 5000);
+    }
   }
 
   function handleRemoveSample() {
@@ -64,6 +94,40 @@ export default function Preferences() {
                 type="checkbox"
                 checked={settings.showBalanceStats !== false}
                 onChange={(e) => updatePref('showBalanceStats', e.target.checked)}
+              />
+              <span className="pref-toggle-slider" />
+            </label>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Show accounts on dashboard</p>
+              <p className="pref-row-desc">Display the My Accounts section on the home page</p>
+            </div>
+            <label className="pref-toggle">
+              <input
+                type="checkbox"
+                checked={settings.showAccountsOnHome !== false}
+                onChange={(e) => updatePref('showAccountsOnHome', e.target.checked)}
+              />
+              <span className="pref-toggle-slider" />
+            </label>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Hide balances</p>
+              <p className="pref-row-desc">Mask all monetary amounts with *** for privacy</p>
+            </div>
+            <label className="pref-toggle">
+              <input
+                type="checkbox"
+                checked={settings.hideBalances === true}
+                onChange={(e) => updatePref('hideBalances', e.target.checked)}
               />
               <span className="pref-toggle-slider" />
             </label>
@@ -142,6 +206,95 @@ export default function Preferences() {
         </div>
       </div>
 
+      {/* Reminders */}
+      <div className="pref-section">
+        <h3 className="pref-section-title">
+          <i className="fa-solid fa-bell" /> Reminders
+        </h3>
+
+        <div className="pref-card">
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Enable reminders</p>
+              <p className="pref-row-desc">
+                {notifStatus === 'denied'
+                  ? 'Notifications blocked in browser settings'
+                  : 'Get notified to log your expenses'}
+              </p>
+            </div>
+            {settings.reminderEnabled ? (
+              <label className="pref-toggle">
+                <input
+                  type="checkbox"
+                  checked={true}
+                  onChange={() => updatePref('reminderEnabled', false)}
+                />
+                <span className="pref-toggle-slider" />
+              </label>
+            ) : (
+              <button className="pref-btn outline" onClick={handleEnableReminder} disabled={notifStatus === 'denied'}>
+                <i className="fa-solid fa-bell" /> Enable
+              </button>
+            )}
+          </div>
+
+          {settings.reminderEnabled && (
+            <>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Frequency</p>
+                  <p className="pref-row-desc">How often to remind you</p>
+                </div>
+                <select
+                  className="pref-select"
+                  value={settings.reminderFrequency || 'daily'}
+                  onChange={(e) => updatePref('reminderFrequency', e.target.value)}
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                </select>
+              </div>
+
+              {settings.reminderFrequency === 'weekly' && (
+                <>
+                  <div className="pref-divider" />
+                  <div className="pref-row">
+                    <div className="pref-row-info">
+                      <p className="pref-row-label">Day of week</p>
+                      <p className="pref-row-desc">Which day to send the reminder</p>
+                    </div>
+                    <select
+                      className="pref-select"
+                      value={settings.reminderDay ?? 0}
+                      onChange={(e) => updatePref('reminderDay', parseInt(e.target.value))}
+                    >
+                      {DAY_NAMES.map((day, i) => (
+                        <option key={i} value={i}>{day}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Reminder time</p>
+                  <p className="pref-row-desc">When to send the notification</p>
+                </div>
+                <input
+                  type="time"
+                  className="pref-time-input"
+                  value={settings.reminderTime || '20:00'}
+                  onChange={(e) => updatePref('reminderTime', e.target.value)}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Data */}
       <div className="pref-section">
         <h3 className="pref-section-title">
@@ -213,9 +366,9 @@ export default function Preferences() {
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">Spendimeter</p>
-              <p className="pref-row-desc">Version 1.0 · Your money, your rules.</p>
+              <p className="pref-row-desc">Version 1.1 · Your money, your rules.</p>
             </div>
-            <span className="pref-badge">v1.0</span>
+            <span className="pref-badge">v1.1</span>
           </div>
         </div>
       </div>

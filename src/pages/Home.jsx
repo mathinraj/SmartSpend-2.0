@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
+import { useToast } from '../components/Toast';
 import { formatCurrency } from '../utils/currencies';
 import { formatDate, getAccountIcon } from '../utils/helpers';
 import { hasSampleData } from '../utils/sampleData';
@@ -12,6 +13,54 @@ export default function Home() {
   const { accounts, transactions, settings, categories } = state;
   const currency = settings.currency;
   const isDesktop = useIsDesktop();
+  const toast = useToast();
+
+  const [showReminderHint, setShowReminderHint] = useState(false);
+  useEffect(() => {
+    if (settings.reminderEnabled) return;
+    if (sessionStorage.getItem('spendimeter_reminder_dismissed')) return;
+    if (Math.random() < 0.35) setShowReminderHint(true);
+  }, []);
+
+  function dismissReminderHint() {
+    setShowReminderHint(false);
+    sessionStorage.setItem('spendimeter_reminder_dismissed', '1');
+  }
+
+  async function enableReminderFromHint() {
+    if (!('Notification' in window)) {
+      toast('Your browser does not support notifications.', 'error');
+      dismissReminderHint();
+      return;
+    }
+
+    let perm = Notification.permission;
+    if (perm === 'denied') {
+      toast('Notifications are blocked. Enable them in your browser settings.', 'error', 5000);
+      dismissReminderHint();
+      return;
+    }
+
+    if (perm !== 'granted') {
+      toast('Please click "Allow" when your browser asks for notification permission.', 'info', 5000);
+      perm = await Notification.requestPermission();
+    }
+
+    if (perm === 'granted') {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: {
+        reminderEnabled: true,
+        reminderTime: settings.reminderTime || '20:00',
+        reminderFrequency: settings.reminderFrequency || 'daily',
+      }});
+      toast('Reminders enabled! You\'ll be notified daily at 8:00 PM.', 'success', 4000);
+      setTimeout(() => {
+        toast('You can customize the reminder schedule in Preferences.', 'info', 5000);
+      }, 1500);
+    } else {
+      toast('Notifications were denied. Enable them in Chrome Settings > Site Settings > Notifications.', 'warning', 6000);
+    }
+    dismissReminderHint();
+  }
 
   const totalBalance = useMemo(
     () => accounts.reduce((sum, a) => sum + a.balance, 0),
@@ -52,6 +101,9 @@ export default function Home() {
     return acc ? acc.name : 'Unknown';
   }
 
+  const [peekBalances, setPeekBalances] = useState(false);
+  const hideBalances = settings.hideBalances === true && !peekBalances;
+  const maskAmount = (val) => hideBalances ? 'xxxxx' : val;
   const sampleLoaded = hasSampleData(accounts);
 
   function handleRemoveSample() {
@@ -66,6 +118,21 @@ export default function Home() {
         <div className="sample-banner">
           <span><i className="fa-solid fa-flask-vial" /> Sample data loaded</span>
           <button onClick={handleRemoveSample}>Remove</button>
+        </div>
+      )}
+
+      {showReminderHint && (
+        <div className="reminder-hint">
+          <div className="reminder-hint-content">
+            <i className="fa-solid fa-bell" />
+            <span>Never forget to log expenses! Enable daily reminders?</span>
+          </div>
+          <div className="reminder-hint-actions">
+            <button className="reminder-hint-enable" onClick={enableReminderFromHint}>Enable</button>
+            <button className="reminder-hint-dismiss" onClick={dismissReminderHint}>
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -84,52 +151,70 @@ export default function Home() {
           {settings.homeView === 'balance' ? (
             <div className="balance-card">
               <p className="balance-label">Total Balance</p>
-              <h2 className="balance-amount">{formatCurrency(totalBalance, currency)}</h2>
-              <div className="balance-stats">
-                <div className="balance-stat">
-                  <span className="stat-dot stat-income" />
-                  <div>
-                    <p className="stat-label">Income this month</p>
-                    <p className="stat-value amount-positive">
-                      +{formatCurrency(monthlyStats.income, currency)}
-                    </p>
-                  </div>
-                </div>
-                <div className="balance-stat">
-                  <span className="stat-dot stat-expense" />
-                  <div>
-                    <p className="stat-label">Expense this month</p>
-                    <p className="stat-value amount-negative">
-                      -{formatCurrency(monthlyStats.expense, currency)}
-                    </p>
-                  </div>
-                </div>
+              <div className="balance-amount-row">
+                <h2 className="balance-amount">{maskAmount(formatCurrency(totalBalance, currency))}</h2>
+                {settings.hideBalances && (
+                  <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
+                    <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+                  </button>
+                )}
               </div>
+              {settings.showBalanceStats !== false && (
+                <div className="balance-stats">
+                  <div className="balance-stat">
+                    <span className="stat-dot stat-income" />
+                    <div>
+                      <p className="stat-label">Income this month</p>
+                      <p className="stat-value amount-positive">
+                        +{maskAmount(formatCurrency(monthlyStats.income, currency))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="balance-stat">
+                    <span className="stat-dot stat-expense" />
+                    <div>
+                      <p className="stat-label">Expense this month</p>
+                      <p className="stat-value amount-negative">
+                        -{maskAmount(formatCurrency(monthlyStats.expense, currency))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="balance-card balance-card-expense">
               <p className="balance-label">This Month's Expenses</p>
-              <h2 className="balance-amount">-{formatCurrency(monthlyStats.expense, currency)}</h2>
-              <div className="balance-stats">
-                <div className="balance-stat">
-                  <span className="stat-dot stat-income" />
-                  <div>
-                    <p className="stat-label">Income this month</p>
-                    <p className="stat-value amount-positive">
-                      +{formatCurrency(monthlyStats.income, currency)}
-                    </p>
-                  </div>
-                </div>
-                <div className="balance-stat">
-                  <span className="stat-dot" style={{ background: '#74B9FF' }} />
-                  <div>
-                    <p className="stat-label">Balance</p>
-                    <p className="stat-value">
-                      {formatCurrency(totalBalance, currency)}
-                    </p>
-                  </div>
-                </div>
+              <div className="balance-amount-row">
+                <h2 className="balance-amount">-{maskAmount(formatCurrency(monthlyStats.expense, currency))}</h2>
+                {settings.hideBalances && (
+                  <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
+                    <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+                  </button>
+                )}
               </div>
+              {settings.showBalanceStats !== false && (
+                <div className="balance-stats">
+                  <div className="balance-stat">
+                    <span className="stat-dot stat-income" />
+                    <div>
+                      <p className="stat-label">Income this month</p>
+                      <p className="stat-value amount-positive">
+                        +{maskAmount(formatCurrency(monthlyStats.income, currency))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="balance-stat">
+                    <span className="stat-dot" style={{ background: '#74B9FF' }} />
+                    <div>
+                      <p className="stat-label">Balance</p>
+                      <p className="stat-value">
+                        {maskAmount(formatCurrency(totalBalance, currency))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -158,7 +243,14 @@ export default function Home() {
       ) : settings.homeView === 'balance' ? (
         <div className="balance-card">
           <p className="balance-label">Total Balance</p>
-          <h2 className="balance-amount">{formatCurrency(totalBalance, currency)}</h2>
+          <div className="balance-amount-row">
+            <h2 className="balance-amount">{maskAmount(formatCurrency(totalBalance, currency))}</h2>
+            {settings.hideBalances && (
+              <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
+                <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+              </button>
+            )}
+          </div>
           {settings.showBalanceStats !== false && (
             <div className="balance-stats">
               <div className="balance-stat">
@@ -166,7 +258,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Income</p>
                   <p className="stat-value amount-positive">
-                    +{formatCurrency(monthlyStats.income, currency)}
+                    +{maskAmount(formatCurrency(monthlyStats.income, currency))}
                   </p>
                 </div>
               </div>
@@ -175,7 +267,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Expense</p>
                   <p className="stat-value amount-negative">
-                    -{formatCurrency(monthlyStats.expense, currency)}
+                    -{maskAmount(formatCurrency(monthlyStats.expense, currency))}
                   </p>
                 </div>
               </div>
@@ -185,7 +277,14 @@ export default function Home() {
       ) : (
         <div className="balance-card balance-card-expense">
           <p className="balance-label">This Month's Expenses</p>
-          <h2 className="balance-amount">-{formatCurrency(monthlyStats.expense, currency)}</h2>
+          <div className="balance-amount-row">
+            <h2 className="balance-amount">-{maskAmount(formatCurrency(monthlyStats.expense, currency))}</h2>
+            {settings.hideBalances && (
+              <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
+                <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+              </button>
+            )}
+          </div>
           {settings.showBalanceStats !== false && (
             <div className="balance-stats">
               <div className="balance-stat">
@@ -193,7 +292,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Income</p>
                   <p className="stat-value amount-positive">
-                    +{formatCurrency(monthlyStats.income, currency)}
+                    +{maskAmount(formatCurrency(monthlyStats.income, currency))}
                   </p>
                 </div>
               </div>
@@ -202,7 +301,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Balance</p>
                   <p className="stat-value">
-                    {formatCurrency(totalBalance, currency)}
+                    {maskAmount(formatCurrency(totalBalance, currency))}
                   </p>
                 </div>
               </div>
@@ -211,7 +310,7 @@ export default function Home() {
         </div>
       )}
 
-      {accounts.length > 0 && (
+      {accounts.length > 0 && settings.showAccountsOnHome !== false && (
         <div className="section">
           <div className="section-header">
             <h3 className="section-title">My Accounts</h3>
@@ -224,7 +323,7 @@ export default function Home() {
                   <span className="account-mini-icon">{getAccountIcon(acc.type)}</span>
                   <p className="account-mini-name">{acc.name}</p>
                   <p className="account-mini-balance">
-                    {formatCurrency(acc.balance, currency)}
+                    {maskAmount(formatCurrency(acc.balance, currency))}
                   </p>
                 </div>
               ))}
@@ -274,7 +373,7 @@ export default function Home() {
                   </div>
                   <p className={`txn-amount ${txn.type === 'income' ? 'amount-positive' : txn.type === 'expense' ? 'amount-negative' : ''}`}>
                     {txn.type === 'income' ? '+' : txn.type === 'expense' ? '-' : ''}
-                    {formatCurrency(txn.amount, currency)}
+                    {maskAmount(formatCurrency(txn.amount, currency))}
                   </p>
                 </div>
               );

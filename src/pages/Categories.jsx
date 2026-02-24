@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/Modal';
 import './Categories.css';
@@ -31,8 +31,25 @@ export default function Categories() {
 
   const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6C5CE7' });
   const [subForm, setSubForm] = useState({ name: '' });
+  const [reorderMode, setReorderMode] = useState(false);
+  const dragIndex = useRef(null);
 
   const currentCategories = activeTab === 'expense' ? categories.expense : categories.income;
+
+  function moveCategory(fromIdx, toIdx) {
+    if (toIdx < 0 || toIdx >= currentCategories.length) return;
+    const actionType = activeTab === 'expense' ? 'REORDER_EXPENSE_CATEGORIES' : 'REORDER_INCOME_CATEGORIES';
+    dispatch({ type: actionType, payload: { fromIndex: fromIdx, toIndex: toIdx } });
+  }
+
+  function handleDragStart(idx) { dragIndex.current = idx; }
+  function handleDragOver(e) { e.preventDefault(); }
+  function handleDrop(idx) {
+    if (dragIndex.current !== null && dragIndex.current !== idx) {
+      moveCategory(dragIndex.current, idx);
+    }
+    dragIndex.current = null;
+  }
 
   function openAddCategory() {
     setEditingCat(null);
@@ -111,9 +128,21 @@ export default function Categories() {
     <div className="page">
       <div className="section-header">
         <h1 className="page-title" style={{ marginBottom: 0 }}>Categories</h1>
-        <button className="btn btn-primary btn-sm" onClick={openAddCategory}>
-          <i className="fa-solid fa-plus" /> New
-        </button>
+        <div className="section-header-actions">
+          {currentCategories.length > 1 && (
+            <button
+              className={`btn btn-sm ${reorderMode ? 'btn-outline' : 'btn-ghost'}`}
+              onClick={() => { setReorderMode(!reorderMode); setExpandedCat(null); }}
+            >
+              <i className="fa-solid fa-arrows-up-down" /> {reorderMode ? 'Done' : 'Reorder'}
+            </button>
+          )}
+          {!reorderMode && (
+            <button className="btn btn-primary btn-sm" onClick={openAddCategory}>
+              <i className="fa-solid fa-plus" /> New
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="tabs">
@@ -132,49 +161,77 @@ export default function Categories() {
         </div>
       ) : (
         <div className="cat-manage-list">
-          {currentCategories.map((cat) => {
-            const isExpanded = expandedCat === cat.id;
+          {currentCategories.map((cat, idx) => {
+            const isExpanded = !reorderMode && expandedCat === cat.id;
             const subcatCount = activeTab === 'expense' && cat.subcategories ? cat.subcategories.length : 0;
             return (
-              <div key={cat.id} className={`cat-card ${isExpanded ? 'expanded' : ''}`}>
+              <div
+                key={cat.id}
+                className={`cat-card ${isExpanded ? 'expanded' : ''} ${reorderMode ? 'reorder-active' : ''}`}
+                draggable={reorderMode}
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(idx)}
+              >
                 <div
                   className="cat-card-header"
-                  onClick={() => activeTab === 'expense' && setExpandedCat(isExpanded ? null : cat.id)}
+                  onClick={() => !reorderMode && activeTab === 'expense' && setExpandedCat(isExpanded ? null : cat.id)}
                 >
+                  {reorderMode && (
+                    <div className="reorder-controls-row">
+                      <button
+                        className="reorder-btn"
+                        disabled={idx === 0}
+                        onClick={(e) => { e.stopPropagation(); moveCategory(idx, idx - 1); }}
+                      >
+                        <i className="fa-solid fa-chevron-up" />
+                      </button>
+                      <span className="reorder-handle"><i className="fa-solid fa-grip-vertical" /></span>
+                      <button
+                        className="reorder-btn"
+                        disabled={idx === currentCategories.length - 1}
+                        onClick={(e) => { e.stopPropagation(); moveCategory(idx, idx + 1); }}
+                      >
+                        <i className="fa-solid fa-chevron-down" />
+                      </button>
+                    </div>
+                  )}
                   <div className="cat-card-left">
                     <span className="cat-card-icon" style={{ background: cat.color + '18', color: cat.color }}>
                       {cat.icon}
                     </span>
                     <div className="cat-card-info">
                       <p className="cat-card-name">{cat.name}</p>
-                      {activeTab === 'expense' && (
+                      {activeTab === 'expense' && !reorderMode && (
                         <p className="cat-card-meta">
                           {subcatCount} {subcatCount === 1 ? 'subcategory' : 'subcategories'}
                         </p>
                       )}
                     </div>
                   </div>
-                  <div className="cat-card-actions">
-                    <button
-                      className="cat-icon-btn edit"
-                      title="Edit"
-                      onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
-                    >
-                      <i className="fa-solid fa-pen" />
-                    </button>
-                    <button
-                      className="cat-icon-btn delete"
-                      title="Delete"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
-                    >
-                      <i className="fa-solid fa-trash-can" />
-                    </button>
-                    {activeTab === 'expense' && (
-                      <span className={`cat-card-chevron ${isExpanded ? 'open' : ''}`}>
-                        <i className="fa-solid fa-chevron-down" />
-                      </span>
-                    )}
-                  </div>
+                  {!reorderMode && (
+                    <div className="cat-card-actions">
+                      <button
+                        className="cat-icon-btn edit"
+                        title="Edit"
+                        onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
+                      >
+                        <i className="fa-solid fa-pen" />
+                      </button>
+                      <button
+                        className="cat-icon-btn delete"
+                        title="Delete"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
+                      >
+                        <i className="fa-solid fa-trash-can" />
+                      </button>
+                      {activeTab === 'expense' && (
+                        <span className={`cat-card-chevron ${isExpanded ? 'open' : ''}`}>
+                          <i className="fa-solid fa-chevron-down" />
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {activeTab === 'expense' && isExpanded && (

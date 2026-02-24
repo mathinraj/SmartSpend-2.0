@@ -170,6 +170,23 @@
   flex-shrink: 0;
 }
 
+.pref-time-input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.pref-time-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
 .danger-text {
   color: var(--danger) !important;
 }

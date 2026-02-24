@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { useIsDesktop } from './hooks/useMediaQuery';
+import { useReminder } from './hooks/useReminder';
+import { ToastProvider } from './components/Toast';
 import BottomNav from './components/BottomNav';
 import Sidebar from './components/Sidebar';
 import Welcome from './pages/Welcome';
@@ -17,6 +19,7 @@ import './App.css';
 function AppContent() {
   const { state } = useApp();
   const isDesktop = useIsDesktop();
+  useReminder();
 
   if (state.settings.onboardStep === 0) {
     return <Welcome />;
@@ -50,7 +53,9 @@ function AppContent() {
 export default function App() {
   return (
     <AppProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AppProvider>
   );
 }

@@ -30,6 +30,73 @@
   background: #E55A5A;
 }
 
+.reminder-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: rgba(108, 92, 231, 0.06);
+  border: 1.5px solid rgba(108, 92, 231, 0.15);
+  border-radius: var(--radius-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+.reminder-hint-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.reminder-hint-content i {
+  color: var(--primary);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.reminder-hint-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.reminder-hint-enable {
+  padding: 5px 12px;
+  background: var(--primary);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+
+.reminder-hint-enable:hover {
+  background: var(--primary-dark);
+}
+
+.reminder-hint-dismiss {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-light);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  transition: all 0.15s;
+}
+
+.reminder-hint-dismiss:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
 .home-header {
   display: flex;
   align-items: center;
@@ -85,10 +152,39 @@
   margin-bottom: 4px;
 }
 
+.balance-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .balance-amount {
   font-size: 2rem;
   font-weight: 800;
-  margin-bottom: 20px;
+}
+
+.balance-peek-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.balance-peek-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.balance-stats {
+  margin-top: 20px;
 }
 
 .balance-stats {

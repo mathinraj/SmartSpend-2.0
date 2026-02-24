@@ -4,8 +4,8 @@ import './Welcome.css';
 const features = [
   { icon: '📊', title: 'Smart Analytics', desc: 'Visualize where your money goes' },
   { icon: '🏦', title: 'Multi-Account', desc: 'Bank, cards, cash & wallets' },
-  { icon: '🔄', title: 'Easy Transfers', desc: 'Track money between accounts' },
-  { icon: '🎯', title: 'Categories', desc: 'Organize every transaction' },
+  { icon: '🔔', title: 'Reminders', desc: 'Daily or weekly expense logging nudges' },
+  { icon: '🔒', title: 'Privacy Mode', desc: 'Hide balances with one toggle' },
 ];
 
 export default function Welcome() {

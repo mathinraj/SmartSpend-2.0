@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/currencies';
 import { getAccountIcon, getAccountColor } from '../utils/helpers';
@@ -20,6 +20,8 @@ export default function Accounts() {
   const [showModal, setShowModal] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
   const [form, setForm] = useState({ name: '', type: 'bank', balance: '' });
+  const [reorderMode, setReorderMode] = useState(false);
+  const dragIndex = useRef(null);
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
@@ -63,11 +65,37 @@ export default function Accounts() {
     }
   }
 
+  function moveAccount(fromIdx, toIdx) {
+    if (toIdx < 0 || toIdx >= accounts.length) return;
+    dispatch({ type: 'REORDER_ACCOUNTS', payload: { fromIndex: fromIdx, toIndex: toIdx } });
+  }
+
+  function handleDragStart(idx) { dragIndex.current = idx; }
+  function handleDragOver(e) { e.preventDefault(); }
+  function handleDrop(idx) {
+    if (dragIndex.current !== null && dragIndex.current !== idx) {
+      moveAccount(dragIndex.current, idx);
+    }
+    dragIndex.current = null;
+  }
+
   return (
     <div className="page">
       <div className="section-header">
         <h1 className="page-title" style={{ marginBottom: 0 }}>Accounts</h1>
-        <button className="btn btn-primary btn-sm" onClick={openAdd}><i className="fa-solid fa-plus" /> Add</button>
+        <div className="section-header-actions">
+          {accounts.length > 1 && (
+            <button
+              className={`btn btn-sm ${reorderMode ? 'btn-outline' : 'btn-ghost'}`}
+              onClick={() => setReorderMode(!reorderMode)}
+            >
+              <i className="fa-solid fa-arrows-up-down" /> {reorderMode ? 'Done' : 'Reorder'}
+            </button>
+          )}
+          {!reorderMode && (
+            <button className="btn btn-primary btn-sm" onClick={openAdd}><i className="fa-solid fa-plus" /> Add</button>
+          )}
+        </div>
       </div>
 
       <div className="accounts-total card">
@@ -82,8 +110,35 @@ export default function Accounts() {
         </div>
       ) : (
         <div className="accounts-list">
-          {accounts.map((acc) => (
-            <div key={acc.id} className="account-card" onClick={() => openEdit(acc)}>
+          {accounts.map((acc, idx) => (
+            <div
+              key={acc.id}
+              className={`account-card ${reorderMode ? 'reorder-active' : ''}`}
+              onClick={() => !reorderMode && openEdit(acc)}
+              draggable={reorderMode}
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(idx)}
+            >
+              {reorderMode && (
+                <div className="reorder-controls">
+                  <button
+                    className="reorder-btn"
+                    disabled={idx === 0}
+                    onClick={(e) => { e.stopPropagation(); moveAccount(idx, idx - 1); }}
+                  >
+                    <i className="fa-solid fa-chevron-up" />
+                  </button>
+                  <span className="reorder-handle"><i className="fa-solid fa-grip-vertical" /></span>
+                  <button
+                    className="reorder-btn"
+                    disabled={idx === accounts.length - 1}
+                    onClick={(e) => { e.stopPropagation(); moveAccount(idx, idx + 1); }}
+                  >
+                    <i className="fa-solid fa-chevron-down" />
+                  </button>
+                </div>
+              )}
               <div
                 className="account-icon-wrap"
                 style={{ background: getAccountColor(acc.type) + '15' }}
@@ -96,20 +151,22 @@ export default function Accounts() {
                   {ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label}
                 </p>
               </div>
-              <div className="account-balance-wrap">
-                <p className={`account-balance ${acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
-                  {formatCurrency(acc.balance, currency)}
-                </p>
-                <button
-                  className="account-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(acc.id);
-                  }}
-                >
-                  <i className="fa-solid fa-trash-can" />
-                </button>
-              </div>
+              {!reorderMode && (
+                <div className="account-balance-wrap">
+                  <p className={`account-balance ${acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
+                    {formatCurrency(acc.balance, currency)}
+                  </p>
+                  <button
+                    className="account-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(acc.id);
+                    }}
+                  >
+                    <i className="fa-solid fa-trash-can" />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

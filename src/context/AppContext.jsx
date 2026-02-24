@@ -267,6 +267,27 @@ function appReducer(state, action) {
         },
       };
 
+    case 'REORDER_ACCOUNTS': {
+      const accs = [...state.accounts];
+      const [moved] = accs.splice(action.payload.fromIndex, 1);
+      accs.splice(action.payload.toIndex, 0, moved);
+      return { ...state, accounts: accs };
+    }
+
+    case 'REORDER_EXPENSE_CATEGORIES': {
+      const cats = [...state.categories.expense];
+      const [moved] = cats.splice(action.payload.fromIndex, 1);
+      cats.splice(action.payload.toIndex, 0, moved);
+      return { ...state, categories: { ...state.categories, expense: cats } };
+    }
+
+    case 'REORDER_INCOME_CATEGORIES': {
+      const cats = [...state.categories.income];
+      const [moved] = cats.splice(action.payload.fromIndex, 1);
+      cats.splice(action.payload.toIndex, 0, moved);
+      return { ...state, categories: { ...state.categories, income: cats } };
+    }
+
     case 'LOAD_SAMPLE_DATA': {
       const sample = generateSampleData();
       const existingSampleIds = new Set(state.accounts.map((a) => a.id));

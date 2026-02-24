@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
 import './Sidebar.css';
@@ -24,10 +24,10 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
+      <Link to="/" className="sidebar-brand">
         <span className="sidebar-logo">💰</span>
         <h2 className="sidebar-title">Spendimeter</h2>
-      </div>
+      </Link>
 
       <nav className="sidebar-nav">
         {navItems.map((item) => (
@@ -59,7 +59,7 @@ export default function Sidebar() {
       </NavLink>
 
       <div className="sidebar-footer">
-        <p className="sidebar-footer-text">Spendimeter v1.0</p>
+        <p className="sidebar-footer-text">Spendimeter v1.1</p>
         <p className="sidebar-footer-sub">Data stored locally</p>
       </div>
     </aside>
