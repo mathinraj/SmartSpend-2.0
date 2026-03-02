@@ -33,6 +33,11 @@ export default function AddTransaction() {
   const [toAccountId, setToAccountId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
+  const [paymentApp, setPaymentApp] = useState('');
+  const [editingApps, setEditingApps] = useState(false);
+  const [newAppName, setNewAppName] = useState('');
+
+  const paymentApps = settings.paymentApps || ['GPay', 'PhonePe', 'Paytm', 'CRED', 'Amazon Pay', 'Cash', 'Card Swipe', 'Net Banking'];
 
   useEffect(() => {
     if (editing) {
@@ -45,6 +50,7 @@ export default function AddTransaction() {
       setToAccountId(editing.toAccountId || '');
       setCategoryId(editing.categoryId || '');
       setSubcategoryId(editing.subcategoryId || '');
+      setPaymentApp(editing.paymentApp || '');
     }
   }, [editing]);
 
@@ -52,13 +58,28 @@ export default function AddTransaction() {
   const incomeCategories = categories.income;
   const selectedCategory = expenseCategories.find((c) => c.id === categoryId);
 
+  function addPaymentApp() {
+    if (!newAppName.trim()) return;
+    const updated = [...paymentApps, newAppName.trim()];
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { paymentApps: updated } });
+    setNewAppName('');
+  }
+
+  function removePaymentApp(app) {
+    const updated = paymentApps.filter((a) => a !== app);
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { paymentApps: updated } });
+    if (paymentApp === app) setPaymentApp('');
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     const amountVal = parseFloat(amount);
     if (!amountVal || amountVal <= 0) return;
 
+    const appField = settings.trackPaymentApp !== false ? (paymentApp.trim() || null) : null;
+
     if (editing) {
-      const payload = { id: editing.id, type: tab, amount: amountVal, note: note.trim(), date };
+      const payload = { id: editing.id, type: tab, amount: amountVal, note: note.trim(), date, paymentApp: appField };
       if (tab === 'transfer') {
         if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) return;
         payload.fromAccountId = fromAccountId;
@@ -73,13 +94,13 @@ export default function AddTransaction() {
     } else {
       if (tab === 'expense') {
         if (!accountId || !categoryId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'expense', amount: amountVal, accountId, categoryId, subcategoryId: subcategoryId || null, note: note.trim(), date } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'expense', amount: amountVal, accountId, categoryId, subcategoryId: subcategoryId || null, note: note.trim(), date, paymentApp: appField } });
       } else if (tab === 'income') {
         if (!accountId || !categoryId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'income', amount: amountVal, accountId, categoryId, note: note.trim(), date } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'income', amount: amountVal, accountId, categoryId, note: note.trim(), date, paymentApp: appField } });
       } else {
         if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'transfer', amount: amountVal, fromAccountId, toAccountId, note: note.trim(), date } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'transfer', amount: amountVal, fromAccountId, toAccountId, note: note.trim(), date, paymentApp: appField } });
       }
     }
     router.push(editing ? '/transactions' : '/');
@@ -221,6 +242,63 @@ export default function AddTransaction() {
           <label className="form-label"><i className="fa-regular fa-note-sticky" style={{ marginRight: 6 }} />Note (optional)</label>
           <input type="text" className="form-input" placeholder="What was this for?" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
+
+        {settings.trackPaymentApp !== false && (
+          <div className="form-group">
+            <div className="payment-app-header">
+              <label className="form-label"><i className="fa-solid fa-mobile-screen-button" style={{ marginRight: 6 }} />Payment App (optional)</label>
+              <button
+                type="button"
+                className="payment-app-edit-btn"
+                onClick={() => setEditingApps(!editingApps)}
+              >
+                <i className={`fa-solid ${editingApps ? 'fa-check' : 'fa-pen'}`} />
+              </button>
+            </div>
+            <div className="payment-app-picker">
+              {paymentApps.map((app) => (
+                <button
+                  key={app}
+                  type="button"
+                  className={`payment-app-chip ${paymentApp === app ? 'selected' : ''} ${editingApps ? 'editing' : ''}`}
+                  onClick={() => !editingApps && setPaymentApp(paymentApp === app ? '' : app)}
+                >
+                  {app}
+                  {editingApps && (
+                    <span className="payment-app-remove" onClick={(e) => { e.stopPropagation(); removePaymentApp(app); }}>
+                      <i className="fa-solid fa-xmark" />
+                    </span>
+                  )}
+                </button>
+              ))}
+              {editingApps && (
+                <div className="payment-app-add-inline">
+                  <input
+                    type="text"
+                    className="payment-app-add-input"
+                    placeholder="New app..."
+                    value={newAppName}
+                    onChange={(e) => setNewAppName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addPaymentApp();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="payment-app-add-btn"
+                    onClick={addPaymentApp}
+                    disabled={!newAppName.trim()}
+                  >
+                    <i className="fa-solid fa-plus" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <button type="submit" className={`btn btn-full add-submit ${tab === 'income' ? 'btn-income' : tab === 'expense' ? 'btn-expense' : 'btn-primary'}`}>
           <i className={`fa-solid ${editing ? 'fa-save' : tab === 'transfer' ? 'fa-right-left' : 'fa-check'}`} />

@@ -98,6 +98,57 @@ export default function Preferences() {
     }
   }
 
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinStep, setPinStep] = useState('new');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+
+  const hasAppLock = typeof window !== 'undefined' && !!localStorage.getItem('spendimeter_app_lock');
+
+  function hashPin(val) {
+    let hash = 0;
+    for (let i = 0; i < val.length; i++) {
+      const char = val.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return 'pin_' + Math.abs(hash).toString(36);
+  }
+
+  function handleSetPin() {
+    if (newPin.length !== 4) {
+      toast('PIN must be 4 digits', 'error');
+      return;
+    }
+    if (pinStep === 'new') {
+      setPinStep('confirm');
+      setConfirmPin('');
+      return;
+    }
+    if (confirmPin !== newPin) {
+      toast('PINs do not match. Try again.', 'error');
+      setPinStep('new');
+      setNewPin('');
+      setConfirmPin('');
+      return;
+    }
+    localStorage.setItem('spendimeter_app_lock', hashPin(newPin));
+    updatePref('appLockEnabled', true);
+    toast('App lock enabled!', 'success');
+    setShowPinSetup(false);
+    setNewPin('');
+    setConfirmPin('');
+    setPinStep('new');
+  }
+
+  function handleRemoveLock() {
+    if (window.confirm('Remove app lock? Anyone will be able to open the app.')) {
+      localStorage.removeItem('spendimeter_app_lock');
+      updatePref('appLockEnabled', false);
+      toast('App lock removed', 'info');
+    }
+  }
+
   const currentCurrency = CURRENCIES.find((c) => c.code === settings.currency);
 
   return (
@@ -242,6 +293,23 @@ export default function Preferences() {
                 type="checkbox"
                 checked={settings.confirmDelete !== false}
                 onChange={(e) => updatePref('confirmDelete', e.target.checked)}
+              />
+              <span className="pref-toggle-slider" />
+            </label>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Track payment app / UPI</p>
+              <p className="pref-row-desc">Add an optional field to record which app was used (GPay, PhonePe, etc.)</p>
+            </div>
+            <label className="pref-toggle">
+              <input
+                type="checkbox"
+                checked={settings.trackPaymentApp !== false}
+                onChange={(e) => updatePref('trackPaymentApp', e.target.checked)}
               />
               <span className="pref-toggle-slider" />
             </label>
@@ -516,6 +584,88 @@ export default function Preferences() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Security */}
+      <div className="pref-section">
+        <h3 className="pref-section-title">
+          <i className="fa-solid fa-shield-halved" /> Security
+        </h3>
+
+        <div className="pref-card">
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">App Lock</p>
+              <p className="pref-row-desc">
+                {hasAppLock
+                  ? 'PIN lock is active. App locks when you switch away.'
+                  : 'Set a 4-digit PIN to protect your financial data'}
+              </p>
+            </div>
+            {hasAppLock ? (
+              <button className="pref-btn danger" onClick={handleRemoveLock}>
+                <i className="fa-solid fa-lock-open" /> Remove
+              </button>
+            ) : (
+              <button className="pref-btn outline" onClick={() => { setShowPinSetup(true); setPinStep('new'); setNewPin(''); setConfirmPin(''); }}>
+                <i className="fa-solid fa-lock" /> Set PIN
+              </button>
+            )}
+          </div>
+
+          {hasAppLock && (
+            <>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Change PIN</p>
+                  <p className="pref-row-desc">Set a new 4-digit PIN</p>
+                </div>
+                <button className="pref-btn outline" onClick={() => { setShowPinSetup(true); setPinStep('new'); setNewPin(''); setConfirmPin(''); }}>
+                  <i className="fa-solid fa-key" /> Change
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {showPinSetup && (
+          <div className="pin-setup-card">
+            <p className="pin-setup-title">
+              {pinStep === 'new' ? 'Enter new 4-digit PIN' : 'Confirm your PIN'}
+            </p>
+            <div className="pin-setup-input-row">
+              <input
+                type="tel"
+                className="pin-setup-input"
+                maxLength={4}
+                value={pinStep === 'new' ? newPin : confirmPin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  if (pinStep === 'new') setNewPin(val);
+                  else setConfirmPin(val);
+                }}
+                placeholder="••••"
+                autoFocus
+              />
+            </div>
+            <div className="pin-setup-dots">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <span key={i} className={`pin-dot ${i < (pinStep === 'new' ? newPin : confirmPin).length ? 'filled' : ''}`} />
+              ))}
+            </div>
+            <div className="pin-setup-actions">
+              <button className="btn btn-sm btn-outline" onClick={() => { setShowPinSetup(false); setNewPin(''); setConfirmPin(''); }}>Cancel</button>
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={handleSetPin}
+                disabled={(pinStep === 'new' ? newPin : confirmPin).length !== 4}
+              >
+                {pinStep === 'new' ? 'Next' : 'Set PIN'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* About */}

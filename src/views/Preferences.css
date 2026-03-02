@@ -315,3 +315,71 @@
   color: var(--text-light);
   font-weight: 500;
 }
+
+/* PIN setup */
+.pin-setup-card {
+  margin-top: 12px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.pin-setup-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.pin-setup-input-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.pin-setup-input {
+  width: 120px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 12px;
+  padding: 8px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-text-security: disc;
+}
+
+.pin-setup-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.pin-setup-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.pin-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: all 0.2s;
+}
+
+.pin-dot.filled {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.pin-setup-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}

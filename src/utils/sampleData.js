@@ -12,7 +12,7 @@ function daysFromNow(n) {
   return toDateInputValue(d);
 }
 
-export const SAMPLE_ACCOUNT_IDS = ['acc_hdfc', 'acc_sbi', 'acc_icici_cc', 'acc_cash', 'acc_paytm'];
+export const SAMPLE_ACCOUNT_IDS = ['acc_hdfc', 'acc_sbi', 'acc_icici_cc', 'acc_hdfc_cc', 'acc_cash', 'acc_paytm'];
 
 export function hasSampleData(accounts) {
   return SAMPLE_ACCOUNT_IDS.some((id) => accounts.some((a) => a.id === id));
@@ -22,7 +22,24 @@ export function generateSampleData() {
   const accounts = [
     { id: 'acc_hdfc', name: 'HDFC Savings', type: 'bank', balance: 45230.50 },
     { id: 'acc_sbi', name: 'SBI Salary', type: 'bank', balance: 128500.00 },
-    { id: 'acc_icici_cc', name: 'ICICI Credit Card', type: 'card', balance: -12340.00 },
+    { 
+      id: 'acc_icici_cc', 
+      name: 'ICICI Credit Card', 
+      type: 'card', 
+      balance: -12340.00,
+      billingDate: 15,
+      dueDate: 5,
+      creditLimit: 150000
+    },
+    { 
+      id: 'acc_hdfc_cc', 
+      name: 'HDFC Millennia Card', 
+      type: 'card', 
+      balance: -8750.00,
+      billingDate: 28,
+      dueDate: 18,
+      creditLimit: 200000
+    },
     { id: 'acc_cash', name: 'Cash in Hand', type: 'cash', balance: 3200.00 },
     { id: 'acc_paytm', name: 'Paytm Wallet', type: 'wallet', balance: 1850.00 },
   ];
@@ -36,8 +53,9 @@ export function generateSampleData() {
     { type: 'transfer', amount: 5000, fromAccountId: 'acc_sbi', toAccountId: 'acc_paytm', note: 'Top up wallet', date: daysAgo(1) },
     { type: 'expense', amount: 180, accountId: 'acc_cash', categoryId: 'food', subcategoryId: 'food_cafe', note: 'Starbucks coffee', date: daysAgo(2) },
     { type: 'expense', amount: 1200, accountId: 'acc_hdfc', categoryId: 'bills', subcategoryId: 'bills_internet', note: 'Jio fiber bill', date: daysAgo(2) },
-    { type: 'expense', amount: 3500, accountId: 'acc_icici_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Amazon - wireless earbuds', date: daysAgo(3) },
-    { type: 'expense', amount: 650, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_restaurant', note: 'Lunch at Haldirams', date: daysAgo(3) },
+    { type: 'expense', amount: 3500, accountId: 'acc_icici_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Amazon - wireless earbuds', date: daysAgo(3), paymentApp: 'Amazon Pay' },
+    { type: 'expense', amount: 650, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_restaurant', note: 'Lunch at Haldirams', date: daysAgo(3), paymentApp: 'Paytm' },
+    { type: 'expense', amount: 2800, accountId: 'acc_hdfc_cc', categoryId: 'shopping', subcategoryId: 'shopping_clothes', note: 'Zara shopping', date: daysAgo(4), paymentApp: 'Card Swipe' },
     { type: 'expense', amount: 4500, accountId: 'acc_hdfc', categoryId: 'health', subcategoryId: 'health_gym', note: 'Gym monthly', date: daysAgo(5) },
     { type: 'expense', amount: 350, accountId: 'acc_cash', categoryId: 'transport', subcategoryId: 'transport_fuel', note: 'Petrol', date: daysAgo(5) },
     { type: 'income', amount: 12000, accountId: 'acc_hdfc', categoryId: 'income_freelance', note: 'Logo design project', date: daysAgo(5) },
@@ -46,8 +64,9 @@ export function generateSampleData() {
     { type: 'expense', amount: 1800, accountId: 'acc_hdfc', categoryId: 'food', subcategoryId: 'food_groceries', note: 'BigBasket groceries', date: daysAgo(10) },
     { type: 'expense', amount: 500, accountId: 'acc_cash', categoryId: 'personal', subcategoryId: 'personal_grooming', note: 'Haircut', date: daysAgo(10) },
     { type: 'transfer', amount: 10000, fromAccountId: 'acc_sbi', toAccountId: 'acc_hdfc', note: 'Monthly transfer', date: daysAgo(10) },
-    { type: 'expense', amount: 2200, accountId: 'acc_icici_cc', categoryId: 'entertainment', subcategoryId: 'ent_movies', note: 'PVR IMAX tickets', date: daysAgo(14) },
-    { type: 'expense', amount: 750, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_snacks', note: 'Movie snacks', date: daysAgo(14) },
+    { type: 'expense', amount: 2200, accountId: 'acc_icici_cc', categoryId: 'entertainment', subcategoryId: 'ent_movies', note: 'PVR IMAX tickets', date: daysAgo(14), paymentApp: 'Card Swipe' },
+    { type: 'expense', amount: 750, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_snacks', note: 'Movie snacks', date: daysAgo(14), paymentApp: 'Paytm' },
+    { type: 'expense', amount: 5200, accountId: 'acc_hdfc_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Flipkart - new phone', date: daysAgo(15), paymentApp: 'Net Banking' },
     { type: 'expense', amount: 1500, accountId: 'acc_hdfc', categoryId: 'education', subcategoryId: 'edu_books', note: 'Programming books', date: daysAgo(18) },
     { type: 'income', amount: 5000, accountId: 'acc_hdfc', categoryId: 'income_gift', note: 'Birthday gift from uncle', date: daysAgo(18) },
     { type: 'expense', amount: 6800, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_flights', note: 'Flight to Goa', date: daysAgo(22) },
@@ -64,7 +83,24 @@ export function generateSampleData() {
 
   const transactions = txns.map((t) => ({ ...t, id: generateId(), createdAt: now }));
 
+  const today = new Date();
+  const currentDay = today.getDate();
+
+  const iciciDueDay = 5;
+  const hdfcDueDay = 18;
+  
+  function getNextDueDate(dueDay) {
+    const d = new Date();
+    d.setDate(dueDay);
+    if (d < today) {
+      d.setMonth(d.getMonth() + 1);
+    }
+    return toDateInputValue(d);
+  }
+
   const plannedPaymentsData = [
+    { name: 'ICICI Credit Card Bill', amount: 12340, frequency: 'monthly', nextDate: getNextDueDate(iciciDueDay), accountId: 'acc_sbi', categoryId: 'bills', note: 'Auto-pay from SBI', enabled: true },
+    { name: 'HDFC Credit Card Bill', amount: 8750, frequency: 'monthly', nextDate: getNextDueDate(hdfcDueDay), accountId: 'acc_hdfc', categoryId: 'bills', note: 'Pay from HDFC Savings', enabled: true },
     { name: 'Netflix Subscription', amount: 649, frequency: 'monthly', nextDate: daysFromNow(5), accountId: 'acc_icici_cc', categoryId: 'entertainment', note: 'Premium plan', enabled: true },
     { name: 'Jio Fiber Internet', amount: 1199, frequency: 'monthly', nextDate: daysFromNow(12), accountId: 'acc_hdfc', categoryId: 'bills', note: '100 Mbps plan', enabled: true },
     { name: 'Room Rent', amount: 8500, frequency: 'monthly', nextDate: daysFromNow(1), accountId: 'acc_sbi', categoryId: 'bills', note: 'Monthly rent share', enabled: true },

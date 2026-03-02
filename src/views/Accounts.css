@@ -16,6 +16,49 @@
   margin-top: 4px;
 }
 
+.accounts-grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.account-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.account-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-section-icon {
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+.account-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.account-section-total {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .accounts-list {
   display: flex;
   flex-direction: column;
@@ -32,7 +75,13 @@
   box-shadow: var(--shadow);
   cursor: pointer;
   transition: transform 0.2s;
+  border-left: 3px solid transparent;
 }
+
+.account-card-bank { border-left-color: #0984E3; }
+.account-card-card { border-left-color: #6C5CE7; }
+.account-card-wallet { border-left-color: #E17055; }
+.account-card-cash { border-left-color: #00B894; }
 
 .account-card:hover {
   transform: translateX(4px);
@@ -68,6 +117,13 @@
   margin-top: 2px;
 }
 
+.account-billing-info {
+  font-size: 0.68rem;
+  color: var(--primary);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
 .account-balance-wrap {
   text-align: right;
   flex-shrink: 0;
@@ -78,11 +134,32 @@
   font-size: 1rem;
 }
 
+.account-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.account-pay-btn {
+  background: rgba(0, 184, 148, 0.08);
+  color: var(--success);
+  font-size: 0.72rem;
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.account-pay-btn:hover {
+  background: var(--success);
+  color: white;
+}
+
 .account-delete {
   background: transparent;
   font-size: 0.75rem;
   padding: 6px;
-  margin-top: 4px;
   color: var(--text-light);
   border-radius: 6px;
   transition: all 0.2s;
@@ -91,6 +168,27 @@
 .account-delete:hover {
   color: var(--danger);
   background: rgba(255, 107, 107, 0.08);
+}
+
+.pay-bill-outstanding {
+  text-align: center;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: rgba(255, 107, 107, 0.06);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(255, 107, 107, 0.15);
+}
+
+.pay-bill-outstanding-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.pay-bill-outstanding-amount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-top: 4px;
 }
 
 .account-type-grid {

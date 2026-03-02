@@ -211,3 +211,145 @@
 .btn-expense:hover {
   background: #E55A5A;
 }
+
+/* Payment App Picker */
+.payment-app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.payment-app-edit-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.payment-app-edit-btn:hover {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--primary);
+}
+
+.payment-app-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.payment-app-chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.payment-app-chip:hover {
+  border-color: var(--primary-light);
+}
+
+.payment-app-chip.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.payment-app-chip.editing {
+  padding-right: 32px;
+  cursor: default;
+}
+
+.payment-app-chip.editing:hover {
+  border-color: var(--border);
+}
+
+.payment-app-remove {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--danger);
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.payment-app-remove:hover {
+  background: var(--danger);
+  color: white;
+  transform: translateY(-50%) scale(1.15);
+}
+
+.payment-app-add-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 20px;
+  border: 1.5px dashed var(--primary);
+  background: rgba(108, 92, 231, 0.03);
+}
+
+.payment-app-add-input {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  width: 100px;
+}
+
+.payment-app-add-input::placeholder {
+  color: var(--text-light);
+}
+
+.payment-app-add-input:focus {
+  outline: none;
+}
+
+.payment-app-add-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.payment-app-add-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: scale(1.1);
+}
+
+.payment-app-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
