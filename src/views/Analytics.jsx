@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,

@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/currencies';
 import { formatDate, getAccountIcon, toDateInputValue } from '../utils/helpers';
@@ -18,7 +20,7 @@ export default function Transactions() {
   const { state, dispatch } = useApp();
   const { accounts, transactions, categories, settings } = state;
   const currency = settings.currency;
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [typeFilter, setTypeFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -130,7 +132,7 @@ export default function Transactions() {
   }
 
   function handleEdit(txn) {
-    navigate('/add', { state: { txn } });
+    router.push(`/add?edit=${txn.id}`);
   }
 
   function clearFilters() {

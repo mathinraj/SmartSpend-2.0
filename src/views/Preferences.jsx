@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
@@ -366,9 +368,9 @@ export default function Preferences() {
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">Spendimeter</p>
-              <p className="pref-row-desc">Version 1.1 · Your money, your rules.</p>
+              <p className="pref-row-desc">Version 1.2 · Your money, your rules.</p>
             </div>
-            <span className="pref-badge">v1.1</span>
+            <span className="pref-badge">v1.2</span>
           </div>
         </div>
       </div>

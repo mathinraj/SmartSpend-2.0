@@ -1,5 +1,7 @@
+'use client';
+
 import { useMemo, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
@@ -141,7 +143,7 @@ export default function Home() {
           <p className="home-greeting">Welcome back</p>
           <h1 className="home-title">Spendimeter</h1>
         </div>
-        <Link to="/preferences" className="home-settings-btn" title="Preferences">
+        <Link href="/preferences" className="home-settings-btn" title="Preferences">
           <i className="fa-solid fa-gear" />
         </Link>
       </div>
@@ -221,19 +223,19 @@ export default function Home() {
           <div className="desktop-quick-actions card">
             <h3 className="section-title" style={{ marginBottom: 16 }}>Quick Actions</h3>
             <div className="quick-actions-grid">
-              <Link to="/add" className="quick-action">
+              <Link href="/add" className="quick-action">
                 <span className="qa-icon qa-expense">💸</span>
                 <span>Add Expense</span>
               </Link>
-              <Link to="/add" className="quick-action">
+              <Link href="/add" className="quick-action">
                 <span className="qa-icon qa-income">💰</span>
                 <span>Add Income</span>
               </Link>
-              <Link to="/add" className="quick-action">
+              <Link href="/add" className="quick-action">
                 <span className="qa-icon qa-transfer">🔄</span>
                 <span>Transfer</span>
               </Link>
-              <Link to="/analytics" className="quick-action">
+              <Link href="/analytics" className="quick-action">
                 <span className="qa-icon qa-analytics">📊</span>
                 <span>Analytics</span>
               </Link>
@@ -314,7 +316,7 @@ export default function Home() {
         <div className="section">
           <div className="section-header">
             <h3 className="section-title">My Accounts</h3>
-            <Link to="/accounts" className="section-link">See all</Link>
+            <Link href="/accounts" className="section-link">See all</Link>
           </div>
           <div className="accounts-scroll-wrapper">
             <div className="accounts-scroll">
@@ -335,7 +337,7 @@ export default function Home() {
       <div className="section">
         <div className="section-header">
           <h3 className="section-title">Recent Transactions</h3>
-          <Link to="/transactions" className="section-link">See all</Link>
+          <Link href="/transactions" className="section-link">See all</Link>
         </div>
 
         {recentTransactions.length === 0 ? (

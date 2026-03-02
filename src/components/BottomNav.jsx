@@ -1,4 +1,7 @@
-import { NavLink } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
 import './BottomNav.css';
@@ -13,12 +16,18 @@ const navItems = [
 
 export default function BottomNav() {
   const { state, dispatch } = useApp();
+  const pathname = usePathname();
   const sampleLoaded = hasSampleData(state.accounts);
 
   function handleRemoveSample() {
     if (window.confirm('Remove all sample data? Your own data will be kept.')) {
       dispatch({ type: 'REMOVE_SAMPLE_DATA' });
     }
+  }
+
+  function isActive(path) {
+    if (path === '/') return pathname === '/';
+    return pathname === path;
   }
 
   return (
@@ -33,13 +42,10 @@ export default function BottomNav() {
       )}
       <div className="bottom-nav-inner">
         {navItems.map((item) => (
-          <NavLink
+          <Link
             key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? 'active' : ''} ${item.isCenter ? 'nav-center' : ''}`
-            }
+            href={item.path}
+            className={`nav-item ${isActive(item.path) ? 'active' : ''} ${item.isCenter ? 'nav-center' : ''}`}
           >
             {item.isCenter ? (
               <span className="nav-center-btn">
@@ -51,7 +57,7 @@ export default function BottomNav() {
                 <span className="nav-label">{item.label}</span>
               </>
             )}
-          </NavLink>
+          </Link>
         ))}
       </div>
     </nav>

@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/currencies';
 import { toDateInputValue, getAccountIcon, getAccountColor } from '../utils/helpers';
@@ -8,21 +10,43 @@ import './AddTransaction.css';
 export default function AddTransaction() {
   const { state, dispatch } = useApp();
   const { accounts, categories, settings } = state;
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const dateRef = useRef(null);
 
-  const editing = location.state?.txn || null;
+  const [editing, setEditing] = useState(null);
 
-  const [tab, setTab] = useState(editing?.type || settings.defaultTxnType || 'expense');
-  const [amount, setAmount] = useState(editing ? String(editing.amount) : '');
-  const [note, setNote] = useState(editing?.note || '');
-  const [date, setDate] = useState(editing?.date || toDateInputValue(new Date()));
-  const [accountId, setAccountId] = useState(editing?.accountId || accounts[0]?.id || '');
-  const [fromAccountId, setFromAccountId] = useState(editing?.fromAccountId || '');
-  const [toAccountId, setToAccountId] = useState(editing?.toAccountId || '');
-  const [categoryId, setCategoryId] = useState(editing?.categoryId || '');
-  const [subcategoryId, setSubcategoryId] = useState(editing?.subcategoryId || '');
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const txn = state.transactions.find((t) => t.id === editId);
+      if (txn) setEditing(txn);
+    }
+  }, [searchParams, state.transactions]);
+
+  const [tab, setTab] = useState(settings.defaultTxnType || 'expense');
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(toDateInputValue(new Date()));
+  const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+  const [fromAccountId, setFromAccountId] = useState('');
+  const [toAccountId, setToAccountId] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [subcategoryId, setSubcategoryId] = useState('');
+
+  useEffect(() => {
+    if (editing) {
+      setTab(editing.type);
+      setAmount(String(editing.amount));
+      setNote(editing.note || '');
+      setDate(editing.date);
+      setAccountId(editing.accountId || accounts[0]?.id || '');
+      setFromAccountId(editing.fromAccountId || '');
+      setToAccountId(editing.toAccountId || '');
+      setCategoryId(editing.categoryId || '');
+      setSubcategoryId(editing.subcategoryId || '');
+    }
+  }, [editing]);
 
   const expenseCategories = categories.expense;
   const incomeCategories = categories.income;
@@ -58,7 +82,7 @@ export default function AddTransaction() {
         dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'transfer', amount: amountVal, fromAccountId, toAccountId, note: note.trim(), date } });
       }
     }
-    navigate(editing ? '/transactions' : '/');
+    router.push(editing ? '/transactions' : '/');
   }
 
   const dateObj = new Date(date + 'T00:00:00');
@@ -73,7 +97,7 @@ export default function AddTransaction() {
         <div className="empty-state">
           <div className="empty-state-icon"><i className="fa-solid fa-building-columns" /></div>
           <p>Please add an account first before creating transactions.</p>
-          <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/accounts')}>
+          <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => router.push('/accounts')}>
             <i className="fa-solid fa-plus" /> Add Account
           </button>
         </div>

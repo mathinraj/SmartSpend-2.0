@@ -1,4 +1,7 @@
-import { NavLink, Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
 import './Sidebar.css';
@@ -14,6 +17,7 @@ const navItems = [
 
 export default function Sidebar() {
   const { state, dispatch } = useApp();
+  const pathname = usePathname();
   const sampleLoaded = hasSampleData(state.accounts);
 
   function handleRemoveSample() {
@@ -22,24 +26,28 @@ export default function Sidebar() {
     }
   }
 
+  function isActive(path) {
+    if (path === '/') return pathname === '/';
+    return pathname === path;
+  }
+
   return (
     <aside className="sidebar">
-      <Link to="/" className="sidebar-brand">
+      <Link href="/" className="sidebar-brand">
         <span className="sidebar-logo">💰</span>
         <h2 className="sidebar-title">Spendimeter</h2>
       </Link>
 
       <nav className="sidebar-nav">
         {navItems.map((item) => (
-          <NavLink
+          <Link
             key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            href={item.path}
+            className={`sidebar-link ${isActive(item.path) ? 'active' : ''}`}
           >
             <i className={`${item.icon} sidebar-link-icon`} />
             <span className="sidebar-link-label">{item.label}</span>
-          </NavLink>
+          </Link>
         ))}
       </nav>
 
@@ -50,16 +58,16 @@ export default function Sidebar() {
         </button>
       )}
 
-      <NavLink
-        to="/preferences"
-        className={({ isActive }) => `sidebar-link sidebar-prefs-link ${isActive ? 'active' : ''}`}
+      <Link
+        href="/preferences"
+        className={`sidebar-link sidebar-prefs-link ${isActive('/preferences') ? 'active' : ''}`}
       >
         <i className="fa-solid fa-gear sidebar-link-icon" />
         <span className="sidebar-link-label">Preferences</span>
-      </NavLink>
+      </Link>
 
       <div className="sidebar-footer">
-        <p className="sidebar-footer-text">Spendimeter v1.1</p>
+        <p className="sidebar-footer-text">Spendimeter v1.2</p>
         <p className="sidebar-footer-sub">Data stored locally</p>
       </div>
     </aside>

@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useReducer, useEffect } from 'react';
 import { STORAGE_KEYS, loadFromStorage, saveToStorage } from '../utils/storage';
 import { DEFAULT_CATEGORIES, INCOME_CATEGORIES } from '../utils/categories';
