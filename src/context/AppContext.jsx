@@ -360,6 +360,35 @@ function appReducer(state, action) {
       };
     }
 
+    case 'IMPORT_DATA': {
+      const d = action.payload;
+      return {
+        settings: d.settings ? { ...state.settings, ...d.settings, onboardStep: state.settings.onboardStep } : state.settings,
+        accounts: d.accounts || state.accounts,
+        transactions: d.transactions || state.transactions,
+        categories: d.categories || state.categories,
+        plannedPayments: d.plannedPayments || state.plannedPayments,
+      };
+    }
+
+    case 'MERGE_IMPORT_DATA': {
+      const imp = action.payload;
+      const existingAccIds = new Set(state.accounts.map((a) => a.id));
+      const existingTxnIds = new Set(state.transactions.map((t) => t.id));
+      const existingPpIds = new Set(state.plannedPayments.map((p) => p.id));
+
+      const newAccounts = (imp.accounts || []).filter((a) => !existingAccIds.has(a.id));
+      const newTxns = (imp.transactions || []).filter((t) => !existingTxnIds.has(t.id));
+      const newPp = (imp.plannedPayments || []).filter((p) => !existingPpIds.has(p.id));
+
+      return {
+        ...state,
+        accounts: [...state.accounts, ...newAccounts],
+        transactions: [...newTxns, ...state.transactions],
+        plannedPayments: [...state.plannedPayments, ...newPp],
+      };
+    }
+
     case 'RESET_DATA':
       return {
         settings: initialSettings,

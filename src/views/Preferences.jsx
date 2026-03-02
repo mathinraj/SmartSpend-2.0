@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
 import { CURRENCIES } from '../utils/currencies';
@@ -96,6 +96,114 @@ export default function Preferences() {
     if (window.confirm('This will delete ALL your data and reset the app. Are you sure?')) {
       dispatch({ type: 'RESET_DATA' });
     }
+  }
+
+  const fileInputRef = useRef(null);
+  const [importMode, setImportMode] = useState(null); // 'replace' | 'merge'
+
+  function buildExportData() {
+    return {
+      _app: 'Spendimeter',
+      _version: '1.2',
+      _exportedAt: new Date().toISOString(),
+      settings: { ...settings, onboardStep: undefined },
+      accounts,
+      transactions,
+      categories: state.categories,
+      plannedPayments: state.plannedPayments,
+    };
+  }
+
+  function handleExportJSON() {
+    const data = buildExportData();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `spendimeter-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Backup exported as JSON', 'success');
+  }
+
+  function handleExportCSV() {
+    if (transactions.length === 0) {
+      toast('No transactions to export', 'warning');
+      return;
+    }
+    const accountMap = {};
+    accounts.forEach((a) => { accountMap[a.id] = a.name; });
+
+    const escCSV = (val) => {
+      if (val == null) return '';
+      const s = String(val);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const headers = ['Date', 'Type', 'Amount', 'Category', 'Subcategory', 'Account', 'From Account', 'To Account', 'Note', 'Payment App'];
+    const rows = transactions.map((t) => [
+      t.date || '',
+      t.type || '',
+      t.amount || 0,
+      t.category || '',
+      t.subcategory || '',
+      accountMap[t.accountId] || '',
+      accountMap[t.fromAccountId] || '',
+      accountMap[t.toAccountId] || '',
+      t.note || '',
+      t.paymentApp || '',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map((r) => r.map(escCSV).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `spendimeter-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Transactions exported as CSV', 'success');
+  }
+
+  function triggerImport(mode) {
+    setImportMode(mode);
+    fileInputRef.current?.click();
+  }
+
+  function handleFileSelected(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    if (!file.name.endsWith('.json')) {
+      toast('Please select a .json backup file', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data._app && !data.accounts && !data.transactions) {
+          toast('Invalid backup file format', 'error');
+          return;
+        }
+
+        if (importMode === 'replace') {
+          if (!window.confirm('This will replace ALL your current data with the backup. Continue?')) return;
+          dispatch({ type: 'IMPORT_DATA', payload: data });
+          toast(`Data restored! ${(data.accounts || []).length} accounts, ${(data.transactions || []).length} transactions.`, 'success', 4000);
+        } else {
+          dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
+          toast('Data merged! Only new items were added.', 'success', 4000);
+        }
+      } catch {
+        toast('Failed to read backup file. Make sure it\'s a valid Spendimeter JSON export.', 'error', 4000);
+      }
+    };
+    reader.readAsText(file);
   }
 
   const [showPinSetup, setShowPinSetup] = useState(false);
@@ -582,6 +690,82 @@ export default function Preferences() {
             <button className="pref-btn danger" onClick={handleResetAll}>
               <i className="fa-solid fa-rotate-left" /> Reset
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Backup & Sync */}
+      <div className="pref-section">
+        <h3 className="pref-section-title">
+          <i className="fa-solid fa-cloud-arrow-up" /> Backup &amp; Sync
+        </h3>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleFileSelected}
+        />
+
+        <div className="pref-card">
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Export as JSON</p>
+              <p className="pref-row-desc">Full backup of all data — accounts, transactions, categories, settings</p>
+            </div>
+            <button className="pref-btn outline" onClick={handleExportJSON}>
+              <i className="fa-solid fa-download" /> Export
+            </button>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Export as CSV</p>
+              <p className="pref-row-desc">Transactions only — open in Excel, Google Sheets, etc.</p>
+            </div>
+            <button className="pref-btn outline" onClick={handleExportCSV}>
+              <i className="fa-solid fa-file-csv" /> Export
+            </button>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Import backup (replace)</p>
+              <p className="pref-row-desc">Restore from a JSON backup — replaces all current data</p>
+            </div>
+            <button className="pref-btn outline" onClick={() => triggerImport('replace')}>
+              <i className="fa-solid fa-upload" /> Import
+            </button>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Import backup (merge)</p>
+              <p className="pref-row-desc">Add missing accounts &amp; transactions from a backup without duplicating</p>
+            </div>
+            <button className="pref-btn outline" onClick={() => triggerImport('merge')}>
+              <i className="fa-solid fa-code-merge" /> Merge
+            </button>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row backup-gdrive-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">
+                <i className="fa-brands fa-google-drive" style={{ marginRight: 6, color: '#4285F4' }} />
+                Google Drive sync
+              </p>
+              <p className="pref-row-desc">Auto-sync your data to your own Google Drive for cross-device access</p>
+            </div>
+            <span className="pref-badge coming-soon-badge">Coming soon</span>
           </div>
         </div>
       </div>
