@@ -1,6 +1,6 @@
 # Spendimeter
 
-A personal finance tracker built with React. Track expenses, income, and transfers across multiple accounts — all stored locally in your browser.
+A personal finance tracker built with Next.js and React. Track expenses, income, and transfers across multiple accounts — all stored locally in your browser.
 
 ## Features
 
@@ -22,14 +22,14 @@ A personal finance tracker built with React. Track expenses, income, and transfe
 
 | Layer | Tool |
 |-------|------|
-| Framework | React 19 |
-| Routing | React Router 6 |
+| Framework | Next.js 15 (App Router) |
+| UI Library | React 19 |
 | State | Context API + useReducer |
 | Charts | Recharts |
 | Dates | date-fns |
 | IDs | uuid |
-| Build | Vite 5 |
 | Styling | Custom CSS with CSS variables |
+| Deployment | Vercel |
 
 ## Getting Started
 
@@ -43,11 +43,19 @@ npm run dev
 # Build for production
 npm run build
 
-# Preview production build
-npm run preview
+# Start production server
+npm start
 ```
 
 ## Changelog
+
+### v1.2
+- **Migrated to Next.js 15 App Router** for improved SEO and performance
+- Server-side rendering (SSR) for faster initial page loads
+- Enhanced SEO with proper meta tags, Open Graph, and robots.txt
+- File-based routing with Next.js App Router
+- Maintained identical UI/UX and SPA navigation experience
+- All client-side features preserved (localStorage, notifications, etc.)
 
 ### v1.1
 - Reminders with daily/weekly scheduling and browser notifications
