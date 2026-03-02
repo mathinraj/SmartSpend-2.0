@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
 import { formatCurrency } from '../utils/currencies';
-import { formatDate, getAccountIcon } from '../utils/helpers';
+import { formatDate, getAccountIcon, generateId } from '../utils/helpers';
 import { hasSampleData } from '../utils/sampleData';
 import './Home.css';
 
@@ -19,7 +19,8 @@ export default function Home() {
 
   const [showReminderHint, setShowReminderHint] = useState(false);
   useEffect(() => {
-    if (settings.reminderEnabled) return;
+    const reminders = settings.reminders || [];
+    if (reminders.length > 0) return;
     if (sessionStorage.getItem('spendimeter_reminder_dismissed')) return;
     if (Math.random() < 0.35) setShowReminderHint(true);
   }, []);
@@ -50,9 +51,16 @@ export default function Home() {
 
     if (perm === 'granted') {
       dispatch({ type: 'UPDATE_SETTINGS', payload: {
-        reminderEnabled: true,
-        reminderTime: settings.reminderTime || '20:00',
-        reminderFrequency: settings.reminderFrequency || 'daily',
+        reminders: [{
+          id: generateId(),
+          label: 'Log expenses',
+          message: "Don't forget to log your expenses today!",
+          time: '20:00',
+          frequency: 'daily',
+          day: 0,
+          intervalMinutes: 60,
+          enabled: true,
+        }],
       }});
       toast('Reminders enabled! You\'ll be notified daily at 8:00 PM.', 'success', 4000);
       setTimeout(() => {
@@ -235,9 +243,9 @@ export default function Home() {
                 <span className="qa-icon qa-transfer">🔄</span>
                 <span>Transfer</span>
               </Link>
-              <Link href="/analytics" className="quick-action">
-                <span className="qa-icon qa-analytics">📊</span>
-                <span>Analytics</span>
+              <Link href="/planned" className="quick-action">
+                <span className="qa-icon qa-planned">📅</span>
+                <span>Planned</span>
               </Link>
             </div>
           </div>
@@ -330,6 +338,45 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {state.plannedPayments && state.plannedPayments.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <h3 className="section-title">Upcoming Payments</h3>
+            <Link href="/planned" className="section-link">See all</Link>
+          </div>
+          <div className="upcoming-payments-list">
+            {state.plannedPayments
+              .filter((p) => p.enabled)
+              .sort((a, b) => new Date(a.nextDate) - new Date(b.nextDate))
+              .slice(0, 3)
+              .map((payment) => {
+                const dueDate = new Date(payment.nextDate);
+                const todayDate = new Date();
+                todayDate.setHours(0, 0, 0, 0);
+                dueDate.setHours(0, 0, 0, 0);
+                const diffDays = Math.ceil((dueDate - todayDate) / (1000 * 60 * 60 * 24));
+                const dueLabel = diffDays < 0
+                  ? `${Math.abs(diffDays)}d overdue`
+                  : diffDays === 0
+                  ? 'Due today'
+                  : diffDays === 1
+                  ? 'Tomorrow'
+                  : `In ${diffDays}d`;
+                return (
+                  <Link key={payment.id} href="/planned" className="upcoming-payment-item">
+                    <span className="upcoming-payment-icon">📅</span>
+                    <div className="upcoming-payment-info">
+                      <p className="upcoming-payment-name">{payment.name}</p>
+                      <p className={`upcoming-payment-due ${diffDays < 0 ? 'overdue-text' : ''}`}>{dueLabel}</p>
+                    </div>
+                    <p className="upcoming-payment-amount">{maskAmount(formatCurrency(payment.amount, currency))}</p>
+                  </Link>
+                );
+              })}
           </div>
         </div>
       )}

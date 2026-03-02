@@ -21,8 +21,9 @@ function loadInitialState() {
     expense: DEFAULT_CATEGORIES,
     income: INCOME_CATEGORIES,
   };
+  const plannedPayments = loadFromStorage(STORAGE_KEYS.PLANNED_PAYMENTS) || [];
 
-  return { settings, accounts, transactions, categories };
+  return { settings, accounts, transactions, categories, plannedPayments };
 }
 
 function appReducer(state, action) {
@@ -298,6 +299,7 @@ function appReducer(state, action) {
         ...state,
         accounts: [...state.accounts, ...newAccounts],
         transactions: [...sample.transactions, ...state.transactions],
+        plannedPayments: [...(sample.plannedPayments || []), ...state.plannedPayments],
       };
     }
 
@@ -312,6 +314,49 @@ function appReducer(state, action) {
           if (t.toAccountId && sampleIdSet.has(t.toAccountId)) return false;
           return true;
         }),
+        plannedPayments: state.plannedPayments.filter((p) => {
+          return !p.accountId || !sampleIdSet.has(p.accountId);
+        }),
+      };
+    }
+
+    case 'ADD_PLANNED_PAYMENT':
+      return {
+        ...state,
+        plannedPayments: [...state.plannedPayments, { ...action.payload, id: generateId(), createdAt: new Date().toISOString() }],
+      };
+
+    case 'UPDATE_PLANNED_PAYMENT':
+      return {
+        ...state,
+        plannedPayments: state.plannedPayments.map((p) =>
+          p.id === action.payload.id ? { ...p, ...action.payload } : p
+        ),
+      };
+
+    case 'DELETE_PLANNED_PAYMENT':
+      return {
+        ...state,
+        plannedPayments: state.plannedPayments.filter((p) => p.id !== action.payload),
+      };
+
+    case 'TOGGLE_PLANNED_PAYMENT':
+      return {
+        ...state,
+        plannedPayments: state.plannedPayments.map((p) =>
+          p.id === action.payload ? { ...p, enabled: !p.enabled } : p
+        ),
+      };
+
+    case 'MARK_PLANNED_PAID': {
+      const payment = state.plannedPayments.find((p) => p.id === action.payload);
+      if (!payment) return state;
+      const lastPaid = new Date().toISOString();
+      return {
+        ...state,
+        plannedPayments: state.plannedPayments.map((p) =>
+          p.id === action.payload ? { ...p, lastPaidDate: lastPaid } : p
+        ),
       };
     }
 
@@ -321,6 +366,7 @@ function appReducer(state, action) {
         accounts: [],
         transactions: [],
         categories: { expense: DEFAULT_CATEGORIES, income: INCOME_CATEGORIES },
+        plannedPayments: [],
       };
 
     default:
@@ -346,6 +392,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.CATEGORIES, state.categories);
   }, [state.categories]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.PLANNED_PAYMENTS, state.plannedPayments);
+  }, [state.plannedPayments]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

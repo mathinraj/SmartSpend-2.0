@@ -20,6 +20,11 @@ function AppShell({ children }) {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const theme = state.settings.theme || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [state.settings.theme]);
+
   if (!mounted) {
     return null;
   }

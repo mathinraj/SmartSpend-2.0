@@ -6,6 +6,12 @@ function daysAgo(n) {
   return toDateInputValue(d);
 }
 
+function daysFromNow(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return toDateInputValue(d);
+}
+
 export const SAMPLE_ACCOUNT_IDS = ['acc_hdfc', 'acc_sbi', 'acc_icici_cc', 'acc_cash', 'acc_paytm'];
 
 export function hasSampleData(accounts) {
@@ -58,5 +64,22 @@ export function generateSampleData() {
 
   const transactions = txns.map((t) => ({ ...t, id: generateId(), createdAt: now }));
 
-  return { accounts, transactions };
+  const plannedPaymentsData = [
+    { name: 'Netflix Subscription', amount: 649, frequency: 'monthly', nextDate: daysFromNow(5), accountId: 'acc_icici_cc', categoryId: 'entertainment', note: 'Premium plan', enabled: true },
+    { name: 'Jio Fiber Internet', amount: 1199, frequency: 'monthly', nextDate: daysFromNow(12), accountId: 'acc_hdfc', categoryId: 'bills', note: '100 Mbps plan', enabled: true },
+    { name: 'Room Rent', amount: 8500, frequency: 'monthly', nextDate: daysFromNow(1), accountId: 'acc_sbi', categoryId: 'bills', note: 'Monthly rent share', enabled: true },
+    { name: 'Gym Membership', amount: 4500, frequency: 'monthly', nextDate: daysFromNow(18), accountId: 'acc_hdfc', categoryId: 'health', note: 'Cult.fit yearly split', enabled: true },
+    { name: 'Electricity Bill', amount: 2100, frequency: 'monthly', nextDate: daysFromNow(8), accountId: 'acc_hdfc', categoryId: 'bills', note: '', enabled: true },
+    { name: 'Health Insurance', amount: 15000, frequency: 'quarterly', nextDate: daysFromNow(45), accountId: 'acc_hdfc', categoryId: 'bills', note: 'HDFC Ergo policy', enabled: true },
+    { name: 'Spotify Premium', amount: 119, frequency: 'monthly', nextDate: daysFromNow(22), accountId: 'acc_paytm', categoryId: 'entertainment', note: 'Individual plan', enabled: true },
+    { name: 'Domain Renewal', amount: 800, frequency: 'yearly', nextDate: daysFromNow(90), accountId: 'acc_hdfc', categoryId: 'bills', note: 'Personal website', enabled: false },
+  ];
+
+  const plannedPayments = plannedPaymentsData.map((p) => ({
+    ...p,
+    id: generateId(),
+    createdAt: now,
+  }));
+
+  return { accounts, transactions, plannedPayments };
 }

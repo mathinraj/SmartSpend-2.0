@@ -407,6 +407,78 @@
   background: rgba(116, 185, 255, 0.1);
 }
 
+.qa-planned {
+  background: rgba(253, 203, 110, 0.15);
+}
+
+.upcoming-payments-list {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.upcoming-payment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  transition: background 0.15s;
+}
+
+.upcoming-payment-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.upcoming-payment-item:hover {
+  background: rgba(108, 92, 231, 0.03);
+}
+
+.upcoming-payment-icon {
+  font-size: 1.2rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(108, 92, 231, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upcoming-payment-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.upcoming-payment-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upcoming-payment-due {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.upcoming-payment-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.overdue-text {
+  color: var(--danger) !important;
+  font-weight: 700 !important;
+}
+
 @media (min-width: 768px) {
   .accounts-scroll {
     scrollbar-width: thin;

@@ -10,6 +10,7 @@ const navItems = [
   { path: '/', icon: 'fa-solid fa-house', label: 'Dashboard' },
   { path: '/add', icon: 'fa-solid fa-plus-circle', label: 'Add Transaction' },
   { path: '/transactions', icon: 'fa-solid fa-clock-rotate-left', label: 'History' },
+  { path: '/planned', icon: 'fa-solid fa-calendar-check', label: 'Planned Payments' },
   { path: '/accounts', icon: 'fa-solid fa-wallet', label: 'Accounts' },
   { path: '/categories', icon: 'fa-solid fa-tags', label: 'Categories' },
   { path: '/analytics', icon: 'fa-solid fa-chart-pie', label: 'Analytics' },
@@ -69,6 +70,7 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <p className="sidebar-footer-text">Spendimeter v1.2</p>
         <p className="sidebar-footer-sub">Data stored locally</p>
+        <p className="sidebar-footer-sub sidebar-footer-credit">Made by <span className="sidebar-dev-name">Mathinraj</span> 💚</p>
       </div>
     </aside>
   );

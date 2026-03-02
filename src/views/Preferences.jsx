@@ -5,9 +5,23 @@ import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
 import { CURRENCIES } from '../utils/currencies';
 import { hasSampleData } from '../utils/sampleData';
+import { generateId } from '../utils/helpers';
 import './Preferences.css';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function createDefaultReminder() {
+  return {
+    id: generateId(),
+    label: 'Log expenses',
+    message: "Don't forget to log your expenses today!",
+    time: '20:00',
+    frequency: 'daily',
+    day: 0,
+    intervalMinutes: 60,
+    enabled: true,
+  };
+}
 
 export default function Preferences() {
   const { state, dispatch } = useApp();
@@ -17,12 +31,40 @@ export default function Preferences() {
   const [notifStatus, setNotifStatus] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'denied'
   );
+  const [editingReminder, setEditingReminder] = useState(null);
+
+  const reminders = settings.reminders || [];
 
   function updatePref(key, value) {
     dispatch({ type: 'UPDATE_SETTINGS', payload: { [key]: value } });
   }
 
-  async function handleEnableReminder() {
+  function updateReminders(updated) {
+    updatePref('reminders', updated);
+  }
+
+  function addReminder() {
+    const newReminder = createDefaultReminder();
+    updateReminders([...reminders, newReminder]);
+    setEditingReminder(newReminder.id);
+    toast('New reminder added!', 'success');
+  }
+
+  function updateSingleReminder(id, changes) {
+    updateReminders(reminders.map((r) => r.id === id ? { ...r, ...changes } : r));
+  }
+
+  function deleteReminder(id) {
+    updateReminders(reminders.filter((r) => r.id !== id));
+    if (editingReminder === id) setEditingReminder(null);
+    toast('Reminder removed', 'info');
+  }
+
+  function toggleReminder(id) {
+    updateReminders(reminders.map((r) => r.id === id ? { ...r, enabled: !r.enabled } : r));
+  }
+
+  async function handleEnableNotifications() {
     if (!('Notification' in window)) {
       toast('Your browser does not support notifications.', 'error');
       return;
@@ -35,10 +77,10 @@ export default function Preferences() {
     const perm = await Notification.requestPermission();
     setNotifStatus(perm);
     if (perm === 'granted') {
-      updatePref('reminderEnabled', true);
-      if (!settings.reminderTime) updatePref('reminderTime', '20:00');
-      if (!settings.reminderFrequency) updatePref('reminderFrequency', 'daily');
-      toast('Reminders enabled successfully!', 'success');
+      if (reminders.length === 0) {
+        updateReminders([createDefaultReminder()]);
+      }
+      toast('Notifications enabled! You can now add and customize reminders.', 'success');
     } else if (perm === 'denied') {
       toast('Notifications were denied. You can change this in your browser settings.', 'warning', 5000);
     }
@@ -69,6 +111,23 @@ export default function Preferences() {
         </h3>
 
         <div className="pref-card">
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Dark mode</p>
+              <p className="pref-row-desc">Switch to a darker theme that's easier on the eyes</p>
+            </div>
+            <label className="pref-toggle">
+              <input
+                type="checkbox"
+                checked={settings.theme === 'dark'}
+                onChange={(e) => updatePref('theme', e.target.checked ? 'dark' : 'light')}
+              />
+              <span className="pref-toggle-slider" />
+            </label>
+          </div>
+
+          <div className="pref-divider" />
+
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">Show balance on top</p>
@@ -214,87 +273,188 @@ export default function Preferences() {
           <i className="fa-solid fa-bell" /> Reminders
         </h3>
 
-        <div className="pref-card">
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Enable reminders</p>
-              <p className="pref-row-desc">
-                {notifStatus === 'denied'
-                  ? 'Notifications blocked in browser settings'
-                  : 'Get notified to log your expenses'}
-              </p>
-            </div>
-            {settings.reminderEnabled ? (
-              <label className="pref-toggle">
-                <input
-                  type="checkbox"
-                  checked={true}
-                  onChange={() => updatePref('reminderEnabled', false)}
-                />
-                <span className="pref-toggle-slider" />
-              </label>
-            ) : (
-              <button className="pref-btn outline" onClick={handleEnableReminder} disabled={notifStatus === 'denied'}>
+        {notifStatus !== 'granted' ? (
+          <div className="pref-card">
+            <div className="pref-row">
+              <div className="pref-row-info">
+                <p className="pref-row-label">Enable notifications</p>
+                <p className="pref-row-desc">
+                  {notifStatus === 'denied'
+                    ? 'Notifications blocked in browser settings'
+                    : 'Allow notifications to set up customizable reminders'}
+                </p>
+              </div>
+              <button className="pref-btn outline" onClick={handleEnableNotifications} disabled={notifStatus === 'denied'}>
                 <i className="fa-solid fa-bell" /> Enable
               </button>
-            )}
+            </div>
           </div>
+        ) : (
+          <>
+            {reminders.map((reminder) => (
+              <div key={reminder.id} className="pref-card reminder-card">
+                <div className="pref-row">
+                  <div className="pref-row-info">
+                    <p className="pref-row-label">{reminder.label || 'Reminder'}</p>
+                    <p className="pref-row-desc">
+                      {reminder.frequency === 'interval'
+                        ? `Every ${reminder.intervalMinutes || 60} min`
+                        : reminder.frequency === 'weekly'
+                        ? `${DAY_NAMES[reminder.day ?? 0]} at ${reminder.time || '20:00'}`
+                        : `Daily at ${reminder.time || '20:00'}`}
+                    </p>
+                  </div>
+                  <div className="reminder-actions">
+                    <button
+                      className="pref-btn-icon"
+                      onClick={() => setEditingReminder(editingReminder === reminder.id ? null : reminder.id)}
+                      title="Edit"
+                    >
+                      <i className={`fa-solid ${editingReminder === reminder.id ? 'fa-chevron-up' : 'fa-pen'}`} />
+                    </button>
+                    <label className="pref-toggle">
+                      <input
+                        type="checkbox"
+                        checked={reminder.enabled}
+                        onChange={() => toggleReminder(reminder.id)}
+                      />
+                      <span className="pref-toggle-slider" />
+                    </label>
+                  </div>
+                </div>
 
-          {settings.reminderEnabled && (
-            <>
-              <div className="pref-divider" />
+                {editingReminder === reminder.id && (
+                  <div className="reminder-edit-panel">
+                    <div className="reminder-edit-row">
+                      <label className="reminder-edit-label">Label</label>
+                      <input
+                        type="text"
+                        className="reminder-edit-input"
+                        value={reminder.label || ''}
+                        onChange={(e) => updateSingleReminder(reminder.id, { label: e.target.value })}
+                        placeholder="e.g. Morning check"
+                      />
+                    </div>
+
+                    <div className="reminder-edit-row">
+                      <label className="reminder-edit-label">Message</label>
+                      <input
+                        type="text"
+                        className="reminder-edit-input"
+                        value={reminder.message || ''}
+                        onChange={(e) => updateSingleReminder(reminder.id, { message: e.target.value })}
+                        placeholder="Notification message"
+                      />
+                    </div>
+
+                    <div className="reminder-edit-row">
+                      <label className="reminder-edit-label">Frequency</label>
+                      <select
+                        className="pref-select"
+                        value={reminder.frequency || 'daily'}
+                        onChange={(e) => updateSingleReminder(reminder.id, { frequency: e.target.value })}
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="interval">Every X minutes</option>
+                      </select>
+                    </div>
+
+                    {reminder.frequency === 'weekly' && (
+                      <div className="reminder-edit-row">
+                        <label className="reminder-edit-label">Day</label>
+                        <select
+                          className="pref-select"
+                          value={reminder.day ?? 0}
+                          onChange={(e) => updateSingleReminder(reminder.id, { day: parseInt(e.target.value) })}
+                        >
+                          {DAY_NAMES.map((day, i) => (
+                            <option key={i} value={i}>{day}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {reminder.frequency === 'interval' ? (
+                      <div className="reminder-edit-row">
+                        <label className="reminder-edit-label">Interval (minutes)</label>
+                        <input
+                          type="number"
+                          className="reminder-edit-input reminder-edit-input-sm"
+                          value={reminder.intervalMinutes || 60}
+                          min={5}
+                          onChange={(e) => updateSingleReminder(reminder.id, { intervalMinutes: Math.max(5, parseInt(e.target.value) || 5) })}
+                        />
+                      </div>
+                    ) : (
+                      <div className="reminder-edit-row">
+                        <label className="reminder-edit-label">Time</label>
+                        <input
+                          type="time"
+                          className="pref-time-input"
+                          value={reminder.time || '20:00'}
+                          onChange={(e) => updateSingleReminder(reminder.id, { time: e.target.value })}
+                        />
+                      </div>
+                    )}
+
+                    <button className="pref-btn danger reminder-delete-btn" onClick={() => deleteReminder(reminder.id)}>
+                      <i className="fa-solid fa-trash-can" /> Remove this reminder
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <button className="reminder-add-btn" onClick={addReminder}>
+              <i className="fa-solid fa-plus" /> Add another reminder
+            </button>
+
+            <div className="pref-card" style={{ marginTop: 16 }}>
               <div className="pref-row">
                 <div className="pref-row-info">
-                  <p className="pref-row-label">Frequency</p>
-                  <p className="pref-row-desc">How often to remind you</p>
+                  <p className="pref-row-label">Do Not Disturb</p>
+                  <p className="pref-row-desc">Pause all reminders during a time window</p>
                 </div>
-                <select
-                  className="pref-select"
-                  value={settings.reminderFrequency || 'daily'}
-                  onChange={(e) => updatePref('reminderFrequency', e.target.value)}
-                >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                </select>
+                <label className="pref-toggle">
+                  <input
+                    type="checkbox"
+                    checked={settings.dndEnabled === true}
+                    onChange={(e) => updatePref('dndEnabled', e.target.checked)}
+                  />
+                  <span className="pref-toggle-slider" />
+                </label>
               </div>
 
-              {settings.reminderFrequency === 'weekly' && (
+              {settings.dndEnabled && (
                 <>
                   <div className="pref-divider" />
                   <div className="pref-row">
                     <div className="pref-row-info">
-                      <p className="pref-row-label">Day of week</p>
-                      <p className="pref-row-desc">Which day to send the reminder</p>
+                      <p className="pref-row-label">Quiet hours</p>
+                      <p className="pref-row-desc">No notifications during this period</p>
                     </div>
-                    <select
-                      className="pref-select"
-                      value={settings.reminderDay ?? 0}
-                      onChange={(e) => updatePref('reminderDay', parseInt(e.target.value))}
-                    >
-                      {DAY_NAMES.map((day, i) => (
-                        <option key={i} value={i}>{day}</option>
-                      ))}
-                    </select>
+                    <div className="dnd-time-range">
+                      <input
+                        type="time"
+                        className="pref-time-input"
+                        value={settings.dndStart || '23:00'}
+                        onChange={(e) => updatePref('dndStart', e.target.value)}
+                      />
+                      <span className="dnd-separator">to</span>
+                      <input
+                        type="time"
+                        className="pref-time-input"
+                        value={settings.dndEnd || '07:00'}
+                        onChange={(e) => updatePref('dndEnd', e.target.value)}
+                      />
+                    </div>
                   </div>
                 </>
               )}
-
-              <div className="pref-divider" />
-              <div className="pref-row">
-                <div className="pref-row-info">
-                  <p className="pref-row-label">Reminder time</p>
-                  <p className="pref-row-desc">When to send the notification</p>
-                </div>
-                <input
-                  type="time"
-                  className="pref-time-input"
-                  value={settings.reminderTime || '20:00'}
-                  onChange={(e) => updatePref('reminderTime', e.target.value)}
-                />
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Data */}
@@ -372,6 +532,10 @@ export default function Preferences() {
             </div>
             <span className="pref-badge">v1.2</span>
           </div>
+        </div>
+
+        <div className="pref-developer-credit">
+          <p>Made with ❤️ by <span className="pref-developer-name">Mathinraj</span> 💚</p>
         </div>
       </div>
     </div>
