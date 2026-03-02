@@ -1,0 +1,145 @@
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.lock-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  max-width: 340px;
+  width: 100%;
+}
+
+.lock-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(108, 92, 231, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--primary);
+  margin-bottom: 20px;
+}
+
+.lock-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.lock-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.lock-dots {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.lock-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.lock-dot.filled {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.lock-dot.error {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.lock-shake {
+  animation: shakeAnim 0.4s ease;
+}
+
+@keyframes shakeAnim {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.lock-error {
+  font-size: 0.8rem;
+  color: var(--danger);
+  font-weight: 600;
+  margin-bottom: 8px;
+  min-height: 20px;
+}
+
+.lock-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 260px;
+  margin-top: 16px;
+}
+
+.lock-key {
+  width: 100%;
+  aspect-ratio: 1.4;
+  border-radius: 14px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lock-key:active {
+  transform: scale(0.92);
+  background: var(--primary);
+  color: white;
+}
+
+.lock-key-empty {
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+.lock-key-action {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.lock-key-action:active {
+  background: var(--bg);
+  color: var(--danger);
+}
+
+.lock-hidden-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}

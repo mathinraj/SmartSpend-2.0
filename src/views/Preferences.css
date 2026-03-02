@@ -190,3 +190,209 @@
 .danger-text {
   color: var(--danger) !important;
 }
+
+.pref-developer-credit {
+  text-align: center;
+  padding: 16px 0 8px;
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+.pref-developer-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Multiple reminders */
+.reminder-card {
+  margin-bottom: 10px;
+}
+
+.reminder-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pref-btn-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.pref-btn-icon:hover {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--primary);
+}
+
+.reminder-edit-panel {
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reminder-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reminder-edit-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.reminder-edit-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.reminder-edit-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.reminder-edit-input-sm {
+  max-width: 100px;
+}
+
+.reminder-delete-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.reminder-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reminder-add-btn:hover {
+  border-color: var(--primary);
+  background: rgba(108, 92, 231, 0.04);
+}
+
+.dnd-time-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dnd-separator {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+/* PIN setup */
+.pin-setup-card {
+  margin-top: 12px;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.pin-setup-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.pin-setup-input-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.pin-setup-input {
+  width: 120px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 12px;
+  padding: 8px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-text-security: disc;
+}
+
+.pin-setup-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.pin-setup-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.pin-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: all 0.2s;
+}
+
+.pin-dot.filled {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.pin-setup-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Backup section */
+.coming-soon-badge {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.1), rgba(108, 92, 231, 0.1));
+  color: var(--primary);
+  border: 1px dashed var(--primary);
+  font-size: 0.68rem;
+  letter-spacing: 0.3px;
+}
+
+.backup-gdrive-row {
+  opacity: 0.7;
+}

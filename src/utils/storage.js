@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   ACCOUNTS: 'spendimeter_accounts',
   TRANSACTIONS: 'spendimeter_transactions',
   CATEGORIES: 'spendimeter_categories',
+  PLANNED_PAYMENTS: 'spendimeter_planned_payments',
 };
 
 const isBrowser = typeof window !== 'undefined';

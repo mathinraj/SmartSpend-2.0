@@ -9,38 +9,6 @@
   align-items: center;
 }
 
-.bottom-nav-sample-bar {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background: rgba(255, 107, 107, 0.1);
-  border-top: 1.5px solid rgba(255, 107, 107, 0.2);
-  color: var(--danger);
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.bottom-nav-sample-bar i {
-  margin-right: 4px;
-}
-
-.bottom-nav-sample-bar button {
-  padding: 4px 10px;
-  background: var(--danger);
-  color: white;
-  border-radius: 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  transition: background 0.15s;
-}
-
-.bottom-nav-sample-bar button:hover {
-  background: #E55A5A;
-}
-
 .bottom-nav-inner {
   width: 100%;
   max-width: 480px;

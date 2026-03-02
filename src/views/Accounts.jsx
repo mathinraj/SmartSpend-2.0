@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../components/Toast';
 import { formatCurrency } from '../utils/currencies';
 import { getAccountIcon, getAccountColor } from '../utils/helpers';
 import Modal from '../components/Modal';
@@ -14,28 +15,58 @@ const ACCOUNT_TYPES = [
   { id: 'wallet', label: 'Wallet / UPI', icon: '👛' },
 ];
 
+const TYPE_SECTIONS = [
+  { type: 'bank', title: 'Bank Accounts', icon: 'fa-solid fa-building-columns' },
+  { type: 'card', title: 'Cards', icon: 'fa-solid fa-credit-card' },
+  { type: 'wallet', title: 'Wallets & UPI', icon: 'fa-solid fa-mobile-screen-button' },
+  { type: 'cash', title: 'Cash', icon: 'fa-solid fa-money-bill-wave' },
+];
+
 export default function Accounts() {
   const { state, dispatch } = useApp();
   const { accounts, settings } = state;
   const currency = settings.currency;
+  const toast = useToast();
 
   const [showModal, setShowModal] = useState(false);
+  const [showPayBillModal, setShowPayBillModal] = useState(false);
+  const [payBillCard, setPayBillCard] = useState(null);
+  const [payBillAmount, setPayBillAmount] = useState('');
+  const [payBillFrom, setPayBillFrom] = useState('');
   const [editAccount, setEditAccount] = useState(null);
-  const [form, setForm] = useState({ name: '', type: 'bank', balance: '' });
+  const [form, setForm] = useState({ name: '', type: 'bank', balance: '', billingDate: '', dueDate: '', creditLimit: '' });
   const [reorderMode, setReorderMode] = useState(false);
   const dragIndex = useRef(null);
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const bankAccounts = accounts.filter((a) => a.type === 'bank');
+
+  const groupedAccounts = useMemo(() => {
+    const groups = {};
+    TYPE_SECTIONS.forEach((s) => { groups[s.type] = []; });
+    accounts.forEach((acc) => {
+      if (groups[acc.type]) groups[acc.type].push(acc);
+      else groups[acc.type] = [acc];
+    });
+    return groups;
+  }, [accounts]);
 
   function openAdd() {
     setEditAccount(null);
-    setForm({ name: '', type: 'bank', balance: '' });
+    setForm({ name: '', type: 'bank', balance: '', billingDate: '', dueDate: '', creditLimit: '' });
     setShowModal(true);
   }
 
   function openEdit(acc) {
     setEditAccount(acc);
-    setForm({ name: acc.name, type: acc.type, balance: acc.balance.toString() });
+    setForm({
+      name: acc.name,
+      type: acc.type,
+      balance: acc.balance.toString(),
+      billingDate: acc.billingDate || '',
+      dueDate: acc.dueDate || '',
+      creditLimit: acc.creditLimit ? acc.creditLimit.toString() : '',
+    });
     setShowModal(true);
   }
 
@@ -43,19 +74,19 @@ export default function Accounts() {
     e.preventDefault();
     if (!form.name.trim()) return;
 
+    const payload = { name: form.name.trim(), type: form.type };
+    if (form.type === 'card') {
+      payload.billingDate = form.billingDate ? parseInt(form.billingDate) : null;
+      payload.dueDate = form.dueDate ? parseInt(form.dueDate) : null;
+      payload.creditLimit = form.creditLimit ? parseFloat(form.creditLimit) : null;
+    }
+
     if (editAccount) {
-      dispatch({
-        type: 'UPDATE_ACCOUNT',
-        payload: { id: editAccount.id, name: form.name.trim(), type: form.type },
-      });
+      dispatch({ type: 'UPDATE_ACCOUNT', payload: { id: editAccount.id, ...payload } });
     } else {
       dispatch({
         type: 'ADD_ACCOUNT',
-        payload: {
-          name: form.name.trim(),
-          type: form.type,
-          balance: parseFloat(form.balance) || 0,
-        },
+        payload: { ...payload, balance: parseFloat(form.balance) || 0 },
       });
     }
     setShowModal(false);
@@ -65,6 +96,32 @@ export default function Accounts() {
     if (window.confirm('Delete this account? All related data will be kept.')) {
       dispatch({ type: 'DELETE_ACCOUNT', payload: id });
     }
+  }
+
+  function openPayBill(acc) {
+    setPayBillCard(acc);
+    setPayBillAmount(acc.balance < 0 ? Math.abs(acc.balance).toString() : '');
+    setPayBillFrom(bankAccounts[0]?.id || '');
+    setShowPayBillModal(true);
+  }
+
+  function handlePayBill(e) {
+    e.preventDefault();
+    const amt = parseFloat(payBillAmount);
+    if (!amt || amt <= 0 || !payBillFrom || !payBillCard) return;
+    dispatch({
+      type: 'ADD_TRANSACTION',
+      payload: {
+        type: 'transfer',
+        amount: amt,
+        fromAccountId: payBillFrom,
+        toAccountId: payBillCard.id,
+        note: `Bill payment — ${payBillCard.name}`,
+        date: new Date().toISOString().split('T')[0],
+      },
+    });
+    toast('Bill payment recorded!', 'success');
+    setShowPayBillModal(false);
   }
 
   function moveAccount(fromIdx, toIdx) {
@@ -79,6 +136,78 @@ export default function Accounts() {
       moveAccount(dragIndex.current, idx);
     }
     dragIndex.current = null;
+  }
+
+  function getGlobalIndex(acc) {
+    return accounts.findIndex((a) => a.id === acc.id);
+  }
+
+  function getBillingInfo(acc) {
+    if (acc.type !== 'card') return null;
+    const parts = [];
+    if (acc.billingDate) parts.push(`Bills on ${acc.billingDate}${getOrdinal(acc.billingDate)}`);
+    if (acc.dueDate) parts.push(`Due by ${acc.dueDate}${getOrdinal(acc.dueDate)}`);
+    if (acc.creditLimit) parts.push(`Limit: ${formatCurrency(acc.creditLimit, currency)}`);
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+
+  function getOrdinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+  }
+
+  function renderAccountCard(acc) {
+    const idx = getGlobalIndex(acc);
+    const billingInfo = getBillingInfo(acc);
+    return (
+      <div
+        key={acc.id}
+        className={`account-card account-card-${acc.type} ${reorderMode ? 'reorder-active' : ''}`}
+        onClick={() => !reorderMode && openEdit(acc)}
+        draggable={reorderMode}
+        onDragStart={() => handleDragStart(idx)}
+        onDragOver={handleDragOver}
+        onDrop={() => handleDrop(idx)}
+      >
+        {reorderMode && (
+          <div className="reorder-controls">
+            <button className="reorder-btn" disabled={idx === 0} onClick={(e) => { e.stopPropagation(); moveAccount(idx, idx - 1); }}>
+              <i className="fa-solid fa-chevron-up" />
+            </button>
+            <span className="reorder-handle"><i className="fa-solid fa-grip-vertical" /></span>
+            <button className="reorder-btn" disabled={idx === accounts.length - 1} onClick={(e) => { e.stopPropagation(); moveAccount(idx, idx + 1); }}>
+              <i className="fa-solid fa-chevron-down" />
+            </button>
+          </div>
+        )}
+        <div className="account-icon-wrap" style={{ background: getAccountColor(acc.type) + '15' }}>
+          <span className="account-icon">{getAccountIcon(acc.type)}</span>
+        </div>
+        <div className="account-info">
+          <p className="account-name">{acc.name}</p>
+          <p className="account-type">{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label}</p>
+          {billingInfo && <p className="account-billing-info">{billingInfo}</p>}
+        </div>
+        {!reorderMode && (
+          <div className="account-balance-wrap">
+            <p className={`account-balance ${acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
+              {formatCurrency(acc.balance, currency)}
+            </p>
+            <div className="account-card-actions">
+              {acc.type === 'card' && acc.balance < 0 && (
+                <button className="account-pay-btn" onClick={(e) => { e.stopPropagation(); openPayBill(acc); }} title="Pay Bill">
+                  <i className="fa-solid fa-money-bill-transfer" />
+                </button>
+              )}
+              <button className="account-delete" onClick={(e) => { e.stopPropagation(); handleDelete(acc.id); }}>
+                <i className="fa-solid fa-trash-can" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -110,67 +239,33 @@ export default function Accounts() {
           <div className="empty-state-icon">🏦</div>
           <p>No accounts yet. Add your bank accounts, cards, or wallets.</p>
         </div>
-      ) : (
+      ) : reorderMode ? (
         <div className="accounts-list">
-          {accounts.map((acc, idx) => (
-            <div
-              key={acc.id}
-              className={`account-card ${reorderMode ? 'reorder-active' : ''}`}
-              onClick={() => !reorderMode && openEdit(acc)}
-              draggable={reorderMode}
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(idx)}
-            >
-              {reorderMode && (
-                <div className="reorder-controls">
-                  <button
-                    className="reorder-btn"
-                    disabled={idx === 0}
-                    onClick={(e) => { e.stopPropagation(); moveAccount(idx, idx - 1); }}
-                  >
-                    <i className="fa-solid fa-chevron-up" />
-                  </button>
-                  <span className="reorder-handle"><i className="fa-solid fa-grip-vertical" /></span>
-                  <button
-                    className="reorder-btn"
-                    disabled={idx === accounts.length - 1}
-                    onClick={(e) => { e.stopPropagation(); moveAccount(idx, idx + 1); }}
-                  >
-                    <i className="fa-solid fa-chevron-down" />
-                  </button>
+          {accounts.map((acc) => renderAccountCard(acc))}
+        </div>
+      ) : (
+        <div className="accounts-grouped">
+          {TYPE_SECTIONS.map((section) => {
+            const sectionAccounts = groupedAccounts[section.type] || [];
+            if (sectionAccounts.length === 0) return null;
+            const sectionBalance = sectionAccounts.reduce((s, a) => s + a.balance, 0);
+            return (
+              <div key={section.type} className="account-section">
+                <div className="account-section-header">
+                  <div className="account-section-title-row">
+                    <i className={`${section.icon} account-section-icon`} />
+                    <h3 className="account-section-title">{section.title}</h3>
+                  </div>
+                  <span className={`account-section-total ${sectionBalance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
+                    {formatCurrency(sectionBalance, currency)}
+                  </span>
                 </div>
-              )}
-              <div
-                className="account-icon-wrap"
-                style={{ background: getAccountColor(acc.type) + '15' }}
-              >
-                <span className="account-icon">{getAccountIcon(acc.type)}</span>
-              </div>
-              <div className="account-info">
-                <p className="account-name">{acc.name}</p>
-                <p className="account-type">
-                  {ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label}
-                </p>
-              </div>
-              {!reorderMode && (
-                <div className="account-balance-wrap">
-                  <p className={`account-balance ${acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
-                    {formatCurrency(acc.balance, currency)}
-                  </p>
-                  <button
-                    className="account-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(acc.id);
-                    }}
-                  >
-                    <i className="fa-solid fa-trash-can" />
-                  </button>
+                <div className="accounts-list">
+                  {sectionAccounts.map((acc) => renderAccountCard(acc))}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -207,7 +302,7 @@ export default function Accounts() {
 
           {!editAccount && (
             <div className="form-group">
-              <label className="form-label">Initial Balance</label>
+              <label className="form-label">Initial Balance {form.type === 'card' ? '(use negative for outstanding)' : ''}</label>
               <input
                 type="number"
                 className="form-input"
@@ -219,8 +314,95 @@ export default function Accounts() {
             </div>
           )}
 
+          {form.type === 'card' && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Billing Date (day of month)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 15"
+                  min="1"
+                  max="31"
+                  value={form.billingDate}
+                  onChange={(e) => setForm({ ...form, billingDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Payment Due Date (day of month)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 5"
+                  min="1"
+                  max="31"
+                  value={form.dueDate}
+                  onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Credit Limit</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 100000"
+                  min="0"
+                  step="0.01"
+                  value={form.creditLimit}
+                  onChange={(e) => setForm({ ...form, creditLimit: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+
           <button type="submit" className="btn btn-primary btn-full">
             {editAccount ? 'Save Changes' : 'Add Account'}
+          </button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showPayBillModal} onClose={() => setShowPayBillModal(false)} title={`Pay Bill — ${payBillCard?.name || ''}`}>
+        <form onSubmit={handlePayBill}>
+          {payBillCard && (
+            <div className="pay-bill-outstanding">
+              <p className="pay-bill-outstanding-label">Outstanding Balance</p>
+              <p className="pay-bill-outstanding-amount amount-negative">
+                {formatCurrency(Math.abs(payBillCard.balance), currency)}
+              </p>
+            </div>
+          )}
+          <div className="form-group">
+            <label className="form-label">Payment Amount</label>
+            <input
+              type="number"
+              className="form-input"
+              placeholder="0.00"
+              min="0.01"
+              step="0.01"
+              value={payBillAmount}
+              onChange={(e) => setPayBillAmount(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Pay From</label>
+            <select
+              className="form-select"
+              value={payBillFrom}
+              onChange={(e) => setPayBillFrom(e.target.value)}
+              required
+            >
+              <option value="">Select account</option>
+              {bankAccounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance, currency)})</option>
+              ))}
+              {accounts.filter((a) => a.type === 'wallet').map((a) => (
+                <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance, currency)})</option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 8 }}>
+            <i className="fa-solid fa-money-bill-transfer" /> Pay Bill
           </button>
         </form>
       </Modal>

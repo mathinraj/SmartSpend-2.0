@@ -115,3 +115,13 @@
   color: var(--text-light);
   margin-top: 2px;
 }
+
+.sidebar-footer-credit {
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+.sidebar-dev-name {
+  font-weight: 700;
+  color: var(--text);
+}

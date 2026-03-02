@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useApp } from '../context/AppContext';
-import { hasSampleData } from '../utils/sampleData';
 import './BottomNav.css';
 
 const navItems = [
@@ -15,15 +13,7 @@ const navItems = [
 ];
 
 export default function BottomNav() {
-  const { state, dispatch } = useApp();
   const pathname = usePathname();
-  const sampleLoaded = hasSampleData(state.accounts);
-
-  function handleRemoveSample() {
-    if (window.confirm('Remove all sample data? Your own data will be kept.')) {
-      dispatch({ type: 'REMOVE_SAMPLE_DATA' });
-    }
-  }
 
   function isActive(path) {
     if (path === '/') return pathname === '/';
@@ -32,14 +22,6 @@ export default function BottomNav() {
 
   return (
     <nav className="bottom-nav">
-      {sampleLoaded && (
-        <div className="bottom-nav-sample-bar">
-          <span><i className="fa-solid fa-flask-vial" /> Sample data loaded</span>
-          <button onClick={handleRemoveSample}>
-            <i className="fa-solid fa-trash-can" /> Remove
-          </button>
-        </div>
-      )}
       <div className="bottom-nav-inner">
         {navItems.map((item) => (
           <Link
