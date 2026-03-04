@@ -22,8 +22,9 @@ function loadInitialState() {
     income: INCOME_CATEGORIES,
   };
   const plannedPayments = loadFromStorage(STORAGE_KEYS.PLANNED_PAYMENTS) || [];
+  const splitLedger = loadFromStorage(STORAGE_KEYS.SPLIT_LEDGER) || [];
 
-  return { settings, accounts, transactions, categories, plannedPayments };
+  return { settings, accounts, transactions, categories, plannedPayments, splitLedger };
 }
 
 function appReducer(state, action) {
@@ -295,11 +296,16 @@ function appReducer(state, action) {
       const sample = generateSampleData();
       const existingSampleIds = new Set(state.accounts.map((a) => a.id));
       const newAccounts = sample.accounts.filter((a) => !existingSampleIds.has(a.id));
+      const samplePeople = ['Rajesh', 'Priya', 'Amit'];
+      const existingPeople = state.settings.splitPeople || [];
+      const mergedPeople = [...new Set([...existingPeople, ...samplePeople])];
       return {
         ...state,
+        settings: { ...state.settings, splitEnabled: true, plannedEnabled: true, splitPeople: mergedPeople },
         accounts: [...state.accounts, ...newAccounts],
         transactions: [...sample.transactions, ...state.transactions],
         plannedPayments: [...(sample.plannedPayments || []), ...state.plannedPayments],
+        splitLedger: [...(sample.splitLedger || []), ...state.splitLedger],
       };
     }
 
@@ -317,6 +323,7 @@ function appReducer(state, action) {
         plannedPayments: state.plannedPayments.filter((p) => {
           return !p.accountId || !sampleIdSet.has(p.accountId);
         }),
+        splitLedger: state.splitLedger.filter((e) => !e.isSample),
       };
     }
 
@@ -348,6 +355,89 @@ function appReducer(state, action) {
         ),
       };
 
+    case 'ADD_SPLIT_ENTRIES': {
+      const entries = action.payload.map((e) => ({
+        ...e,
+        id: generateId(),
+        createdAt: new Date().toISOString(),
+      }));
+      return { ...state, splitLedger: [...entries, ...state.splitLedger] };
+    }
+
+    case 'ADD_SPLIT_OWE': {
+      const entry = {
+        ...action.payload,
+        id: generateId(),
+        type: 'split_owed',
+        createdAt: new Date().toISOString(),
+      };
+      return { ...state, splitLedger: [entry, ...state.splitLedger] };
+    }
+
+    case 'RECORD_SETTLEMENT': {
+      const { person, amount, direction, note, accountId } = action.payload;
+      const entry = {
+        id: generateId(),
+        type: 'settlement',
+        person,
+        amount,
+        direction,
+        note: note || 'Settlement',
+        date: new Date().toISOString().slice(0, 10),
+        createdAt: new Date().toISOString(),
+      };
+
+      let newState = { ...state, splitLedger: [entry, ...state.splitLedger] };
+
+      if (accountId) {
+        if (direction === 'received') {
+          const txn = {
+            id: generateId(),
+            type: 'income',
+            amount,
+            accountId,
+            categoryId: 'income_split_settlement',
+            note: `Split settlement from ${person}`,
+            date: new Date().toISOString().slice(0, 10),
+            createdAt: new Date().toISOString(),
+          };
+          newState = {
+            ...newState,
+            transactions: [txn, ...newState.transactions],
+            accounts: newState.accounts.map((a) =>
+              a.id === accountId ? { ...a, balance: a.balance + amount } : a
+            ),
+          };
+        } else {
+          const txn = {
+            id: generateId(),
+            type: 'expense',
+            amount,
+            accountId,
+            categoryId: 'other',
+            subcategoryId: 'other_misc',
+            note: `Split settlement to ${person}`,
+            date: new Date().toISOString().slice(0, 10),
+            createdAt: new Date().toISOString(),
+          };
+          newState = {
+            ...newState,
+            transactions: [txn, ...newState.transactions],
+            accounts: newState.accounts.map((a) =>
+              a.id === accountId ? { ...a, balance: a.balance - amount } : a
+            ),
+          };
+        }
+      }
+      return newState;
+    }
+
+    case 'DELETE_SPLIT_ENTRY':
+      return {
+        ...state,
+        splitLedger: state.splitLedger.filter((e) => e.id !== action.payload),
+      };
+
     case 'MARK_PLANNED_PAID': {
       const payment = state.plannedPayments.find((p) => p.id === action.payload);
       if (!payment) return state;
@@ -368,6 +458,7 @@ function appReducer(state, action) {
         transactions: d.transactions || state.transactions,
         categories: d.categories || state.categories,
         plannedPayments: d.plannedPayments || state.plannedPayments,
+        splitLedger: d.splitLedger || state.splitLedger,
       };
     }
 
@@ -376,16 +467,19 @@ function appReducer(state, action) {
       const existingAccIds = new Set(state.accounts.map((a) => a.id));
       const existingTxnIds = new Set(state.transactions.map((t) => t.id));
       const existingPpIds = new Set(state.plannedPayments.map((p) => p.id));
+      const existingSplitIds = new Set(state.splitLedger.map((e) => e.id));
 
       const newAccounts = (imp.accounts || []).filter((a) => !existingAccIds.has(a.id));
       const newTxns = (imp.transactions || []).filter((t) => !existingTxnIds.has(t.id));
       const newPp = (imp.plannedPayments || []).filter((p) => !existingPpIds.has(p.id));
+      const newSplits = (imp.splitLedger || []).filter((e) => !existingSplitIds.has(e.id));
 
       return {
         ...state,
         accounts: [...state.accounts, ...newAccounts],
         transactions: [...newTxns, ...state.transactions],
         plannedPayments: [...state.plannedPayments, ...newPp],
+        splitLedger: [...newSplits, ...state.splitLedger],
       };
     }
 
@@ -396,6 +490,7 @@ function appReducer(state, action) {
         transactions: [],
         categories: { expense: DEFAULT_CATEGORIES, income: INCOME_CATEGORIES },
         plannedPayments: [],
+        splitLedger: [],
       };
 
     default:
@@ -425,6 +520,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.PLANNED_PAYMENTS, state.plannedPayments);
   }, [state.plannedPayments]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SPLIT_LEDGER, state.splitLedger);
+  }, [state.splitLedger]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

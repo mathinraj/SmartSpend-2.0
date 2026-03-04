@@ -61,16 +61,16 @@ export function generateSampleData() {
     { type: 'income', amount: 12000, accountId: 'acc_hdfc', categoryId: 'income_freelance', note: 'Logo design project', date: daysAgo(5) },
     { type: 'expense', amount: 8500, accountId: 'acc_icici_cc', categoryId: 'bills', subcategoryId: 'bills_rent', note: 'Room rent share', date: daysAgo(7) },
     { type: 'expense', amount: 250, accountId: 'acc_paytm', categoryId: 'entertainment', subcategoryId: 'ent_subscriptions', note: 'Netflix monthly', date: daysAgo(7) },
-    { type: 'expense', amount: 1800, accountId: 'acc_hdfc', categoryId: 'food', subcategoryId: 'food_groceries', note: 'BigBasket groceries', date: daysAgo(10) },
+    { type: 'expense', amount: 1800, accountId: 'acc_hdfc', categoryId: 'food', subcategoryId: 'food_groceries', note: 'BigBasket groceries', date: daysAgo(10), isSplit: true, splitAmount: 1200, splitSettled: false },
     { type: 'expense', amount: 500, accountId: 'acc_cash', categoryId: 'personal', subcategoryId: 'personal_grooming', note: 'Haircut', date: daysAgo(10) },
     { type: 'transfer', amount: 10000, fromAccountId: 'acc_sbi', toAccountId: 'acc_hdfc', note: 'Monthly transfer', date: daysAgo(10) },
-    { type: 'expense', amount: 2200, accountId: 'acc_icici_cc', categoryId: 'entertainment', subcategoryId: 'ent_movies', note: 'PVR IMAX tickets', date: daysAgo(14), paymentApp: 'Card Swipe' },
-    { type: 'expense', amount: 750, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_snacks', note: 'Movie snacks', date: daysAgo(14), paymentApp: 'Paytm' },
+    { type: 'expense', amount: 2200, accountId: 'acc_icici_cc', categoryId: 'entertainment', subcategoryId: 'ent_movies', note: 'PVR IMAX tickets', date: daysAgo(14), paymentApp: 'Card Swipe', isSplit: true, splitAmount: 1100, splitSettled: true },
+    { type: 'expense', amount: 750, accountId: 'acc_paytm', categoryId: 'food', subcategoryId: 'food_snacks', note: 'Movie snacks', date: daysAgo(14), paymentApp: 'Paytm', isSplit: true, splitAmount: 375, splitSettled: false },
     { type: 'expense', amount: 5200, accountId: 'acc_hdfc_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Flipkart - new phone', date: daysAgo(15), paymentApp: 'Net Banking' },
     { type: 'expense', amount: 1500, accountId: 'acc_hdfc', categoryId: 'education', subcategoryId: 'edu_books', note: 'Programming books', date: daysAgo(18) },
     { type: 'income', amount: 5000, accountId: 'acc_hdfc', categoryId: 'income_gift', note: 'Birthday gift from uncle', date: daysAgo(18) },
-    { type: 'expense', amount: 6800, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_flights', note: 'Flight to Goa', date: daysAgo(22) },
-    { type: 'expense', amount: 3200, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_hotel', note: 'Hotel booking Goa', date: daysAgo(22) },
+    { type: 'expense', amount: 6800, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_flights', note: 'Flight to Goa', date: daysAgo(22), isSplit: true, splitAmount: 3400, splitSettled: false },
+    { type: 'expense', amount: 3200, accountId: 'acc_icici_cc', categoryId: 'travel', subcategoryId: 'travel_hotel', note: 'Hotel booking Goa', date: daysAgo(22), isSplit: true, splitAmount: 1600, splitSettled: false },
     { type: 'expense', amount: 420, accountId: 'acc_cash', categoryId: 'transport', subcategoryId: 'transport_parking', note: 'Airport parking', date: daysAgo(25) },
     { type: 'income', amount: 75000, accountId: 'acc_sbi', categoryId: 'income_salary', note: 'January Salary', date: daysAgo(25) },
     { type: 'expense', amount: 2100, accountId: 'acc_hdfc', categoryId: 'bills', subcategoryId: 'bills_electricity', note: 'Electricity bill', date: daysAgo(30) },
@@ -117,5 +117,23 @@ export function generateSampleData() {
     createdAt: now,
   }));
 
-  return { accounts, transactions, plannedPayments };
+  const splitLedgerData = [
+    { type: 'split_paid', person: 'Rajesh', amount: 600, note: 'BigBasket groceries', date: daysAgo(10), isSample: true },
+    { type: 'split_paid', person: 'Priya', amount: 600, note: 'BigBasket groceries', date: daysAgo(10), isSample: true },
+    { type: 'split_paid', person: 'Rajesh', amount: 1100, note: 'PVR IMAX tickets', date: daysAgo(14), isSample: true },
+    { type: 'split_owed', person: 'Rajesh', amount: 250, note: 'Chai & snacks', date: daysAgo(12), isSample: true },
+    { type: 'split_paid', person: 'Rajesh', amount: 3400, note: 'Flight to Goa', date: daysAgo(22), isSample: true },
+    { type: 'split_paid', person: 'Priya', amount: 375, note: 'Movie snacks', date: daysAgo(14), isSample: true },
+    { type: 'split_paid', person: 'Priya', amount: 1600, note: 'Hotel booking Goa', date: daysAgo(22), isSample: true },
+    { type: 'split_owed', person: 'Priya', amount: 800, note: 'Dinner at restaurant', date: daysAgo(8), isSample: true },
+    { type: 'settlement', person: 'Rajesh', amount: 2000, direction: 'received', note: 'GPay settlement', date: daysAgo(5), isSample: true },
+  ];
+
+  const splitLedger = splitLedgerData.map((e) => ({
+    ...e,
+    id: generateId(),
+    createdAt: now,
+  }));
+
+  return { accounts, transactions, plannedPayments, splitLedger };
 }

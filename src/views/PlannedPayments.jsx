@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
 import { formatCurrency } from '../utils/currencies';
@@ -207,6 +208,22 @@ export default function PlannedPayments() {
     if (diff === 0) return 'Due today';
     if (diff === 1) return 'Tomorrow';
     return `In ${diff} days`;
+  }
+
+  if (!settings.plannedEnabled) {
+    return (
+      <div className="page">
+        <h1 className="page-title">Planned Payments</h1>
+        <div className="empty-state">
+          <div className="empty-state-icon">📅</div>
+          <p>Planned payments is disabled.</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-light)', marginTop: 8 }}>Enable it in Preferences → Transactions → Planned payments</p>
+          <Link href="/preferences" className="btn btn-primary" style={{ marginTop: 16 }}>
+            <i className="fa-solid fa-gear" /> Go to Preferences
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

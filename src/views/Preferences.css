@@ -203,6 +203,42 @@
   color: var(--text);
 }
 
+.pref-developer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.pref-dev-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #FFDD00;
+  color: #1a1a1a;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.pref-dev-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.pref-dev-link-linkedin {
+  background: #0A66C2;
+  color: white;
+}
+
+.pref-dev-link-linkedin:hover {
+  background: #0856A1;
+}
+
 /* Multiple reminders */
 .reminder-card {
   margin-bottom: 10px;

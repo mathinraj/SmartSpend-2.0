@@ -131,5 +131,6 @@ export const INCOME_CATEGORIES = [
   { id: 'income_rental', name: 'Rental', icon: '🏠', color: '#E17055' },
   { id: 'income_gift', name: 'Gift', icon: '🎁', color: '#FDCB6E' },
   { id: 'income_refund', name: 'Refund', icon: '↩️', color: '#81ECEC' },
+  { id: 'income_split_settlement', name: 'Split Settlement', icon: '🤝', color: '#55EFC4' },
   { id: 'income_other', name: 'Other', icon: '📦', color: '#B2BEC3' },
 ];

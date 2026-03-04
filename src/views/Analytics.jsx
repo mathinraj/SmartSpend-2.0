@@ -78,7 +78,7 @@ export default function Analytics() {
       .reduce((s, t) => s + t.amount, 0);
     const expense = filteredTxns
       .filter((t) => t.type === 'expense')
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + (t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount), 0);
     return { income, expense, net: income - expense };
   }, [filteredTxns]);
 
@@ -90,8 +90,9 @@ export default function Analytics() {
         const cat = categories.expense.find((c) => c.id === t.categoryId);
         const name = cat ? cat.name : 'Other';
         const color = cat ? cat.color : '#B2BEC3';
+        const actualAmount = t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount;
         if (!map[t.categoryId]) map[t.categoryId] = { name, value: 0, color };
-        map[t.categoryId].value += t.amount;
+        map[t.categoryId].value += actualAmount;
       });
     return Object.values(map).sort((a, b) => b.value - a.value);
   }, [filteredTxns, categories]);
@@ -115,7 +116,7 @@ export default function Analytics() {
     filteredTxns.forEach((t) => {
       if (!map[t.date]) map[t.date] = { date: t.date, income: 0, expense: 0 };
       if (t.type === 'income') map[t.date].income += t.amount;
-      if (t.type === 'expense') map[t.date].expense += t.amount;
+      if (t.type === 'expense') map[t.date].expense += (t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount);
     });
     return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
   }, [filteredTxns]);
@@ -130,7 +131,7 @@ export default function Analytics() {
         const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
         if (!map[key]) map[key] = { month: label, key, income: 0, expense: 0 };
         if (t.type === 'income') map[key].income += t.amount;
-        if (t.type === 'expense') map[key].expense += t.amount;
+        if (t.type === 'expense') map[key].expense += (t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount);
       });
     return Object.values(map).sort((a, b) => a.key.localeCompare(b.key)).slice(-12);
   }, [transactions]);
