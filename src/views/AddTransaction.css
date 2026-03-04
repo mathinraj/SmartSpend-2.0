@@ -212,6 +212,298 @@
   background: #E55A5A;
 }
 
+/* Split Expense */
+.split-section {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.split-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.split-toggle-row:hover {
+  background: rgba(108, 92, 231, 0.03);
+}
+
+.split-toggle-info {
+  display: flex;
+  align-items: center;
+}
+
+.split-toggle-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.split-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: white;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.split-checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.split-details {
+  padding: 0 16px 16px;
+  animation: splitSlideIn 0.2s ease;
+}
+
+@keyframes splitSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.split-input-group {
+  margin-bottom: 12px;
+}
+
+.split-input-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.split-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s;
+}
+
+.split-input-wrap:focus-within {
+  border-color: var(--primary);
+}
+
+.split-input-currency {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.split-input {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  width: 100%;
+}
+
+.split-input::-webkit-outer-spin-button,
+.split-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.split-input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.split-no-people {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.split-people-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.split-person-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.split-person-chip:hover {
+  border-color: var(--primary-light);
+}
+
+.split-person-chip.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.split-person-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-person-chip.selected .split-person-avatar {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.split-person-chip .fa-check {
+  font-size: 0.6rem;
+}
+
+.split-mode-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.split-mode-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.split-mode-btn.active {
+  background: rgba(108, 92, 231, 0.08);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.split-custom-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.split-custom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.split-custom-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.split-custom-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  flex-shrink: 0;
+  width: 130px;
+}
+
+.split-custom-input-wrap:focus-within {
+  border-color: var(--primary);
+}
+
+.split-custom-input {
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  width: 100%;
+}
+
+.split-custom-input::-webkit-outer-spin-button,
+.split-custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.split-custom-input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.split-summary {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.split-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.split-summary-val {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.split-owe {
+  color: var(--success);
+}
+
+.split-summary-main {
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
 /* Payment App Picker */
 .payment-app-header {
   display: flex;

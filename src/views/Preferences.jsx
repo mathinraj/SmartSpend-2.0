@@ -427,6 +427,40 @@ export default function Preferences() {
 
           <div className="pref-row">
             <div className="pref-row-info">
+              <p className="pref-row-label">Planned payments</p>
+              <p className="pref-row-desc">Track recurring bills, subscriptions, and upcoming payments with due date reminders</p>
+            </div>
+            <label className="pref-toggle">
+              <input
+                type="checkbox"
+                checked={settings.plannedEnabled === true}
+                onChange={(e) => updatePref('plannedEnabled', e.target.checked)}
+              />
+              <span className="pref-toggle-slider" />
+            </label>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label">Split expense tracking</p>
+              <p className="pref-row-desc">Track shared expenses, per-person balances, and settlements with roommates or friends</p>
+            </div>
+            <label className="pref-toggle">
+              <input
+                type="checkbox"
+                checked={settings.splitEnabled === true}
+                onChange={(e) => updatePref('splitEnabled', e.target.checked)}
+              />
+              <span className="pref-toggle-slider" />
+            </label>
+          </div>
+
+          <div className="pref-divider" />
+
+          <div className="pref-row">
+            <div className="pref-row-info">
               <p className="pref-row-label">Default transaction type</p>
               <p className="pref-row-desc">Pre-select this type when adding a new transaction</p>
             </div>
@@ -869,7 +903,15 @@ export default function Preferences() {
         </div>
 
         <div className="pref-developer-credit">
-          <p>Made with ❤️ by <span className="pref-developer-name">Mathinraj</span> 💚</p>
+          <p>Made with ❤️ by <span className="pref-developer-name">Mathinraj</span></p>
+          <div className="pref-developer-links">
+            <a href="https://buymeacoffee.com/user" target="_blank" rel="noopener noreferrer" className="pref-dev-link">
+              <i className="fa-solid fa-mug-hot" /> Buy me a coffee
+            </a>
+            <a href="https://www.linkedin.com/in" target="_blank" rel="noopener noreferrer" className="pref-dev-link pref-dev-link-linkedin">
+              <i className="fa-brands fa-linkedin" /> LinkedIn
+            </a>
+          </div>
         </div>
       </div>
     </div>

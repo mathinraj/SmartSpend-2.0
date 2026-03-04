@@ -88,9 +88,27 @@ export default function Home() {
       .reduce((s, t) => s + t.amount, 0);
     const expense = monthTxns
       .filter((t) => t.type === 'expense')
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + (t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount), 0);
     return { income, expense };
   }, [transactions]);
+
+  const pendingSplitTotal = useMemo(() => {
+    if (!settings.splitEnabled) return 0;
+    const splitLedger = state.splitLedger || [];
+    const people = settings.splitPeople || [];
+    const balMap = {};
+    people.forEach((p) => { balMap[p] = 0; });
+    splitLedger.forEach((e) => {
+      if (!balMap.hasOwnProperty(e.person)) balMap[e.person] = 0;
+      if (e.type === 'split_paid') balMap[e.person] += e.amount;
+      else if (e.type === 'split_owed') balMap[e.person] -= e.amount;
+      else if (e.type === 'settlement') {
+        if (e.direction === 'received') balMap[e.person] -= e.amount;
+        else balMap[e.person] += e.amount;
+      }
+    });
+    return Object.values(balMap).filter((v) => v > 0).reduce((s, v) => s + v, 0);
+  }, [state.splitLedger, settings]);
 
   const recentTransactions = transactions.slice(0, isDesktop ? 8 : 5);
 
@@ -243,10 +261,18 @@ export default function Home() {
                 <span className="qa-icon qa-transfer">🔄</span>
                 <span>Transfer</span>
               </Link>
-              <Link href="/planned" className="quick-action">
-                <span className="qa-icon qa-planned">📅</span>
-                <span>Planned</span>
-              </Link>
+              {settings.plannedEnabled && (
+                <Link href="/planned" className="quick-action">
+                  <span className="qa-icon qa-planned">📅</span>
+                  <span>Planned</span>
+                </Link>
+              )}
+              {settings.splitEnabled && (
+                <Link href="/splits" className="quick-action">
+                  <span className="qa-icon qa-splits">🤝</span>
+                  <span>Splits</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -342,7 +368,26 @@ export default function Home() {
         </div>
       )}
 
-      {state.plannedPayments && state.plannedPayments.length > 0 && (
+      {settings.splitEnabled && pendingSplitTotal > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <h3 className="section-title">Split Money</h3>
+            <Link href="/splits" className="section-link">View all</Link>
+          </div>
+          <Link href="/splits" className="split-summary-card">
+            <div className="split-summary-left">
+              <span className="split-summary-icon">🤝</span>
+              <div>
+                <p className="split-summary-label">Others owe you</p>
+                <p className="split-summary-total">{maskAmount(formatCurrency(pendingSplitTotal, currency))}</p>
+              </div>
+            </div>
+            <i className="fa-solid fa-chevron-right split-summary-arrow" />
+          </Link>
+        </div>
+      )}
+
+      {settings.plannedEnabled && state.plannedPayments && state.plannedPayments.length > 0 && (
         <div className="section">
           <div className="section-header">
             <h3 className="section-title">Upcoming Payments</h3>
@@ -418,6 +463,7 @@ export default function Home() {
                     </p>
                     <p className="txn-meta">
                       {txn.type === 'transfer' ? 'Transfer' : catInfo.name} · {formatDate(txn.date)}
+                      {txn.isSplit && <span className="txn-split-badge">{txn.splitSettled ? '✓ Split' : '⏳ Split'}</span>}
                     </p>
                   </div>
                   <p className={`txn-amount ${txn.type === 'income' ? 'amount-positive' : txn.type === 'expense' ? 'amount-negative' : ''}`}>

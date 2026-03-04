@@ -255,6 +255,7 @@ export default function Transactions() {
                         {getCategoryName(txn)}
                         {subName && ` · ${subName}`}
                         {txn.type !== 'transfer' && ` · ${getAccountName(txn.accountId)}`}
+                        {txn.isSplit && <span className="txn-split-badge">{txn.splitSettled ? '✓ Split' : '⏳ Split'}</span>}
                       </p>
                     </div>
                     <div className="txn-right">

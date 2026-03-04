@@ -6,11 +6,12 @@ import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
 import './Sidebar.css';
 
-const navItems = [
+const baseNavItems = [
   { path: '/', icon: 'fa-solid fa-house', label: 'Dashboard' },
   { path: '/add', icon: 'fa-solid fa-plus-circle', label: 'Add Transaction' },
   { path: '/transactions', icon: 'fa-solid fa-clock-rotate-left', label: 'History' },
-  { path: '/planned', icon: 'fa-solid fa-calendar-check', label: 'Planned Payments' },
+  { path: '/planned', icon: 'fa-solid fa-calendar-check', label: 'Planned Payments', requiresPlanned: true },
+  { path: '/splits', icon: 'fa-solid fa-people-arrows', label: 'Split Tracker', requiresSplit: true },
   { path: '/accounts', icon: 'fa-solid fa-wallet', label: 'Accounts' },
   { path: '/categories', icon: 'fa-solid fa-tags', label: 'Categories' },
   { path: '/analytics', icon: 'fa-solid fa-chart-pie', label: 'Analytics' },
@@ -40,7 +41,11 @@ export default function Sidebar() {
       </Link>
 
       <nav className="sidebar-nav">
-        {navItems.map((item) => (
+        {baseNavItems.filter((item) => {
+          if (item.requiresSplit && !state.settings.splitEnabled) return false;
+          if (item.requiresPlanned && !state.settings.plannedEnabled) return false;
+          return true;
+        }).map((item) => (
           <Link
             key={item.path}
             href={item.path}

@@ -355,7 +355,7 @@
 
 .quick-actions-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   flex: 1;
 }
@@ -409,6 +409,64 @@
 
 .qa-planned {
   background: rgba(253, 203, 110, 0.15);
+}
+
+.qa-splits {
+  background: rgba(85, 239, 196, 0.15);
+}
+
+/* Split Summary Card */
+.split-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  border-left: 4px solid #FDCB6E;
+  transition: all 0.2s;
+}
+
+.split-summary-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.08));
+}
+
+.split-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.split-summary-icon {
+  font-size: 1.5rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(253, 203, 110, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.split-summary-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.split-summary-total {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--success);
+  margin-top: 2px;
+}
+
+.split-summary-arrow {
+  color: var(--text-light);
+  font-size: 0.8rem;
 }
 
 .upcoming-payments-list {
@@ -472,6 +530,17 @@
   font-weight: 700;
   color: var(--text);
   flex-shrink: 0;
+}
+
+.txn-split-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: rgba(253, 203, 110, 0.2);
+  color: #E17055;
 }
 
 .overdue-text {

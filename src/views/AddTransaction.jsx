@@ -36,6 +36,11 @@ export default function AddTransaction() {
   const [paymentApp, setPaymentApp] = useState('');
   const [editingApps, setEditingApps] = useState(false);
   const [newAppName, setNewAppName] = useState('');
+  const [isSplit, setIsSplit] = useState(false);
+  const [splitAmount, setSplitAmount] = useState('');
+  const [splitMode, setSplitMode] = useState('equal');
+  const [selectedPeople, setSelectedPeople] = useState([]);
+  const [customSplits, setCustomSplits] = useState({});
 
   const paymentApps = settings.paymentApps || ['GPay', 'PhonePe', 'Paytm', 'CRED', 'Amazon Pay', 'Cash', 'Card Swipe', 'Net Banking'];
 
@@ -51,6 +56,15 @@ export default function AddTransaction() {
       setCategoryId(editing.categoryId || '');
       setSubcategoryId(editing.subcategoryId || '');
       setPaymentApp(editing.paymentApp || '');
+      setIsSplit(editing.isSplit || false);
+      setSplitAmount(editing.splitAmount ? String(editing.splitAmount) : '');
+      setSplitMode('custom');
+      if (editing.splitDetails) {
+        setSelectedPeople(editing.splitDetails.map((d) => d.person));
+        const cs = {};
+        editing.splitDetails.forEach((d) => { cs[d.person] = String(d.amount); });
+        setCustomSplits(cs);
+      }
     }
   }, [editing]);
 
@@ -77,9 +91,26 @@ export default function AddTransaction() {
     if (!amountVal || amountVal <= 0) return;
 
     const appField = settings.trackPaymentApp !== false ? (paymentApp.trim() || null) : null;
+    const splitPeople = settings.splitPeople || [];
+    let computedSplitAmount = 0;
+    let splitDetails = [];
+    if (tab === 'expense' && isSplit && settings.splitEnabled && selectedPeople.length > 0) {
+      if (splitMode === 'equal') {
+        const perPerson = amountVal / (selectedPeople.length + 1);
+        splitDetails = selectedPeople.map((p) => ({ person: p, amount: Math.round(perPerson * 100) / 100 }));
+      } else {
+        splitDetails = selectedPeople.map((p) => ({ person: p, amount: parseFloat(customSplits[p]) || 0 }));
+      }
+      computedSplitAmount = splitDetails.reduce((s, d) => s + d.amount, 0);
+    } else if (tab === 'expense' && isSplit && !settings.splitEnabled) {
+      computedSplitAmount = parseFloat(splitAmount) || 0;
+    }
+    const splitFields = (tab === 'expense' && isSplit && computedSplitAmount > 0)
+      ? { isSplit: true, splitAmount: computedSplitAmount, ...(splitDetails.length > 0 ? { splitDetails } : {}) }
+      : { isSplit: false, splitAmount: 0 };
 
     if (editing) {
-      const payload = { id: editing.id, type: tab, amount: amountVal, note: note.trim(), date, paymentApp: appField };
+      const payload = { id: editing.id, type: tab, amount: amountVal, note: note.trim(), date, paymentApp: appField, ...splitFields };
       if (tab === 'transfer') {
         if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) return;
         payload.fromAccountId = fromAccountId;
@@ -94,7 +125,7 @@ export default function AddTransaction() {
     } else {
       if (tab === 'expense') {
         if (!accountId || !categoryId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'expense', amount: amountVal, accountId, categoryId, subcategoryId: subcategoryId || null, note: note.trim(), date, paymentApp: appField } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'expense', amount: amountVal, accountId, categoryId, subcategoryId: subcategoryId || null, note: note.trim(), date, paymentApp: appField, ...splitFields } });
       } else if (tab === 'income') {
         if (!accountId || !categoryId) return;
         dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'income', amount: amountVal, accountId, categoryId, note: note.trim(), date, paymentApp: appField } });
@@ -102,6 +133,18 @@ export default function AddTransaction() {
         if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) return;
         dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'transfer', amount: amountVal, fromAccountId, toAccountId, note: note.trim(), date, paymentApp: appField } });
       }
+    }
+    if (splitFields.isSplit && splitDetails.length > 0 && !editing) {
+      dispatch({
+        type: 'ADD_SPLIT_ENTRIES',
+        payload: splitDetails.map((d) => ({
+          type: 'split_paid',
+          person: d.person,
+          amount: d.amount,
+          note: note.trim() || 'Shared expense',
+          date,
+        })),
+      });
     }
     router.push(editing ? '/transactions' : '/');
   }
@@ -242,6 +285,115 @@ export default function AddTransaction() {
           <label className="form-label"><i className="fa-regular fa-note-sticky" style={{ marginRight: 6 }} />Note (optional)</label>
           <input type="text" className="form-input" placeholder="What was this for?" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
+
+        {tab === 'expense' && settings.splitEnabled && (() => {
+          const people = settings.splitPeople || [];
+          const amountNum = parseFloat(amount) || 0;
+          const equalPerPerson = selectedPeople.length > 0 ? amountNum / (selectedPeople.length + 1) : 0;
+          const totalOthersOwe = splitMode === 'equal'
+            ? Math.round(equalPerPerson * selectedPeople.length * 100) / 100
+            : selectedPeople.reduce((s, p) => s + (parseFloat(customSplits[p]) || 0), 0);
+          const yourShare = Math.max(0, amountNum - totalOthersOwe);
+          return (
+            <div className="split-section">
+              <label className="split-toggle-row" onClick={() => { setIsSplit(!isSplit); if (isSplit) { setSplitAmount(''); setSelectedPeople([]); setCustomSplits({}); } }}>
+                <div className="split-toggle-info">
+                  <i className="fa-solid fa-people-arrows" style={{ marginRight: 8, color: 'var(--primary)' }} />
+                  <span className="split-toggle-text">This is a shared expense</span>
+                </div>
+                <span className={`split-checkbox ${isSplit ? 'checked' : ''}`}>
+                  {isSplit && <i className="fa-solid fa-check" />}
+                </span>
+              </label>
+              {isSplit && (
+                <div className="split-details">
+                  {people.length === 0 ? (
+                    <p className="split-no-people">No contacts yet. Add people in the <strong>Split Tracker</strong> page first.</p>
+                  ) : (
+                    <>
+                      <label className="split-input-label">Split with</label>
+                      <div className="split-people-picker">
+                        {people.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            className={`split-person-chip ${selectedPeople.includes(p) ? 'selected' : ''}`}
+                            onClick={() => {
+                              if (selectedPeople.includes(p)) {
+                                setSelectedPeople(selectedPeople.filter((x) => x !== p));
+                                const cs = { ...customSplits }; delete cs[p]; setCustomSplits(cs);
+                              } else {
+                                setSelectedPeople([...selectedPeople, p]);
+                              }
+                            }}
+                          >
+                            <span className="split-person-avatar">{p.charAt(0).toUpperCase()}</span>
+                            {p}
+                            {selectedPeople.includes(p) && <i className="fa-solid fa-check" />}
+                          </button>
+                        ))}
+                      </div>
+
+                      {selectedPeople.length > 0 && (
+                        <>
+                          <div className="split-mode-row">
+                            <button type="button" className={`split-mode-btn ${splitMode === 'equal' ? 'active' : ''}`} onClick={() => setSplitMode('equal')}>Equal split</button>
+                            <button type="button" className={`split-mode-btn ${splitMode === 'custom' ? 'active' : ''}`} onClick={() => setSplitMode('custom')}>Custom</button>
+                          </div>
+
+                          {splitMode === 'custom' && (
+                            <div className="split-custom-inputs">
+                              {selectedPeople.map((p) => (
+                                <div key={p} className="split-custom-row">
+                                  <span className="split-custom-name">{p}</span>
+                                  <div className="split-custom-input-wrap">
+                                    <span className="split-input-currency">{settings.currency}</span>
+                                    <input
+                                      type="number"
+                                      className="split-custom-input"
+                                      placeholder="0"
+                                      step="0.01"
+                                      min="0"
+                                      value={customSplits[p] || ''}
+                                      onChange={(e) => setCustomSplits({ ...customSplits, [p]: e.target.value })}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {amountNum > 0 && (
+                            <div className="split-summary">
+                              <div className="split-summary-row">
+                                <span>Total paid</span>
+                                <span className="split-summary-val">{formatCurrency(amountNum, settings.currency)}</span>
+                              </div>
+                              {splitMode === 'equal' && (
+                                <div className="split-summary-row">
+                                  <span>Per person ({selectedPeople.length + 1})</span>
+                                  <span className="split-summary-val">{formatCurrency(Math.round(equalPerPerson * 100) / 100, settings.currency)}</span>
+                                </div>
+                              )}
+                              <div className="split-summary-row">
+                                <span>Others owe you</span>
+                                <span className="split-summary-val split-owe">{formatCurrency(totalOthersOwe, settings.currency)}</span>
+                              </div>
+                              <div className="split-summary-row split-summary-main">
+                                <span>Your actual expense</span>
+                                <span className="split-summary-val">{formatCurrency(yourShare, settings.currency)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {settings.trackPaymentApp !== false && (
           <div className="form-group">
