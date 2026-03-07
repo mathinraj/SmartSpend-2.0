@@ -1,10 +1,10 @@
 const STORAGE_KEYS = {
-  SETTINGS: 'spendimeter_settings',
-  ACCOUNTS: 'spendimeter_accounts',
-  TRANSACTIONS: 'spendimeter_transactions',
-  CATEGORIES: 'spendimeter_categories',
-  PLANNED_PAYMENTS: 'spendimeter_planned_payments',
-  SPLIT_LEDGER: 'spendimeter_split_ledger',
+  SETTINGS: 'spendtraq_settings',
+  ACCOUNTS: 'spendtraq_accounts',
+  TRANSACTIONS: 'spendtraq_transactions',
+  CATEGORIES: 'spendtraq_categories',
+  PLANNED_PAYMENTS: 'spendtraq_planned_payments',
+  SPLIT_LEDGER: 'spendtraq_split_ledger',
 };
 
 const isBrowser = typeof window !== 'undefined';

@@ -4,11 +4,11 @@ import '../index.css';
 import '../App.css';
 
 export const metadata = {
-  title: 'Spendimeter - Expense Tracker',
+  title: 'SpendTraq - Expense Tracker',
   description: 'The smartest way to track expenses, manage accounts, and take control of your finances. Free, offline, and private.',
   keywords: ['expense tracker', 'budget tracker', 'personal finance', 'money management', 'spending tracker'],
   openGraph: {
-    title: 'Spendimeter - Expense Tracker',
+    title: 'SpendTraq - Expense Tracker',
     description: 'Track expenses, manage accounts, and take control of your finances.',
     type: 'website',
   },

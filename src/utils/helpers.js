@@ -2,14 +2,16 @@ export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
-export function getAccountIcon(type) {
-  const icons = {
-    bank: '🏦',
-    card: '💳',
-    cash: '💵',
-    wallet: '👛',
-  };
-  return icons[type] || '💰';
+export function getAccountIcon(type, currencyCode) {
+  if (type === 'cash') {
+    const cashEmojis = {
+      USD: '💵', AUD: '💵', CAD: '💵', SGD: '💵', MXN: '💵',
+      EUR: '💶', GBP: '💷', JPY: '💴', CNY: '💴',
+    };
+    return cashEmojis[currencyCode] || '🪙';
+  }
+  const icons = { bank: '🏦', card: '💳', wallet: '👛' };
+  return icons[type] || '🪙';
 }
 
 export function getAccountColor(type) {

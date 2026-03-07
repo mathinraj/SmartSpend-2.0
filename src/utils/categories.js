@@ -124,7 +124,7 @@ export const DEFAULT_CATEGORIES = [
 ];
 
 export const INCOME_CATEGORIES = [
-  { id: 'income_salary', name: 'Salary', icon: '💰', color: '#00B894' },
+  { id: 'income_salary', name: 'Salary', icon: '🪙', color: '#00B894' },
   { id: 'income_freelance', name: 'Freelance', icon: '💻', color: '#00CEC9' },
   { id: 'income_business', name: 'Business', icon: '🏢', color: '#0984E3' },
   { id: 'income_investment', name: 'Investment', icon: '📈', color: '#6C5CE7' },
