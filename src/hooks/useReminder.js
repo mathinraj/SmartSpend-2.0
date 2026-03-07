@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 
-const LAST_NOTIF_PREFIX = 'spendimeter_reminder_';
+const LAST_NOTIF_PREFIX = 'spendtraq_reminder_';
 
 export function useReminder() {
   const { state } = useApp();
@@ -20,10 +20,10 @@ export function useReminder() {
   const sendNotification = useCallback((message, tag) => {
     if (Notification.permission !== 'granted') return;
     try {
-      new Notification('Spendimeter Reminder', {
+      new Notification('SpendTraq Reminder', {
         body: message || "Don't forget to log your expenses today!",
-        icon: '💰',
-        tag: tag || 'spendimeter-reminder',
+        icon: '🪙',
+        tag: tag || 'spendtraq-reminder',
       });
     } catch {
       // Notification constructor can fail on some mobile browsers

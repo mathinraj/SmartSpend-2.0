@@ -1,4 +1,4 @@
-# Spendimeter
+# SpendTraq
 
 A personal finance tracker built with Next.js and React. Track expenses, income, and transfers across multiple accounts — all stored locally in your browser.
 
@@ -31,21 +31,6 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 | Styling | Custom CSS with CSS variables |
 | Deployment | Vercel |
 
-## Getting Started
-
-```bash
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
 
 ## Changelog
 

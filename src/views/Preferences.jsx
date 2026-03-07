@@ -103,7 +103,7 @@ export default function Preferences() {
 
   function buildExportData() {
     return {
-      _app: 'Spendimeter',
+      _app: 'SpendTraq',
       _version: '1.2',
       _exportedAt: new Date().toISOString(),
       settings: { ...settings, onboardStep: undefined },
@@ -121,7 +121,7 @@ export default function Preferences() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `spendimeter-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `spendtraq-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast('Backup exported as JSON', 'success');
@@ -161,7 +161,7 @@ export default function Preferences() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `spendimeter-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `spendtraq-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast('Transactions exported as CSV', 'success');
@@ -200,7 +200,7 @@ export default function Preferences() {
           toast('Data merged! Only new items were added.', 'success', 4000);
         }
       } catch {
-        toast('Failed to read backup file. Make sure it\'s a valid Spendimeter JSON export.', 'error', 4000);
+        toast('Failed to read backup file. Make sure it\'s a valid SpendTraq JSON export.', 'error', 4000);
       }
     };
     reader.readAsText(file);
@@ -211,7 +211,7 @@ export default function Preferences() {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
-  const hasAppLock = typeof window !== 'undefined' && !!localStorage.getItem('spendimeter_app_lock');
+  const hasAppLock = typeof window !== 'undefined' && !!localStorage.getItem('spendtraq_app_lock');
 
   function hashPin(val) {
     let hash = 0;
@@ -240,7 +240,7 @@ export default function Preferences() {
       setConfirmPin('');
       return;
     }
-    localStorage.setItem('spendimeter_app_lock', hashPin(newPin));
+    localStorage.setItem('spendtraq_app_lock', hashPin(newPin));
     updatePref('appLockEnabled', true);
     toast('App lock enabled!', 'success');
     setShowPinSetup(false);
@@ -251,7 +251,7 @@ export default function Preferences() {
 
   function handleRemoveLock() {
     if (window.confirm('Remove app lock? Anyone will be able to open the app.')) {
-      localStorage.removeItem('spendimeter_app_lock');
+      localStorage.removeItem('spendtraq_app_lock');
       updatePref('appLockEnabled', false);
       toast('App lock removed', 'info');
     }
@@ -789,8 +789,9 @@ export default function Preferences() {
             </button>
           </div>
 
-          <div className="pref-divider" />
+        </div>
 
+        <div className="pref-card" style={{ marginTop: 14 }}>
           <div className="pref-row backup-gdrive-row">
             <div className="pref-row-info">
               <p className="pref-row-label">
@@ -895,24 +896,21 @@ export default function Preferences() {
         <div className="pref-card">
           <div className="pref-row">
             <div className="pref-row-info">
-              <p className="pref-row-label">Spendimeter</p>
+              <p className="pref-row-label">SpendTraq</p>
               <p className="pref-row-desc">Version 1.2 · Your money, your rules.</p>
             </div>
             <span className="pref-badge">v1.2</span>
           </div>
         </div>
 
-        <div className="pref-developer-credit">
-          <p>Made with ❤️ by <span className="pref-developer-name">Mathinraj</span></p>
-          <div className="pref-developer-links">
-            <a href="https://buymeacoffee.com/user" target="_blank" rel="noopener noreferrer" className="pref-dev-link">
-              <i className="fa-solid fa-mug-hot" /> Buy me a coffee
-            </a>
-            <a href="https://www.linkedin.com/in" target="_blank" rel="noopener noreferrer" className="pref-dev-link pref-dev-link-linkedin">
-              <i className="fa-brands fa-linkedin" /> LinkedIn
-            </a>
+        <a href="https://www.linkedin.com/in/mathinraj" target="_blank" rel="noopener noreferrer" className="pref-developer-card">
+          <div className="pref-dev-avatar">M</div>
+          <div className="pref-dev-info">
+            <p className="pref-dev-name">Mathinraj 💚</p>
+            <p className="pref-dev-role">Developer</p>
           </div>
-        </div>
+          <i className="fa-brands fa-linkedin-in pref-dev-li-icon" />
+        </a>
       </div>
     </div>
   );

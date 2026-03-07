@@ -12,7 +12,7 @@ export default function LockScreen({ onUnlock }) {
   const inputRef = useRef(null);
 
   const storedHash = typeof window !== 'undefined'
-    ? localStorage.getItem('spendimeter_app_lock')
+    ? localStorage.getItem('spendtraq_app_lock')
     : null;
 
   const hashPin = useCallback((val) => {
@@ -59,7 +59,7 @@ export default function LockScreen({ onUnlock }) {
         <div className="lock-icon">
           <i className="fa-solid fa-lock" />
         </div>
-        <h2 className="lock-title">Spendimeter</h2>
+        <h2 className="lock-title">SpendTraq</h2>
         <p className="lock-subtitle">Enter your PIN to unlock</p>
 
         <div className={`lock-dots ${shake ? 'lock-shake' : ''}`}>

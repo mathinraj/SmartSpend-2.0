@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
-import { formatCurrency } from '../utils/currencies';
+import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { formatDate, getAccountIcon, generateId } from '../utils/helpers';
 import { hasSampleData } from '../utils/sampleData';
 import './Home.css';
@@ -21,13 +21,13 @@ export default function Home() {
   useEffect(() => {
     const reminders = settings.reminders || [];
     if (reminders.length > 0) return;
-    if (sessionStorage.getItem('spendimeter_reminder_dismissed')) return;
+    if (sessionStorage.getItem('spendtraq_reminder_dismissed')) return;
     if (Math.random() < 0.35) setShowReminderHint(true);
   }, []);
 
   function dismissReminderHint() {
     setShowReminderHint(false);
-    sessionStorage.setItem('spendimeter_reminder_dismissed', '1');
+    sessionStorage.setItem('spendtraq_reminder_dismissed', '1');
   }
 
   async function enableReminderFromHint() {
@@ -115,7 +115,7 @@ export default function Home() {
   function getCategoryInfo(txn) {
     if (txn.type === 'income') {
       const cat = categories.income.find((c) => c.id === txn.categoryId);
-      return cat || { icon: '💰', name: 'Income' };
+      return cat || { icon: getCurrencyEmoji(currency), name: 'Income' };
     }
     if (txn.type === 'expense') {
       const cat = categories.expense.find((c) => c.id === txn.categoryId);
@@ -167,7 +167,7 @@ export default function Home() {
       <div className="home-header">
         <div>
           <p className="home-greeting">Welcome back</p>
-          <h1 className="home-title">Spendimeter</h1>
+          <h1 className="home-title">SpendTraq</h1>
         </div>
         <Link href="/preferences" className="home-settings-btn" title="Preferences">
           <i className="fa-solid fa-gear" />
@@ -250,11 +250,11 @@ export default function Home() {
             <h3 className="section-title" style={{ marginBottom: 16 }}>Quick Actions</h3>
             <div className="quick-actions-grid">
               <Link href="/add" className="quick-action">
-                <span className="qa-icon qa-expense">💸</span>
+                <span className="qa-icon qa-expense">📤</span>
                 <span>Add Expense</span>
               </Link>
               <Link href="/add" className="quick-action">
-                <span className="qa-icon qa-income">💰</span>
+                <span className="qa-icon qa-income">📥</span>
                 <span>Add Income</span>
               </Link>
               <Link href="/add" className="quick-action">
@@ -356,7 +356,7 @@ export default function Home() {
             <div className="accounts-scroll">
               {accounts.map((acc) => (
                 <div key={acc.id} className="account-mini-card">
-                  <span className="account-mini-icon">{getAccountIcon(acc.type)}</span>
+                  <span className="account-mini-icon">{getAccountIcon(acc.type, currency)}</span>
                   <p className="account-mini-name">{acc.name}</p>
                   <p className="account-mini-balance">
                     {maskAmount(formatCurrency(acc.balance, currency))}

@@ -3,17 +3,19 @@
 import { useState, useRef, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
-import { formatCurrency } from '../utils/currencies';
+import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { getAccountIcon, getAccountColor } from '../utils/helpers';
 import Modal from '../components/Modal';
 import './Accounts.css';
 
-const ACCOUNT_TYPES = [
-  { id: 'bank', label: 'Bank Account', icon: '🏦' },
-  { id: 'card', label: 'Credit/Debit Card', icon: '💳' },
-  { id: 'cash', label: 'Cash', icon: '💵' },
-  { id: 'wallet', label: 'Wallet / UPI', icon: '👛' },
-];
+function getAccountTypes(currencyCode) {
+  return [
+    { id: 'bank', label: 'Bank Account', icon: '🏦' },
+    { id: 'card', label: 'Credit/Debit Card', icon: '💳' },
+    { id: 'cash', label: 'Cash', icon: getAccountIcon('cash', currencyCode) },
+    { id: 'wallet', label: 'Wallet / UPI', icon: '👛' },
+  ];
+}
 
 const TYPE_SECTIONS = [
   { type: 'bank', title: 'Bank Accounts', icon: 'fa-solid fa-building-columns' },
@@ -27,6 +29,7 @@ export default function Accounts() {
   const { accounts, settings } = state;
   const currency = settings.currency;
   const toast = useToast();
+  const ACCOUNT_TYPES = getAccountTypes(currency);
 
   const [showModal, setShowModal] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
@@ -182,7 +185,7 @@ export default function Accounts() {
           </div>
         )}
         <div className="account-icon-wrap" style={{ background: getAccountColor(acc.type) + '15' }}>
-          <span className="account-icon">{getAccountIcon(acc.type)}</span>
+          <span className="account-icon">{getAccountIcon(acc.type, currency)}</span>
         </div>
         <div className="account-info">
           <p className="account-name">{acc.name}</p>

@@ -305,7 +305,7 @@ export default function Transactions() {
             <select className="form-select" value={filterAccountId} onChange={(e) => setFilterAccountId(e.target.value)}>
               <option value="">All Accounts</option>
               {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{getAccountIcon(a.type)} {a.name}</option>
+                <option key={a.id} value={a.id}>{getAccountIcon(a.type, currency)} {a.name}</option>
               ))}
             </select>
           </div>

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
-import { formatCurrency } from '../utils/currencies';
+import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { formatDate, getAccountIcon, toDateInputValue } from '../utils/helpers';
 import Modal from '../components/Modal';
 import './SplitTracker.css';
@@ -97,11 +97,12 @@ export default function SplitTracker() {
   }
 
   function getEntryDisplay(entry) {
-    if (entry.type === 'split_paid') return { sign: '+', color: 'var(--success)', label: 'You paid (their share)', icon: '💸' };
-    if (entry.type === 'split_owed') return { sign: '-', color: 'var(--danger)', label: 'They paid (your share)', icon: '🧾' };
+    const moneyIcon = getCurrencyEmoji(currency);
+    if (entry.type === 'split_paid') return { sign: '+', color: 'var(--success)', label: 'You paid (their share)', icon: '📤' };
+    if (entry.type === 'split_owed') return { sign: '-', color: 'var(--danger)', label: 'They paid (your share)', icon: '📥' };
     if (entry.type === 'settlement') {
-      if (entry.direction === 'received') return { sign: '-', color: '#74B9FF', label: 'Received from them', icon: '💰' };
-      return { sign: '+', color: '#74B9FF', label: 'Paid to them', icon: '💳' };
+      if (entry.direction === 'received') return { sign: '-', color: '#74B9FF', label: 'Received from them', icon: moneyIcon };
+      return { sign: '+', color: '#74B9FF', label: 'Paid to them', icon: moneyIcon };
     }
     return { sign: '', color: 'var(--text)', label: '', icon: '📝' };
   }
@@ -217,7 +218,7 @@ export default function SplitTracker() {
                 <div className="settle-account-grid">
                   {accounts.map((acc) => (
                     <button key={acc.id} type="button" className={`settle-account-card ${settleForm.accountId === acc.id ? 'selected' : ''}`} onClick={() => setSettleForm({ ...settleForm, accountId: acc.id })}>
-                      <span className="settle-account-icon">{getAccountIcon(acc.type)}</span>
+                      <span className="settle-account-icon">{getAccountIcon(acc.type, currency)}</span>
                       <span className="settle-account-name">{acc.name}</span>
                       {settleForm.accountId === acc.id && <span className="settle-account-check"><i className="fa-solid fa-circle-check" /></span>}
                     </button>

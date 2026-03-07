@@ -25,6 +25,22 @@ export const CURRENCIES = [
   { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound', flag: '🇪🇬' },
 ];
 
+const CURRENCY_EMOJIS = {
+  USD: '💵', AUD: '💵', CAD: '💵', SGD: '💵', MXN: '💵',
+  EUR: '💶',
+  GBP: '💷',
+  JPY: '💴', CNY: '💴',
+};
+
+export function getCurrencyEmoji(currencyCode) {
+  return CURRENCY_EMOJIS[currencyCode] || '🪙';
+}
+
+export function getCurrencySymbol(currencyCode) {
+  const currency = CURRENCIES.find((c) => c.code === currencyCode);
+  return currency ? currency.symbol : '₹';
+}
+
 export function formatCurrency(amount, currencyCode) {
   const currency = CURRENCIES.find((c) => c.code === currencyCode);
   if (!currency) return `${amount.toFixed(2)}`;
