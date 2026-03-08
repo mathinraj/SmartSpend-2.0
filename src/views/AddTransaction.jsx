@@ -5,7 +5,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/currencies';
 import { toDateInputValue, getAccountIcon, getAccountColor } from '../utils/helpers';
+import Modal from '../components/Modal';
 import './AddTransaction.css';
+
+const EMOJI_OPTIONS = [
+  '🍔', '🚗', '🛍️', '📄', '🏥', '🎬', '✈️', '📚', '👤', '📦',
+  '🏠', '🎮', '🎵', '💻', '🏋️', '🐾', '👶', '💼', '🎁', '📱',
+  '☕', '🍕', '🚌', '⛽', '💊', '🎭', '⚽', '🧹', '💇', '🔧',
+  '🪙', '🏢', '📈', '↩️', '🏦', '💶', '👛', '🎯', '🎨', '🌿',
+];
+
+const COLOR_OPTIONS = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+  '#DDA0DD', '#74B9FF', '#A29BFE', '#FD79A8', '#B2BEC3',
+  '#00B894', '#00CEC9', '#0984E3', '#6C5CE7', '#E17055',
+  '#FDCB6E', '#81ECEC', '#55A3E8', '#FF7675', '#636E72',
+];
 
 export default function AddTransaction() {
   const { state, dispatch } = useApp();
@@ -42,6 +57,15 @@ export default function AddTransaction() {
   const [selectedPeople, setSelectedPeople] = useState([]);
   const [customSplits, setCustomSplits] = useState({});
 
+  const [editingCats, setEditingCats] = useState(false);
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6C5CE7' });
+  const [editingCat, setEditingCat] = useState(null);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [subForm, setSubForm] = useState({ name: '' });
+  const [editingSub, setEditingSub] = useState(null);
+  const [parentCatId, setParentCatId] = useState(null);
+
   const paymentApps = settings.paymentApps || ['GPay', 'PhonePe', 'Paytm', 'CRED', 'Amazon Pay', 'Cash', 'Card Swipe', 'Net Banking'];
 
   useEffect(() => {
@@ -71,6 +95,78 @@ export default function AddTransaction() {
   const expenseCategories = categories.expense;
   const incomeCategories = categories.income;
   const selectedCategory = expenseCategories.find((c) => c.id === categoryId);
+
+  function openAddCategory() {
+    setEditingCat(null);
+    setCatForm({ name: '', icon: '📦', color: '#6C5CE7' });
+    setShowCatModal(true);
+  }
+
+  function openEditCategory(cat) {
+    setEditingCat(cat);
+    setCatForm({ name: cat.name, icon: cat.icon, color: cat.color });
+    setShowCatModal(true);
+  }
+
+  function handleSaveCategory(e) {
+    e.preventDefault();
+    if (!catForm.name.trim()) return;
+    const isExpense = tab === 'expense';
+    if (editingCat) {
+      dispatch({
+        type: isExpense ? 'UPDATE_CATEGORY' : 'UPDATE_INCOME_CATEGORY',
+        payload: { id: editingCat.id, name: catForm.name.trim(), icon: catForm.icon, color: catForm.color },
+      });
+    } else {
+      const payload = { name: catForm.name.trim(), icon: catForm.icon, color: catForm.color };
+      if (isExpense) payload.subcategories = [];
+      dispatch({ type: isExpense ? 'ADD_CATEGORY' : 'ADD_INCOME_CATEGORY', payload });
+    }
+    setShowCatModal(false);
+  }
+
+  function handleDeleteCategory(id) {
+    if (!window.confirm('Delete this category? Existing transactions will keep their data.')) return;
+    dispatch({ type: tab === 'expense' ? 'DELETE_CATEGORY' : 'DELETE_INCOME_CATEGORY', payload: id });
+    if (categoryId === id) setCategoryId('');
+  }
+
+  function openAddSubcategory(catId) {
+    setParentCatId(catId);
+    setEditingSub(null);
+    setSubForm({ name: '' });
+    setShowSubModal(true);
+  }
+
+  function openEditSubcategory(catId, sub) {
+    setParentCatId(catId);
+    setEditingSub(sub);
+    setSubForm({ name: sub.name });
+    setShowSubModal(true);
+  }
+
+  function handleSaveSubcategory(e) {
+    e.preventDefault();
+    if (!subForm.name.trim()) return;
+    if (editingSub) {
+      dispatch({
+        type: 'UPDATE_SUBCATEGORY',
+        payload: { categoryId: parentCatId, subcategory: { id: editingSub.id, name: subForm.name.trim() } },
+      });
+    } else {
+      dispatch({
+        type: 'ADD_SUBCATEGORY',
+        payload: { categoryId: parentCatId, subcategory: { name: subForm.name.trim() } },
+      });
+    }
+    setShowSubModal(false);
+  }
+
+  function handleDeleteSubcategory(catId, subId) {
+    if (!window.confirm('Delete this subcategory?')) return;
+    dispatch({ type: 'DELETE_SUBCATEGORY', payload: { categoryId: catId, subcategoryId: subId } });
+    if (subcategoryId === subId) setSubcategoryId('');
+  }
 
   function addPaymentApp() {
     if (!newAppName.trim()) return;
@@ -244,23 +340,61 @@ export default function AddTransaction() {
         {tab === 'expense' && (
           <>
             <div className="form-group">
-              <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Category</label>
+              <div className="category-header">
+                <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Category</label>
+                <div className="category-header-actions">
+                  <button type="button" className="category-manage-btn" onClick={openAddCategory} title="Add category">
+                    <i className="fa-solid fa-plus" />
+                  </button>
+                  <button type="button" className="category-manage-btn" onClick={() => setEditingCats(!editingCats)} title="Edit categories">
+                    <i className={`fa-solid ${editingCats ? 'fa-check' : 'fa-pen'}`} />
+                  </button>
+                </div>
+              </div>
               <div className="category-grid">
                 {expenseCategories.map((cat) => (
-                  <button key={cat.id} type="button" className={`category-item ${categoryId === cat.id ? 'selected' : ''}`} onClick={() => { setCategoryId(cat.id); setSubcategoryId(''); }}>
+                  <button
+                    key={cat.id}
+                    type="button"
+                    className={`category-item ${categoryId === cat.id ? 'selected' : ''} ${editingCats ? 'editing' : ''}`}
+                    onClick={() => { if (!editingCats) { setCategoryId(cat.id); setSubcategoryId(''); } }}
+                  >
+                    {editingCats && (
+                      <div className="category-edit-overlay">
+                        <span className="category-overlay-btn edit" onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}><i className="fa-solid fa-pen" /></span>
+                        <span className="category-overlay-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}><i className="fa-solid fa-xmark" /></span>
+                      </div>
+                    )}
                     <span className="category-icon">{cat.icon}</span>
                     <span className="category-name">{cat.name}</span>
                   </button>
                 ))}
               </div>
             </div>
-            {selectedCategory && selectedCategory.subcategories.length > 0 && (
+            {selectedCategory && (selectedCategory.subcategories.length > 0 || editingCats) && (
               <div className="form-group">
                 <label className="form-label"><i className="fa-solid fa-tags" style={{ marginRight: 6 }} />Subcategory</label>
                 <div className="subcategory-list">
                   {selectedCategory.subcategories.map((sub) => (
-                    <button key={sub.id} type="button" className={`subcategory-chip ${subcategoryId === sub.id ? 'selected' : ''}`} onClick={() => setSubcategoryId(sub.id)}>{sub.name}</button>
+                    <button
+                      key={sub.id}
+                      type="button"
+                      className={`subcategory-chip ${subcategoryId === sub.id ? 'selected' : ''} ${editingCats ? 'editing' : ''}`}
+                      onClick={() => editingCats ? openEditSubcategory(categoryId, sub) : setSubcategoryId(sub.id)}
+                    >
+                      {sub.name}
+                      {editingCats && (
+                        <span className="subcategory-remove" onClick={(e) => { e.stopPropagation(); handleDeleteSubcategory(categoryId, sub.id); }}>
+                          <i className="fa-solid fa-xmark" />
+                        </span>
+                      )}
+                    </button>
                   ))}
+                  {editingCats && (
+                    <button type="button" className="subcategory-chip subcategory-add-chip" onClick={() => openAddSubcategory(categoryId)}>
+                      <i className="fa-solid fa-plus" style={{ fontSize: '0.65rem' }} /> Add
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -269,10 +403,31 @@ export default function AddTransaction() {
 
         {tab === 'income' && (
           <div className="form-group">
-            <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Category</label>
+            <div className="category-header">
+              <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Category</label>
+              <div className="category-header-actions">
+                <button type="button" className="category-manage-btn" onClick={openAddCategory} title="Add category">
+                  <i className="fa-solid fa-plus" />
+                </button>
+                <button type="button" className="category-manage-btn" onClick={() => setEditingCats(!editingCats)} title="Edit categories">
+                  <i className={`fa-solid ${editingCats ? 'fa-check' : 'fa-pen'}`} />
+                </button>
+              </div>
+            </div>
             <div className="category-grid">
               {incomeCategories.map((cat) => (
-                <button key={cat.id} type="button" className={`category-item ${categoryId === cat.id ? 'selected' : ''}`} onClick={() => setCategoryId(cat.id)}>
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`category-item ${categoryId === cat.id ? 'selected' : ''} ${editingCats ? 'editing' : ''}`}
+                  onClick={() => { if (!editingCats) setCategoryId(cat.id); }}
+                >
+                  {editingCats && (
+                    <div className="category-edit-overlay">
+                      <span className="category-overlay-btn edit" onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}><i className="fa-solid fa-pen" /></span>
+                      <span className="category-overlay-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}><i className="fa-solid fa-xmark" /></span>
+                    </div>
+                  )}
                   <span className="category-icon">{cat.icon}</span>
                   <span className="category-name">{cat.name}</span>
                 </button>
@@ -399,13 +554,24 @@ export default function AddTransaction() {
           <div className="form-group">
             <div className="payment-app-header">
               <label className="form-label"><i className="fa-solid fa-mobile-screen-button" style={{ marginRight: 6 }} />Payment App (optional)</label>
-              <button
-                type="button"
-                className="payment-app-edit-btn"
-                onClick={() => setEditingApps(!editingApps)}
-              >
-                <i className={`fa-solid ${editingApps ? 'fa-check' : 'fa-pen'}`} />
-              </button>
+              <div className="category-header-actions">
+                <button
+                  type="button"
+                  className="payment-app-edit-btn"
+                  onClick={() => { setEditingApps(true); setNewAppName(''); }}
+                  title="Add app"
+                >
+                  <i className="fa-solid fa-plus" />
+                </button>
+                <button
+                  type="button"
+                  className="payment-app-edit-btn"
+                  onClick={() => setEditingApps(!editingApps)}
+                  title="Edit apps"
+                >
+                  <i className={`fa-solid ${editingApps ? 'fa-check' : 'fa-pen'}`} />
+                </button>
+              </div>
             </div>
             <div className="payment-app-picker">
               {paymentApps.map((app) => (
@@ -457,6 +623,50 @@ export default function AddTransaction() {
           {editing ? 'Save Changes' : tab === 'expense' ? 'Add Expense' : tab === 'income' ? 'Add Income' : 'Transfer Money'}
         </button>
       </form>
+
+      <Modal isOpen={showCatModal} onClose={() => setShowCatModal(false)} title={editingCat ? 'Edit Category' : 'New Category'}>
+        <form onSubmit={handleSaveCategory}>
+          <div className="form-group">
+            <label className="form-label"><i className="fa-solid fa-font" style={{ marginRight: 6 }} />Name</label>
+            <input type="text" className="form-input" placeholder="Category name" value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label"><i className="fa-regular fa-face-smile" style={{ marginRight: 6 }} />Icon</label>
+            <div className="emoji-picker">
+              {EMOJI_OPTIONS.map((emoji, i) => (
+                <button key={i} type="button" className={`emoji-option ${catForm.icon === emoji ? 'selected' : ''}`} onClick={() => setCatForm({ ...catForm, icon: emoji })}>{emoji}</button>
+              ))}
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label"><i className="fa-solid fa-palette" style={{ marginRight: 6 }} />Color</label>
+            <div className="color-picker">
+              {COLOR_OPTIONS.map((color) => (
+                <button key={color} type="button" className={`color-option ${catForm.color === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setCatForm({ ...catForm, color })} />
+              ))}
+            </div>
+          </div>
+          <div className="cat-preview-bar">
+            <span className="cat-preview-icon" style={{ background: catForm.color + '18' }}>{catForm.icon}</span>
+            <span className="cat-preview-name">{catForm.name || 'Category Name'}</span>
+          </div>
+          <button type="submit" className="btn btn-primary btn-full">
+            <i className="fa-solid fa-check" /> {editingCat ? 'Save Changes' : 'Create Category'}
+          </button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showSubModal} onClose={() => setShowSubModal(false)} title={editingSub ? 'Edit Subcategory' : 'New Subcategory'}>
+        <form onSubmit={handleSaveSubcategory}>
+          <div className="form-group">
+            <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Subcategory Name</label>
+            <input type="text" className="form-input" placeholder="e.g. Groceries, Coffee..." value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} required />
+          </div>
+          <button type="submit" className="btn btn-primary btn-full">
+            <i className="fa-solid fa-check" /> {editingSub ? 'Save Changes' : 'Add Subcategory'}
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 }

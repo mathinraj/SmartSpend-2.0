@@ -20,6 +20,9 @@ export default function SplitTracker() {
   const [newPersonName, setNewPersonName] = useState('');
   const [showOweModal, setShowOweModal] = useState(false);
   const [showSettleModal, setShowSettleModal] = useState(false);
+  const [showEditEntry, setShowEditEntry] = useState(false);
+  const [editEntry, setEditEntry] = useState(null);
+  const [editEntryForm, setEditEntryForm] = useState({ amount: '', note: '', date: '' });
 
   const [oweForm, setOweForm] = useState({ person: '', amount: '', totalAmount: '', note: '', date: toDateInputValue(new Date()) });
   const [settleForm, setSettleForm] = useState({ amount: '', direction: 'received', note: '', accountId: accounts[0]?.id || '', recordTransaction: true });
@@ -94,6 +97,28 @@ export default function SplitTracker() {
     });
     setShowSettleModal(false);
     setSettleForm({ amount: '', direction: 'received', note: '', accountId: accounts[0]?.id || '', recordTransaction: true });
+  }
+
+  function openEditEntry(entry) {
+    setEditEntry(entry);
+    setEditEntryForm({ amount: String(entry.amount), note: entry.note || '', date: entry.date || toDateInputValue(new Date()) });
+    setShowEditEntry(true);
+  }
+
+  function handleUpdateEntry() {
+    const amt = parseFloat(editEntryForm.amount);
+    if (!editEntry || !amt || amt <= 0) return;
+    dispatch({
+      type: 'UPDATE_SPLIT_ENTRY',
+      payload: { id: editEntry.id, amount: amt, note: editEntryForm.note.trim(), date: editEntryForm.date },
+    });
+    setShowEditEntry(false);
+    setEditEntry(null);
+  }
+
+  function handleDeleteEntry(id) {
+    if (!window.confirm('Delete this entry?')) return;
+    dispatch({ type: 'DELETE_SPLIT_ENTRY', payload: id });
   }
 
   function getEntryDisplay(entry) {
@@ -174,6 +199,14 @@ export default function SplitTracker() {
                   <span className="split-ledger-amount" style={{ color: display.color }}>
                     {display.sign}{formatCurrency(entry.amount, currency)}
                   </span>
+                  <div className="split-entry-actions">
+                    <button className="split-entry-btn" onClick={() => openEditEntry(entry)} title="Edit">
+                      <i className="fa-solid fa-pen" />
+                    </button>
+                    <button className="split-entry-btn danger" onClick={() => handleDeleteEntry(entry.id)} title="Delete">
+                      <i className="fa-solid fa-trash-can" />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -228,6 +261,29 @@ export default function SplitTracker() {
             )}
             <button className="btn btn-primary btn-full" onClick={handleSettle}>
               <i className="fa-solid fa-check" /> Confirm Settlement
+            </button>
+          </div>
+        </Modal>
+
+        <Modal isOpen={showEditEntry} onClose={() => { setShowEditEntry(false); setEditEntry(null); }} title="Edit Entry">
+          <div className="settle-modal-content">
+            <div className="form-group">
+              <label className="form-label">Amount</label>
+              <div className="split-input-wrap">
+                <span className="split-input-currency">{currency}</span>
+                <input type="number" className="split-input" placeholder="0.00" step="0.01" min="0.01" value={editEntryForm.amount} onChange={(e) => setEditEntryForm({ ...editEntryForm, amount: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Note</label>
+              <input type="text" className="form-input" placeholder="What was this for?" value={editEntryForm.note} onChange={(e) => setEditEntryForm({ ...editEntryForm, note: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Date</label>
+              <input type="date" className="form-input" value={editEntryForm.date} onChange={(e) => setEditEntryForm({ ...editEntryForm, date: e.target.value })} />
+            </div>
+            <button className="btn btn-primary btn-full" onClick={handleUpdateEntry} disabled={!editEntryForm.amount}>
+              <i className="fa-solid fa-check" /> Save Changes
             </button>
           </div>
         </Modal>

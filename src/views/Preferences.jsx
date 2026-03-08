@@ -791,16 +791,16 @@ export default function Preferences() {
 
         </div>
 
-        <div className="pref-card" style={{ marginTop: 14 }}>
-          <div className="pref-row backup-gdrive-row">
+        <div className="pref-card coming-soon-card" style={{ marginTop: 14 }}>
+          <div className="pref-row">
             <div className="pref-row-info">
-              <p className="pref-row-label">
-                <i className="fa-brands fa-google-drive" style={{ marginRight: 6, color: '#4285F4' }} />
-                Google Drive sync
+              <p className="pref-row-label coming-soon-label">
+                <i className="fa-solid fa-cloud" style={{ color: '#4285F4' }} />
+                Cloud Sync
               </p>
-              <p className="pref-row-desc">Auto-sync your data to your own Google Drive for cross-device access</p>
+              <p className="pref-row-desc">Sync your data across devices seamlessly</p>
             </div>
-            <span className="pref-badge coming-soon-badge">Coming soon</span>
+            <span className="pref-badge coming-soon-badge">Coming Soon</span>
           </div>
         </div>
       </div>

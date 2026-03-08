@@ -432,6 +432,14 @@ function appReducer(state, action) {
       return newState;
     }
 
+    case 'UPDATE_SPLIT_ENTRY':
+      return {
+        ...state,
+        splitLedger: state.splitLedger.map((e) =>
+          e.id === action.payload.id ? { ...e, ...action.payload } : e
+        ),
+      };
+
     case 'DELETE_SPLIT_ENTRY':
       return {
         ...state,
