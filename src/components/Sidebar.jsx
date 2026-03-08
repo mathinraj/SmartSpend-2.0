@@ -65,6 +65,14 @@ export default function Sidebar() {
       )}
 
       <Link
+        href="/feedback"
+        className={`sidebar-link sidebar-prefs-link ${isActive('/feedback') ? 'active' : ''}`}
+      >
+        <i className="fa-solid fa-comment-dots sidebar-link-icon" />
+        <span className="sidebar-link-label">Feedback</span>
+      </Link>
+
+      <Link
         href="/preferences"
         className={`sidebar-link sidebar-prefs-link ${isActive('/preferences') ? 'active' : ''}`}
       >

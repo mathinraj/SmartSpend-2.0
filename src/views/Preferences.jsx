@@ -903,6 +903,17 @@ export default function Preferences() {
           </div>
         </div>
 
+        <a href="/feedback" className="pref-developer-card" style={{ marginBottom: 8 }}>
+          <div className="pref-dev-avatar" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)' }}>
+            <i className="fa-solid fa-comment-dots" style={{ fontSize: '0.9rem' }} />
+          </div>
+          <div className="pref-dev-info">
+            <p className="pref-dev-name">Send Feedback</p>
+            <p className="pref-dev-role">Report bugs, request features, or share your thoughts</p>
+          </div>
+          <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
+        </a>
+
         <a href="https://www.linkedin.com/in/mathinraj" target="_blank" rel="noopener noreferrer" className="pref-developer-card">
           <div className="pref-dev-avatar">M</div>
           <div className="pref-dev-info">
