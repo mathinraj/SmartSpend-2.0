@@ -14,7 +14,6 @@ const baseNavItems = [
   { path: '/planned', icon: 'fa-solid fa-calendar-check', label: 'Planned Payments', requiresPlanned: true },
   { path: '/splits', icon: 'fa-solid fa-people-arrows', label: 'Split Tracker', requiresSplit: true },
   { path: '/accounts', icon: 'fa-solid fa-wallet', label: 'Accounts' },
-  { path: '/categories', icon: 'fa-solid fa-tags', label: 'Categories' },
   { path: '/analytics', icon: 'fa-solid fa-chart-pie', label: 'Analytics' },
 ];
 

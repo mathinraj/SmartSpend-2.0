@@ -558,3 +558,34 @@
   background: rgba(255, 255, 255, 0.25);
   color: white;
 }
+
+/* Split Entry Actions */
+.split-entry-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.split-entry-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--text-light);
+  transition: all 0.15s;
+}
+
+.split-entry-btn:hover {
+  background: rgba(108, 92, 231, 0.08);
+  color: var(--primary);
+}
+
+.split-entry-btn.danger:hover {
+  background: rgba(255, 107, 107, 0.08);
+  color: var(--danger);
+}
