@@ -86,7 +86,7 @@ export const metadata = {
   manifest: '/manifest.json',
 
   other: {
-    'google-site-verification': 'Ld_ZK57-PWK6Ore4hpWXLrAayFmdVm1yKUUqhKfJEHs',
+    'google-site-verification': '7OHgQl0_ZtSYxF2eXQIzCUngjx1qjT4jGzC4Nbg8K-Q',
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
