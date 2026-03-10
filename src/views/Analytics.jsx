@@ -23,6 +23,9 @@ export default function Analytics() {
   const { state } = useApp();
   const { transactions, categories, settings } = state;
   const currency = settings.currency;
+  const isDark = settings.theme === 'dark';
+  const gridColor = isDark ? '#333' : '#E8ECF4';
+  const tickColor = isDark ? '#9e9e9e' : '#636E72';
 
   const [period, setPeriod] = useState('this_month');
   const [customStart, setCustomStart] = useState(toDateInputValue(new Date()));
@@ -121,6 +124,43 @@ export default function Analytics() {
     return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
   }, [filteredTxns]);
 
+  const topExpenses = useMemo(() => {
+    return filteredTxns
+      .filter((t) => t.type === 'expense')
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5)
+      .map((t) => {
+        const cat = categories.expense.find((c) => c.id === t.categoryId);
+        return { ...t, categoryName: cat?.name || 'Other', categoryIcon: cat?.icon || '📦', categoryColor: cat?.color || '#B2BEC3' };
+      });
+  }, [filteredTxns, categories]);
+
+  const avgDaily = useMemo(() => {
+    const expenses = filteredTxns.filter((t) => t.type === 'expense');
+    if (expenses.length === 0) return 0;
+    const totalExpense = expenses.reduce((s, t) => s + (t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount), 0);
+    const uniqueDays = new Set(expenses.map((t) => t.date)).size;
+    return uniqueDays > 0 ? totalExpense / uniqueDays : 0;
+  }, [filteredTxns]);
+
+  const savingsRate = useMemo(() => {
+    if (totals.income === 0) return null;
+    return ((totals.income - totals.expense) / totals.income) * 100;
+  }, [totals]);
+
+  const weekdayData = useMemo(() => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const map = dayNames.map((name) => ({ name, expense: 0, count: 0 }));
+    filteredTxns
+      .filter((t) => t.type === 'expense')
+      .forEach((t) => {
+        const day = new Date(t.date + 'T00:00:00').getDay();
+        map[day].expense += (t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount);
+        map[day].count += 1;
+      });
+    return map;
+  }, [filteredTxns]);
+
   const monthlyData = useMemo(() => {
     const map = {};
     transactions
@@ -212,19 +252,46 @@ export default function Analytics() {
 
       {view === 'overview' && (
         <>
+          {/* Quick Stats Row */}
+          {filteredTxns.length > 0 && (
+            <div className="quick-stats">
+              <div className="quick-stat-card">
+                <i className="fa-solid fa-chart-line quick-stat-icon" style={{ color: '#6C5CE7' }} />
+                <div>
+                  <p className="quick-stat-label">Avg. Daily Spend</p>
+                  <p className="quick-stat-value">{formatCurrency(avgDaily, currency)}</p>
+                </div>
+              </div>
+              <div className="quick-stat-card">
+                <i className="fa-solid fa-piggy-bank quick-stat-icon" style={{ color: savingsRate !== null && savingsRate >= 0 ? '#00B894' : '#FF6B6B' }} />
+                <div>
+                  <p className="quick-stat-label">Savings Rate</p>
+                  <p className="quick-stat-value">{savingsRate !== null ? `${savingsRate.toFixed(1)}%` : '—'}</p>
+                </div>
+              </div>
+              <div className="quick-stat-card">
+                <i className="fa-solid fa-receipt quick-stat-icon" style={{ color: '#E17055' }} />
+                <div>
+                  <p className="quick-stat-label">Transactions</p>
+                  <p className="quick-stat-value">{filteredTxns.length}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {dailyData.length > 0 ? (
             <div className="chart-card card">
               <h3 className="chart-title">Daily Overview</h3>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={dailyData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E8ECF4" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                     fontSize={11}
-                    tick={{ fill: '#636E72' }}
+                    tick={{ fill: tickColor }}
                   />
-                  <YAxis fontSize={11} tick={{ fill: '#636E72' }} />
+                  <YAxis fontSize={11} tick={{ fill: tickColor }} />
                   <Tooltip content={<CustomTooltipContent />} />
                   <Bar dataKey="income" fill="#00B894" name="Income" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="expense" fill="#FF6B6B" name="Expense" radius={[4, 4, 0, 0]} />
@@ -235,6 +302,42 @@ export default function Analytics() {
             <div className="empty-state">
               <div className="empty-state-icon">📊</div>
               <p>No data for this period</p>
+            </div>
+          )}
+
+          {/* Spending by Day of Week */}
+          {weekdayData.some((d) => d.expense > 0) && (
+            <div className="chart-card card">
+              <h3 className="chart-title">Spending by Day of Week</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={weekdayData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="name" fontSize={11} tick={{ fill: tickColor }} />
+                  <YAxis fontSize={11} tick={{ fill: tickColor }} />
+                  <Tooltip content={<CustomTooltipContent />} />
+                  <Bar dataKey="expense" fill="#A29BFE" name="Expense" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Top Expenses */}
+          {topExpenses.length > 0 && (
+            <div className="chart-card card">
+              <h3 className="chart-title">Top Expenses</h3>
+              <div className="top-expenses-list">
+                {topExpenses.map((t, i) => (
+                  <div key={t.id} className="top-expense-item">
+                    <span className="top-expense-rank">#{i + 1}</span>
+                    <span className="top-expense-icon" style={{ background: t.categoryColor + '18' }}>{t.categoryIcon}</span>
+                    <div className="top-expense-info">
+                      <p className="top-expense-note">{t.note || t.categoryName}</p>
+                      <p className="top-expense-meta">{t.categoryName} · {new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
+                    </div>
+                    <span className="top-expense-amount">{formatCurrency(t.amount, currency)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </>
@@ -343,9 +446,9 @@ export default function Analytics() {
               <h3 className="chart-title">Monthly Trends</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={monthlyData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E8ECF4" />
-                  <XAxis dataKey="month" fontSize={11} tick={{ fill: '#636E72' }} />
-                  <YAxis fontSize={11} tick={{ fill: '#636E72' }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="month" fontSize={11} tick={{ fill: tickColor }} />
+                  <YAxis fontSize={11} tick={{ fill: tickColor }} />
                   <Tooltip content={<CustomTooltipContent />} />
                   <Legend />
                   <Line

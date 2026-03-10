@@ -12,6 +12,61 @@ import LockScreen from '../components/LockScreen';
 import Welcome from '../views/Welcome';
 import CurrencySetup from '../views/CurrencySetup';
 
+function InstallBanner() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    if (localStorage.getItem('spendtraq_install_dismissed')) return;
+
+    function handleBeforeInstall(e) {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  }
+
+  function handleDismiss() {
+    setDismissed(true);
+    localStorage.setItem('spendtraq_install_dismissed', Date.now().toString());
+    setDeferredPrompt(null);
+  }
+
+  if (!deferredPrompt || dismissed) return null;
+
+  return (
+    <div className="install-banner">
+      <div className="install-banner-content">
+        <div className="install-banner-icon">
+          <i className="fa-solid fa-download" />
+        </div>
+        <div className="install-banner-text">
+          <p className="install-banner-title">Install SpendTraq</p>
+          <p className="install-banner-desc">Add to home screen for quick access</p>
+        </div>
+      </div>
+      <div className="install-banner-actions">
+        <button className="install-banner-btn primary" onClick={handleInstall}>Install</button>
+        <button className="install-banner-btn dismiss" onClick={handleDismiss}>
+          <i className="fa-solid fa-xmark" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppShell({ children }) {
   const { state } = useApp();
   const isDesktop = useIsDesktop();
@@ -105,6 +160,7 @@ function AppShell({ children }) {
     <div className={`app-layout ${isDesktop ? 'desktop' : 'mobile'}`}>
       {isDesktop && <Sidebar />}
       <main className={`app-main ${isDesktop ? 'with-sidebar' : ''}`}>
+        <InstallBanner />
         {children}
       </main>
       {!isDesktop && <BottomNav />}
