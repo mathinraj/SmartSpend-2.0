@@ -87,3 +87,100 @@
 .app-layout.desktop .chart-card {
   padding: 24px;
 }
+
+/* Install Banner */
+.install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 16px 16px 0;
+  background: linear-gradient(135deg, #6C5CE7, #A29BFE);
+  border-radius: 12px;
+  color: white;
+  animation: bannerSlideIn 0.3s ease;
+}
+
+@keyframes bannerSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.install-banner-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.install-banner-text {
+  min-width: 0;
+}
+
+.install-banner-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.install-banner-desc {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+.install-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.install-banner-btn.primary {
+  padding: 7px 16px;
+  background: white;
+  color: #6C5CE7;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+
+.install-banner-btn.primary:hover {
+  transform: scale(1.05);
+}
+
+.install-banner-btn.dismiss {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.install-banner-btn.dismiss:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.app-layout.desktop .install-banner {
+  margin: 32px 40px 0;
+  max-width: 900px;
+}

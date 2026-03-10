@@ -104,6 +104,21 @@
   margin-bottom: 20px;
 }
 
+.home-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-profile-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+  flex-shrink: 0;
+}
+
 .home-greeting {
   font-size: 0.85rem;
   color: var(--text-secondary);
