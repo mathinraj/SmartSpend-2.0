@@ -244,6 +244,7 @@ export default function Preferences() {
     reader.readAsText(file);
   }
 
+  const [showDashboardOptions, setShowDashboardOptions] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinStep, setPinStep] = useState('new');
   const [newPin, setNewPin] = useState('');
@@ -363,7 +364,7 @@ export default function Preferences() {
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">Dark mode</p>
-              <p className="pref-row-desc">Switch to a darker theme that's easier on the eyes</p>
+              <p className="pref-row-desc">Easier on the eyes in low light</p>
             </div>
             <label className="pref-toggle">
               <input
@@ -377,71 +378,40 @@ export default function Preferences() {
 
           <div className="pref-divider" />
 
-          <div className="pref-row">
+          <div
+            className="pref-row"
+            style={{ cursor: 'pointer' }}
+            onClick={() => setShowDashboardOptions(!showDashboardOptions)}
+          >
             <div className="pref-row-info">
-              <p className="pref-row-label">Show balance on top</p>
-              <p className="pref-row-desc">By default, monthly expenses are shown. Enable to show total balance instead</p>
+              <p className="pref-row-label">Customize dashboard</p>
+              <p className="pref-row-desc">Choose what to show on the home page</p>
             </div>
-            <label className="pref-toggle">
-              <input
-                type="checkbox"
-                checked={settings.homeView === 'balance'}
-                onChange={(e) => updatePref('homeView', e.target.checked ? 'balance' : 'expenses')}
-              />
-              <span className="pref-toggle-slider" />
-            </label>
+            <i className={`fa-solid fa-chevron-${showDashboardOptions ? 'up' : 'down'}`} style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
           </div>
 
-          <div className="pref-divider" />
-
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Show income/expense in balance card</p>
-              <p className="pref-row-desc">Display monthly income and expense stats below the main card</p>
+          {showDashboardOptions && (
+            <div className="dashboard-options">
+              {[
+                { label: 'Show balance on top', desc: 'Total balance instead of monthly expenses', checked: settings.homeView === 'balance', onChange: (v) => updatePref('homeView', v ? 'balance' : 'expenses') },
+                { label: 'Income/Expense stats', desc: 'Below the main balance card', checked: settings.showBalanceStats !== false, onChange: (v) => updatePref('showBalanceStats', v) },
+                { label: 'Accounts section', desc: 'My Accounts on the home page', checked: settings.showAccountsOnHome !== false, onChange: (v) => updatePref('showAccountsOnHome', v) },
+                ...(settings.splitEnabled ? [{ label: 'Split money', desc: '"Others owe you" card', checked: settings.showSplitOnHome !== false, onChange: (v) => updatePref('showSplitOnHome', v) }] : []),
+                { label: 'Hide balances', desc: 'Mask amounts with *** for privacy', checked: settings.hideBalances === true, onChange: (v) => updatePref('hideBalances', v) },
+              ].map((item) => (
+                <label key={item.label} className="dashboard-option-row">
+                  <div className="dashboard-option-info">
+                    <p className="dashboard-option-label">{item.label}</p>
+                    <p className="dashboard-option-desc">{item.desc}</p>
+                  </div>
+                  <span className="pref-toggle" style={{ width: 38, height: 20 }}>
+                    <input type="checkbox" checked={item.checked} onChange={(e) => item.onChange(e.target.checked)} />
+                    <span className="pref-toggle-slider compact-slider" />
+                  </span>
+                </label>
+              ))}
             </div>
-            <label className="pref-toggle">
-              <input
-                type="checkbox"
-                checked={settings.showBalanceStats !== false}
-                onChange={(e) => updatePref('showBalanceStats', e.target.checked)}
-              />
-              <span className="pref-toggle-slider" />
-            </label>
-          </div>
-
-          <div className="pref-divider" />
-
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Show accounts on dashboard</p>
-              <p className="pref-row-desc">Display the My Accounts section on the home page</p>
-            </div>
-            <label className="pref-toggle">
-              <input
-                type="checkbox"
-                checked={settings.showAccountsOnHome !== false}
-                onChange={(e) => updatePref('showAccountsOnHome', e.target.checked)}
-              />
-              <span className="pref-toggle-slider" />
-            </label>
-          </div>
-
-          <div className="pref-divider" />
-
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Hide balances</p>
-              <p className="pref-row-desc">Mask all monetary amounts with *** for privacy</p>
-            </div>
-            <label className="pref-toggle">
-              <input
-                type="checkbox"
-                checked={settings.hideBalances === true}
-                onChange={(e) => updatePref('hideBalances', e.target.checked)}
-              />
-              <span className="pref-toggle-slider" />
-            </label>
-          </div>
+          )}
         </div>
       </div>
 
@@ -832,6 +802,19 @@ export default function Preferences() {
           onChange={handleFileSelected}
         />
 
+        <div className="pref-card coming-soon-card" style={{ marginBottom: 14 }}>
+          <div className="pref-row">
+            <div className="pref-row-info">
+              <p className="pref-row-label coming-soon-label">
+                <i className="fa-solid fa-cloud" style={{ color: '#4285F4' }} />
+                Cloud Sync
+              </p>
+              <p className="pref-row-desc">Sync your data across devices seamlessly</p>
+            </div>
+            <span className="pref-badge coming-soon-badge">Coming Soon</span>
+          </div>
+        </div>
+
         <div className="backup-actions">
           <div className="backup-action-group">
             <button className="backup-action-btn" onClick={() => { setShowExportOptions(!showExportOptions); setShowImportOptions(false); }}>
@@ -883,19 +866,6 @@ export default function Preferences() {
                 </button>
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="pref-card coming-soon-card" style={{ marginTop: 14 }}>
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label coming-soon-label">
-                <i className="fa-solid fa-cloud" style={{ color: '#4285F4' }} />
-                Cloud Sync
-              </p>
-              <p className="pref-row-desc">Sync your data across devices seamlessly</p>
-            </div>
-            <span className="pref-badge coming-soon-badge">Coming Soon</span>
           </div>
         </div>
       </div>

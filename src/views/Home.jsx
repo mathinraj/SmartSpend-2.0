@@ -383,7 +383,7 @@ export default function Home() {
         </div>
       )}
 
-      {settings.splitEnabled && pendingSplitTotal > 0 && (
+      {settings.splitEnabled && settings.showSplitOnHome !== false && pendingSplitTotal > 0 && (
         <div className="section">
           <div className="section-header">
             <h3 className="section-title">Split Money</h3>
