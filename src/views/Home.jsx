@@ -165,9 +165,24 @@ export default function Home() {
       )}
 
       <div className="home-header">
-        <div>
-          <p className="home-greeting">Welcome back</p>
-          <h1 className="home-title">SpendTraq</h1>
+        <div className="home-header-left">
+          {settings.hasProfilePhoto && (() => {
+            const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
+            return photo ? <img src={photo} alt="" className="home-profile-photo" /> : null;
+          })()}
+          <div>
+            {settings.profileName ? (
+              <>
+                <p className="home-greeting">Welcome back,</p>
+                <h1 className="home-title">{settings.profileName}</h1>
+              </>
+            ) : (
+              <>
+                <p className="home-greeting">Welcome to</p>
+                <h1 className="home-title">SpendTraq</h1>
+              </>
+            )}
+          </div>
         </div>
         <Link href="/preferences" className="home-settings-btn" title="Preferences">
           <i className="fa-solid fa-gear" />

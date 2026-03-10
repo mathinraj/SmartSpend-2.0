@@ -1,11 +1,18 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
 import { getCurrencySymbol } from '../utils/currencies';
 import './Sidebar.css';
+
+const FEEDBACK_LABELS = [
+  { icon: 'fa-solid fa-comment-dots', label: 'Feedback' },
+  { icon: 'fa-solid fa-lightbulb', label: 'Suggestions' },
+  { icon: 'fa-solid fa-bug', label: 'Report Bug' },
+];
 
 const baseNavItems = [
   { path: '/', icon: 'fa-solid fa-house', label: 'Dashboard' },
@@ -21,6 +28,11 @@ export default function Sidebar() {
   const { state, dispatch } = useApp();
   const pathname = usePathname();
   const sampleLoaded = hasSampleData(state.accounts);
+
+  const feedbackLabel = useMemo(() => {
+    const idx = Math.floor(Date.now() / 86400000) % FEEDBACK_LABELS.length;
+    return FEEDBACK_LABELS[idx];
+  }, []);
 
   function handleRemoveSample() {
     if (window.confirm('Remove all sample data? Your own data will be kept.')) {
@@ -68,8 +80,8 @@ export default function Sidebar() {
         href="/feedback"
         className={`sidebar-link sidebar-prefs-link ${isActive('/feedback') ? 'active' : ''}`}
       >
-        <i className="fa-solid fa-comment-dots sidebar-link-icon" />
-        <span className="sidebar-link-label">Feedback</span>
+        <i className={`${feedbackLabel.icon} sidebar-link-icon`} />
+        <span className="sidebar-link-label">{feedbackLabel.label}</span>
       </Link>
 
       <Link

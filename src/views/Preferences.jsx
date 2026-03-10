@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
 import { CURRENCIES } from '../utils/currencies';
 import { hasSampleData } from '../utils/sampleData';
@@ -28,10 +29,45 @@ export default function Preferences() {
   const { settings, accounts, transactions } = state;
   const sampleLoaded = hasSampleData(accounts);
   const toast = useToast();
+  const isDesktop = useIsDesktop();
   const [notifStatus, setNotifStatus] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'denied'
   );
   const [editingReminder, setEditingReminder] = useState(null);
+
+  const profilePhotoInputRef = useRef(null);
+  const profileName = settings.profileName || '';
+  const profilePhoto = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
+
+  function handleProfileNameChange(e) {
+    updatePref('profileName', e.target.value);
+  }
+
+  function handleProfilePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast('Please select an image file', 'error');
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      toast('Image too large. Max 500KB.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      localStorage.setItem('spendtraq_profile_photo', ev.target.result);
+      updatePref('hasProfilePhoto', true);
+      toast('Profile photo updated!', 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemovePhoto() {
+    localStorage.removeItem('spendtraq_profile_photo');
+    updatePref('hasProfilePhoto', false);
+    toast('Profile photo removed', 'info');
+  }
 
   const reminders = settings.reminders || [];
 
@@ -99,7 +135,9 @@ export default function Preferences() {
   }
 
   const fileInputRef = useRef(null);
-  const [importMode, setImportMode] = useState(null); // 'replace' | 'merge'
+  const [importMode, setImportMode] = useState(null);
+  const [showExportOptions, setShowExportOptions] = useState(false);
+  const [showImportOptions, setShowImportOptions] = useState(false);
 
   function buildExportData() {
     return {
@@ -262,6 +300,58 @@ export default function Preferences() {
   return (
     <div className="page">
       <h1 className="page-title">Preferences</h1>
+
+      {/* Profile */}
+      <div className="pref-section">
+        <h3 className="pref-section-title">
+          <i className="fa-solid fa-user" /> Profile
+        </h3>
+
+        <div className="pref-card">
+          <div className="profile-section">
+            <div className="profile-photo-area" onClick={() => profilePhotoInputRef.current?.click()}>
+              {profilePhoto ? (
+                <img src={profilePhoto} alt="" className="profile-photo" />
+              ) : (
+                <div className="profile-photo-placeholder">
+                  <i className="fa-solid fa-camera" />
+                </div>
+              )}
+              <input
+                ref={profilePhotoInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleProfilePhotoUpload}
+              />
+            </div>
+            <div className="profile-name-area">
+              <input
+                type="text"
+                className="profile-name-input"
+                placeholder="Your name"
+                value={profileName}
+                onChange={handleProfileNameChange}
+                maxLength={30}
+              />
+            </div>
+          </div>
+          {profilePhoto && (
+            <>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Remove photo</p>
+                  <p className="pref-row-desc">Photo is stored locally on this device only</p>
+                </div>
+                <button className="pref-btn danger" onClick={handleRemovePhoto}>
+                  <i className="fa-solid fa-trash-can" /> Remove
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Appearance */}
       <div className="pref-section">
@@ -742,53 +832,58 @@ export default function Preferences() {
           onChange={handleFileSelected}
         />
 
-        <div className="pref-card">
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Export as JSON</p>
-              <p className="pref-row-desc">Full backup of all data — accounts, transactions, categories, settings</p>
-            </div>
-            <button className="pref-btn outline" onClick={handleExportJSON}>
-              <i className="fa-solid fa-download" /> Export
+        <div className="backup-actions">
+          <div className="backup-action-group">
+            <button className="backup-action-btn" onClick={() => { setShowExportOptions(!showExportOptions); setShowImportOptions(false); }}>
+              <i className="fa-solid fa-download" />
+              <span>Export</span>
+              <i className={`fa-solid fa-chevron-${showExportOptions ? 'up' : 'down'} backup-chevron`} />
             </button>
+            {showExportOptions && (
+              <div className="backup-options">
+                <button className="backup-option" onClick={() => { handleExportJSON(); setShowExportOptions(false); }}>
+                  <i className="fa-solid fa-file-code" />
+                  <div>
+                    <p className="backup-option-title">JSON backup</p>
+                    <p className="backup-option-desc">All data — accounts, transactions, settings</p>
+                  </div>
+                </button>
+                <button className="backup-option" onClick={() => { handleExportCSV(); setShowExportOptions(false); }}>
+                  <i className="fa-solid fa-file-csv" />
+                  <div>
+                    <p className="backup-option-title">CSV export</p>
+                    <p className="backup-option-desc">Transactions only — for Excel, Sheets</p>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="pref-divider" />
-
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Export as CSV</p>
-              <p className="pref-row-desc">Transactions only — open in Excel, Google Sheets, etc.</p>
-            </div>
-            <button className="pref-btn outline" onClick={handleExportCSV}>
-              <i className="fa-solid fa-file-csv" /> Export
+          <div className="backup-action-group">
+            <button className="backup-action-btn" onClick={() => { setShowImportOptions(!showImportOptions); setShowExportOptions(false); }}>
+              <i className="fa-solid fa-upload" />
+              <span>Import</span>
+              <i className={`fa-solid fa-chevron-${showImportOptions ? 'up' : 'down'} backup-chevron`} />
             </button>
+            {showImportOptions && (
+              <div className="backup-options">
+                <button className="backup-option" onClick={() => { triggerImport('replace'); setShowImportOptions(false); }}>
+                  <i className="fa-solid fa-arrow-rotate-left" />
+                  <div>
+                    <p className="backup-option-title">Replace all data</p>
+                    <p className="backup-option-desc">Restore from backup — overwrites everything</p>
+                  </div>
+                </button>
+                <button className="backup-option" onClick={() => { triggerImport('merge'); setShowImportOptions(false); }}>
+                  <i className="fa-solid fa-code-merge" />
+                  <div>
+                    <p className="backup-option-title">Merge data</p>
+                    <p className="backup-option-desc">Add missing items without duplicating</p>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
-
-          <div className="pref-divider" />
-
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Import backup (replace)</p>
-              <p className="pref-row-desc">Restore from a JSON backup — replaces all current data</p>
-            </div>
-            <button className="pref-btn outline" onClick={() => triggerImport('replace')}>
-              <i className="fa-solid fa-upload" /> Import
-            </button>
-          </div>
-
-          <div className="pref-divider" />
-
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Import backup (merge)</p>
-              <p className="pref-row-desc">Add missing accounts &amp; transactions from a backup without duplicating</p>
-            </div>
-            <button className="pref-btn outline" onClick={() => triggerImport('merge')}>
-              <i className="fa-solid fa-code-merge" /> Merge
-            </button>
-          </div>
-
         </div>
 
         <div className="pref-card coming-soon-card" style={{ marginTop: 14 }}>
@@ -903,16 +998,18 @@ export default function Preferences() {
           </div>
         </div>
 
-        <a href="/feedback" className="pref-developer-card" style={{ marginBottom: 8 }}>
-          <div className="pref-dev-avatar" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)' }}>
-            <i className="fa-solid fa-comment-dots" style={{ fontSize: '0.9rem' }} />
-          </div>
-          <div className="pref-dev-info">
-            <p className="pref-dev-name">Send Feedback</p>
-            <p className="pref-dev-role">Report bugs, request features, or share your thoughts</p>
-          </div>
-          <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
-        </a>
+        {!isDesktop && (
+          <a href="/feedback" className="pref-developer-card" style={{ marginBottom: 8 }}>
+            <div className="pref-dev-avatar" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)' }}>
+              <i className="fa-solid fa-comment-dots" style={{ fontSize: '0.9rem' }} />
+            </div>
+            <div className="pref-dev-info">
+              <p className="pref-dev-name">Send Feedback</p>
+              <p className="pref-dev-role">Report bugs, request features, or share your thoughts</p>
+            </div>
+            <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
+          </a>
+        )}
 
         <a href="https://www.linkedin.com/in/mathinraj" target="_blank" rel="noopener noreferrer" className="pref-developer-card">
           <div className="pref-dev-avatar">M</div>
@@ -920,7 +1017,11 @@ export default function Preferences() {
             <p className="pref-dev-name">Mathinraj 💚</p>
             <p className="pref-dev-role">Developer</p>
           </div>
-          <i className="fa-brands fa-linkedin-in pref-dev-li-icon" />
+          <span className="pref-dev-li-icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+          </span>
         </a>
       </div>
     </div>
