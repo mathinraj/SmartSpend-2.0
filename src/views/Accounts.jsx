@@ -41,6 +41,10 @@ export default function Accounts() {
   const [reorderMode, setReorderMode] = useState(false);
   const dragIndex = useRef(null);
 
+  const [peekBalances, setPeekBalances] = useState(false);
+  const hideBalances = settings.hideBalances === true && !peekBalances;
+  const maskAmount = (val) => hideBalances ? 'xxxxx' : val;
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const bankAccounts = accounts.filter((a) => a.type === 'bank');
 
@@ -195,7 +199,7 @@ export default function Accounts() {
         {!reorderMode && (
           <div className="account-balance-wrap">
             <p className={`account-balance ${acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
-              {formatCurrency(acc.balance, currency)}
+              {maskAmount(formatCurrency(acc.balance, currency))}
             </p>
             <div className="account-card-actions">
               {acc.type === 'card' && acc.balance < 0 && (
@@ -233,8 +237,15 @@ export default function Accounts() {
       </div>
 
       <div className="accounts-total card">
-        <p className="accounts-total-label">Total Balance</p>
-        <h2 className="accounts-total-amount">{formatCurrency(totalBalance, currency)}</h2>
+        <div className="accounts-total-top">
+          <p className="accounts-total-label">Total Balance</p>
+          {settings.hideBalances && (
+            <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
+              <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+            </button>
+          )}
+        </div>
+        <h2 className="accounts-total-amount">{maskAmount(formatCurrency(totalBalance, currency))}</h2>
       </div>
 
       {accounts.length === 0 ? (
@@ -260,7 +271,7 @@ export default function Accounts() {
                     <h3 className="account-section-title">{section.title}</h3>
                   </div>
                   <span className={`account-section-total ${sectionBalance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
-                    {formatCurrency(sectionBalance, currency)}
+                    {maskAmount(formatCurrency(sectionBalance, currency))}
                   </span>
                 </div>
                 <div className="accounts-list">

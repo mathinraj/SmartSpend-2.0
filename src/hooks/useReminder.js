@@ -17,17 +17,22 @@ export function useReminder() {
     return await Notification.requestPermission();
   }, []);
 
-  const sendNotification = useCallback((message, tag) => {
+  const sendNotification = useCallback(async (message, tag) => {
     if (Notification.permission !== 'granted') return;
+    const options = {
+      body: message || "Don't forget to log your expenses today!",
+      tag: tag || 'spendtraq-reminder',
+    };
     try {
-      new Notification('SpendTraq Reminder', {
-        body: message || "Don't forget to log your expenses today!",
-        icon: '🪙',
-        tag: tag || 'spendtraq-reminder',
-      });
-    } catch {
-      // Notification constructor can fail on some mobile browsers
-    }
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('SpendTraq Reminder', options);
+        return;
+      }
+    } catch { /* fall through */ }
+    try {
+      new Notification('SpendTraq Reminder', options);
+    } catch { /* constructor can fail on some mobile browsers */ }
   }, []);
 
   useEffect(() => {
@@ -94,6 +99,7 @@ export function useReminder() {
       });
     };
 
+    checkReminders();
     intervalRef.current = setInterval(checkReminders, 30000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [settings.reminders, settings.dndEnabled, settings.dndStart, settings.dndEnd, sendNotification]);

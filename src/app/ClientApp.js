@@ -129,14 +129,23 @@ function AppShell({ children }) {
 
   useEffect(() => {
     if (!state.settings.appLockEnabled || !hasLock) return;
+    let hiddenAt = null;
+    const timeout = (state.settings.appLockTimeout ?? 0) * 1000;
+
     function handleVisibility() {
       if (document.visibilityState === 'hidden') {
-        setLocked(true);
+        hiddenAt = Date.now();
+        if (timeout === 0) setLocked(true);
+      } else if (document.visibilityState === 'visible' && hiddenAt !== null) {
+        if (timeout > 0 && Date.now() - hiddenAt >= timeout) {
+          setLocked(true);
+        }
+        hiddenAt = null;
       }
     }
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [state.settings.appLockEnabled, hasLock]);
+  }, [state.settings.appLockEnabled, state.settings.appLockTimeout, hasLock]);
 
   const handleUnlock = useCallback(() => setLocked(false), []);
 
