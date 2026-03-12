@@ -161,6 +161,7 @@ export default function Preferences() {
     a.download = `spendtraq-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
     toast('Backup exported as JSON', 'success');
   }
 

@@ -147,6 +147,38 @@ function AppShell({ children }) {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [state.settings.appLockEnabled, state.settings.appLockTimeout, hasLock]);
 
+  useEffect(() => {
+    if (state.settings.onboardStep < 2) return;
+    const BACKUP_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+    const STORAGE_KEY = 'spendtraq_last_backup_reminder';
+
+    function checkBackupReminder() {
+      const lastReminder = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+      if (Date.now() - lastReminder < BACKUP_INTERVAL_MS) return;
+
+      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const options = {
+        body: 'Your data is stored locally and can be lost if site data is cleared. Export a backup in Preferences → Backup & Sync.',
+        tag: 'spendtraq-backup-reminder',
+      };
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) =>
+            reg.showNotification('Back up your SpendTraq data', options)
+          ).catch(() => {});
+        } else {
+          new Notification('Back up your SpendTraq data', options);
+        }
+      } catch { /* ignore */ }
+    }
+
+    const timer = setTimeout(checkBackupReminder, 5000);
+    return () => clearTimeout(timer);
+  }, [state.settings.onboardStep]);
+
   const handleUnlock = useCallback(() => setLocked(false), []);
 
   if (!mounted) {

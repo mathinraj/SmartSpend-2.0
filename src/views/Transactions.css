@@ -286,6 +286,60 @@
   flex: 1;
 }
 
+.filter-count {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.8rem;
+}
+
+.filter-chip-section {
+  margin-bottom: 8px;
+}
+
+.filter-chip-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.filter-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filter-chip:active {
+  transform: scale(0.95);
+}
+
+.filter-chip.selected {
+  background: rgba(108, 92, 231, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filter-chip-icon {
+  font-size: 0.8rem;
+}
+
 .txn-split-badge {
   display: inline-block;
   margin-left: 6px;

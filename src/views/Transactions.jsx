@@ -28,8 +28,8 @@ export default function Transactions() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Advanced filters
-  const [filterCategoryId, setFilterCategoryId] = useState('');
-  const [filterAccountId, setFilterAccountId] = useState('');
+  const [filterCategoryIds, setFilterCategoryIds] = useState([]);
+  const [filterAccountIds, setFilterAccountIds] = useState([]);
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterAmountMin, setFilterAmountMin] = useState('');
@@ -37,12 +37,20 @@ export default function Transactions() {
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
-    if (filterCategoryId) n++;
-    if (filterAccountId) n++;
+    if (filterCategoryIds.length) n++;
+    if (filterAccountIds.length) n++;
     if (filterDateFrom || filterDateTo) n++;
     if (filterAmountMin || filterAmountMax) n++;
     return n;
-  }, [filterCategoryId, filterAccountId, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax]);
+  }, [filterCategoryIds, filterAccountIds, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax]);
+
+  function toggleFilterCategory(id) {
+    setFilterCategoryIds((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
+  }
+
+  function toggleFilterAccount(id) {
+    setFilterAccountIds((prev) => prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]);
+  }
 
   function getCategoryName(txn) {
     if (txn.type === 'transfer') return 'Transfer';
@@ -102,10 +110,10 @@ export default function Transactions() {
     if (typeFilter !== 'all') result = result.filter((t) => t.type === typeFilter);
     if (search.trim()) result = result.filter(matchesSearch);
 
-    if (filterCategoryId) result = result.filter((t) => t.categoryId === filterCategoryId);
-    if (filterAccountId) {
+    if (filterCategoryIds.length) result = result.filter((t) => filterCategoryIds.includes(t.categoryId));
+    if (filterAccountIds.length) {
       result = result.filter((t) =>
-        t.accountId === filterAccountId || t.fromAccountId === filterAccountId || t.toAccountId === filterAccountId
+        filterAccountIds.includes(t.accountId) || filterAccountIds.includes(t.fromAccountId) || filterAccountIds.includes(t.toAccountId)
       );
     }
     if (filterDateFrom) result = result.filter((t) => t.date >= filterDateFrom);
@@ -114,7 +122,7 @@ export default function Transactions() {
     if (filterAmountMax) result = result.filter((t) => t.amount <= parseFloat(filterAmountMax));
 
     return result;
-  }, [transactions, typeFilter, search, searchField, filterCategoryId, filterAccountId, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax]);
+  }, [transactions, typeFilter, search, searchField, filterCategoryIds, filterAccountIds, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -136,8 +144,8 @@ export default function Transactions() {
   }
 
   function clearFilters() {
-    setFilterCategoryId('');
-    setFilterAccountId('');
+    setFilterCategoryIds([]);
+    setFilterAccountIds([]);
     setFilterDateFrom('');
     setFilterDateTo('');
     setFilterAmountMin('');
@@ -198,18 +206,21 @@ export default function Transactions() {
       {/* Active filter chips */}
       {activeFilterCount > 0 && (
         <div className="active-filters-row">
-          {filterCategoryId && (
-            <span className="active-filter-chip">
-              <i className="fa-solid fa-tag" /> {allCategories.find((c) => c.id === filterCategoryId)?.name}
-              <button onClick={() => setFilterCategoryId('')}><i className="fa-solid fa-xmark" /></button>
+          {filterCategoryIds.map((cid) => {
+            const cat = allCategories.find((c) => c.id === cid);
+            return (
+              <span key={cid} className="active-filter-chip">
+                <i className="fa-solid fa-tag" /> {cat?.name || cid}
+                <button onClick={() => toggleFilterCategory(cid)}><i className="fa-solid fa-xmark" /></button>
+              </span>
+            );
+          })}
+          {filterAccountIds.map((aid) => (
+            <span key={aid} className="active-filter-chip">
+              <i className="fa-solid fa-wallet" /> {getAccountName(aid)}
+              <button onClick={() => toggleFilterAccount(aid)}><i className="fa-solid fa-xmark" /></button>
             </span>
-          )}
-          {filterAccountId && (
-            <span className="active-filter-chip">
-              <i className="fa-solid fa-wallet" /> {getAccountName(filterAccountId)}
-              <button onClick={() => setFilterAccountId('')}><i className="fa-solid fa-xmark" /></button>
-            </span>
-          )}
+          ))}
           {(filterDateFrom || filterDateTo) && (
             <span className="active-filter-chip">
               <i className="fa-regular fa-calendar" /> {filterDateFrom || '...'} — {filterDateTo || '...'}
@@ -284,30 +295,45 @@ export default function Transactions() {
       <Modal isOpen={showFilters} onClose={() => setShowFilters(false)} title="Filter Transactions">
         <div className="filter-panel">
           <div className="form-group">
-            <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Category</label>
-            <select className="form-select" value={filterCategoryId} onChange={(e) => setFilterCategoryId(e.target.value)}>
-              <option value="">All Categories</option>
-              <optgroup label="Expense">
-                {categories.expense.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Income">
-                {categories.income.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
-              </optgroup>
-            </select>
+            <label className="form-label"><i className="fa-solid fa-tag" style={{ marginRight: 6 }} />Categories {filterCategoryIds.length > 0 && <span className="filter-count">({filterCategoryIds.length})</span>}</label>
+            {categories.expense.length > 0 && (
+              <div className="filter-chip-section">
+                <p className="filter-chip-section-label">Expense</p>
+                <div className="filter-chip-grid">
+                  {categories.expense.map((c) => (
+                    <button key={c.id} type="button" className={`filter-chip ${filterCategoryIds.includes(c.id) ? 'selected' : ''}`} onClick={() => toggleFilterCategory(c.id)}>
+                      <span className="filter-chip-icon">{c.icon}</span>
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {categories.income.length > 0 && (
+              <div className="filter-chip-section">
+                <p className="filter-chip-section-label">Income</p>
+                <div className="filter-chip-grid">
+                  {categories.income.map((c) => (
+                    <button key={c.id} type="button" className={`filter-chip ${filterCategoryIds.includes(c.id) ? 'selected' : ''}`} onClick={() => toggleFilterCategory(c.id)}>
+                      <span className="filter-chip-icon">{c.icon}</span>
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
-            <label className="form-label"><i className="fa-solid fa-wallet" style={{ marginRight: 6 }} />Account</label>
-            <select className="form-select" value={filterAccountId} onChange={(e) => setFilterAccountId(e.target.value)}>
-              <option value="">All Accounts</option>
+            <label className="form-label"><i className="fa-solid fa-wallet" style={{ marginRight: 6 }} />Accounts {filterAccountIds.length > 0 && <span className="filter-count">({filterAccountIds.length})</span>}</label>
+            <div className="filter-chip-grid">
               {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{getAccountIcon(a.type, currency)} {a.name}</option>
+                <button key={a.id} type="button" className={`filter-chip ${filterAccountIds.includes(a.id) ? 'selected' : ''}`} onClick={() => toggleFilterAccount(a.id)}>
+                  <span className="filter-chip-icon">{getAccountIcon(a.type, currency)}</span>
+                  {a.name}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div className="form-group">
