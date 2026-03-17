@@ -15,12 +15,17 @@ const FEEDBACK_TYPES = [
   { id: 'feedback', icon: 'fa-solid fa-comment-dots', label: 'General Feedback', color: '#6C5CE7' },
 ];
 
+function isValidEmail(value) {
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
+}
+
 export default function Feedback() {
   const toast = useToast();
   const formRef = useRef(null);
   const [type, setType] = useState('feedback');
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -29,6 +34,11 @@ export default function Feedback() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!message.trim()) return;
+
+    if (email.trim() && !isValidEmail(email.trim())) {
+      setEmailError('Please enter a valid email (e.g. name@example.com)');
+      return;
+    }
 
     if (!configured) {
       toast('EmailJS is not configured. Please add your keys to .env.local', 'error', 5000);
@@ -143,11 +153,17 @@ export default function Feedback() {
           </label>
           <input
             type="email"
-            className="form-input"
+            className={`form-input ${emailError ? 'form-input-error' : ''}`}
             placeholder="your@email.com — only if you'd like a reply"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
+            onBlur={() => {
+              if (email.trim() && !isValidEmail(email.trim())) {
+                setEmailError('Please enter a valid email (e.g. name@example.com)');
+              }
+            }}
           />
+          {emailError && <p className="form-error-text">{emailError}</p>}
         </div>
 
         <button

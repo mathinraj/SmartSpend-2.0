@@ -4,7 +4,6 @@ import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
-import { CURRENCIES } from '../utils/currencies';
 import { hasSampleData } from '../utils/sampleData';
 import { generateId } from '../utils/helpers';
 import './Preferences.css';
@@ -162,6 +161,7 @@ export default function Preferences() {
     a.download = `spendtraq-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
     toast('Backup exported as JSON', 'success');
   }
 
@@ -245,14 +245,18 @@ export default function Preferences() {
   }
 
   const [showDashboardOptions, setShowDashboardOptions] = useState(false);
-  const [showPinSetup, setShowPinSetup] = useState(false);
-  const [pinStep, setPinStep] = useState('new');
+  const [showLockSetup, setShowLockSetup] = useState(false);
+  const [lockSetupType, setLockSetupType] = useState('pin');
+  const [lockStep, setLockStep] = useState('new');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const hasAppLock = typeof window !== 'undefined' && !!localStorage.getItem('spendtraq_app_lock');
+  const currentLockType = typeof window !== 'undefined' ? (localStorage.getItem('spendtraq_lock_type') || 'pin') : 'pin';
 
-  function hashPin(val) {
+  function hashValue(val) {
     let hash = 0;
     for (let i = 0; i < val.length; i++) {
       const char = val.charCodeAt(i);
@@ -262,41 +266,50 @@ export default function Preferences() {
     return 'pin_' + Math.abs(hash).toString(36);
   }
 
-  function handleSetPin() {
-    if (newPin.length !== 4) {
-      toast('PIN must be 4 digits', 'error');
-      return;
-    }
-    if (pinStep === 'new') {
-      setPinStep('confirm');
-      setConfirmPin('');
-      return;
-    }
-    if (confirmPin !== newPin) {
-      toast('PINs do not match. Try again.', 'error');
-      setPinStep('new');
-      setNewPin('');
-      setConfirmPin('');
-      return;
-    }
-    localStorage.setItem('spendtraq_app_lock', hashPin(newPin));
-    updatePref('appLockEnabled', true);
-    toast('App lock enabled!', 'success');
-    setShowPinSetup(false);
+  function resetLockSetup() {
+    setShowLockSetup(false);
+    setLockStep('new');
     setNewPin('');
     setConfirmPin('');
-    setPinStep('new');
+    setNewPassword('');
+    setConfirmPassword('');
+  }
+
+  function handleSetLock() {
+    if (lockSetupType === 'pin') {
+      if (newPin.length !== 4) { toast('PIN must be 4 digits', 'error'); return; }
+      if (lockStep === 'new') { setLockStep('confirm'); setConfirmPin(''); return; }
+      if (confirmPin !== newPin) {
+        toast('PINs do not match. Try again.', 'error');
+        setLockStep('new'); setNewPin(''); setConfirmPin('');
+        return;
+      }
+      localStorage.setItem('spendtraq_app_lock', hashValue(newPin));
+      localStorage.setItem('spendtraq_lock_type', 'pin');
+    } else {
+      if (newPassword.length < 4) { toast('Password must be at least 4 characters', 'error'); return; }
+      if (lockStep === 'new') { setLockStep('confirm'); setConfirmPassword(''); return; }
+      if (confirmPassword !== newPassword) {
+        toast('Passwords do not match. Try again.', 'error');
+        setLockStep('new'); setNewPassword(''); setConfirmPassword('');
+        return;
+      }
+      localStorage.setItem('spendtraq_app_lock', hashValue(newPassword));
+      localStorage.setItem('spendtraq_lock_type', 'password');
+    }
+    updatePref('appLockEnabled', true);
+    toast('App lock enabled!', 'success');
+    resetLockSetup();
   }
 
   function handleRemoveLock() {
     if (window.confirm('Remove app lock? Anyone will be able to open the app.')) {
       localStorage.removeItem('spendtraq_app_lock');
+      localStorage.removeItem('spendtraq_lock_type');
       updatePref('appLockEnabled', false);
       toast('App lock removed', 'info');
     }
   }
-
-  const currentCurrency = CURRENCIES.find((c) => c.code === settings.currency);
 
   return (
     <div className="page">
@@ -412,35 +425,6 @@ export default function Preferences() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Currency */}
-      <div className="pref-section">
-        <h3 className="pref-section-title">
-          <i className="fa-solid fa-coins" /> Currency
-        </h3>
-
-        <div className="pref-card">
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">Primary currency</p>
-              <p className="pref-row-desc">
-                {currentCurrency ? `${currentCurrency.flag} ${currentCurrency.name} (${currentCurrency.symbol})` : settings.currency}
-              </p>
-            </div>
-            <select
-              className="pref-select"
-              value={settings.currency}
-              onChange={(e) => updatePref('currency', e.target.value)}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.flag} {c.code} — {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
@@ -882,8 +866,8 @@ export default function Preferences() {
               <p className="pref-row-label">App Lock</p>
               <p className="pref-row-desc">
                 {hasAppLock
-                  ? 'PIN lock is active. App locks when you switch away.'
-                  : 'Set a 4-digit PIN to protect your financial data'}
+                  ? `${currentLockType === 'password' ? 'Password' : 'PIN'} lock is active`
+                  : 'Protect your financial data with a PIN or password'}
               </p>
             </div>
             {hasAppLock ? (
@@ -891,8 +875,8 @@ export default function Preferences() {
                 <i className="fa-solid fa-lock-open" /> Remove
               </button>
             ) : (
-              <button className="pref-btn outline" onClick={() => { setShowPinSetup(true); setPinStep('new'); setNewPin(''); setConfirmPin(''); }}>
-                <i className="fa-solid fa-lock" /> Set PIN
+              <button className="pref-btn outline" onClick={() => { setShowLockSetup(true); setLockSetupType('pin'); setLockStep('new'); setNewPin(''); setConfirmPin(''); setNewPassword(''); setConfirmPassword(''); }}>
+                <i className="fa-solid fa-lock" /> Set Up
               </button>
             )}
           </div>
@@ -902,52 +886,111 @@ export default function Preferences() {
               <div className="pref-divider" />
               <div className="pref-row">
                 <div className="pref-row-info">
-                  <p className="pref-row-label">Change PIN</p>
-                  <p className="pref-row-desc">Set a new 4-digit PIN</p>
+                  <p className="pref-row-label">Change {currentLockType === 'password' ? 'password' : 'PIN'}</p>
+                  <p className="pref-row-desc">Set a new {currentLockType === 'password' ? 'password' : '4-digit PIN'}</p>
                 </div>
-                <button className="pref-btn outline" onClick={() => { setShowPinSetup(true); setPinStep('new'); setNewPin(''); setConfirmPin(''); }}>
+                <button className="pref-btn outline" onClick={() => { setShowLockSetup(true); setLockSetupType(currentLockType); setLockStep('new'); setNewPin(''); setConfirmPin(''); setNewPassword(''); setConfirmPassword(''); }}>
                   <i className="fa-solid fa-key" /> Change
                 </button>
+              </div>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Lock after</p>
+                  <p className="pref-row-desc">Delay before locking when you leave the app</p>
+                </div>
+                <select
+                  className="pref-select"
+                  value={settings.appLockTimeout ?? 0}
+                  onChange={(e) => updatePref('appLockTimeout', parseInt(e.target.value))}
+                >
+                  <option value={0}>Immediately</option>
+                  <option value={30}>30 seconds</option>
+                  <option value={60}>1 minute</option>
+                  <option value={300}>5 minutes</option>
+                </select>
               </div>
             </>
           )}
         </div>
 
-        {showPinSetup && (
+        {showLockSetup && (
           <div className="pin-setup-card">
-            <p className="pin-setup-title">
-              {pinStep === 'new' ? 'Enter new 4-digit PIN' : 'Confirm your PIN'}
-            </p>
-            <div className="pin-setup-input-row">
-              <input
-                type="tel"
-                className="pin-setup-input"
-                maxLength={4}
-                value={pinStep === 'new' ? newPin : confirmPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  if (pinStep === 'new') setNewPin(val);
-                  else setConfirmPin(val);
-                }}
-                placeholder="••••"
-                autoFocus
-              />
-            </div>
-            <div className="pin-setup-dots">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <span key={i} className={`pin-dot ${i < (pinStep === 'new' ? newPin : confirmPin).length ? 'filled' : ''}`} />
-              ))}
-            </div>
-            <div className="pin-setup-actions">
-              <button className="btn btn-sm btn-outline" onClick={() => { setShowPinSetup(false); setNewPin(''); setConfirmPin(''); }}>Cancel</button>
-              <button
-                className="btn btn-sm btn-primary"
-                onClick={handleSetPin}
-                disabled={(pinStep === 'new' ? newPin : confirmPin).length !== 4}
-              >
-                {pinStep === 'new' ? 'Next' : 'Set PIN'}
+            <div className="lock-type-tabs">
+              <button className={`lock-type-tab ${lockSetupType === 'pin' ? 'active' : ''}`} onClick={() => { setLockSetupType('pin'); setLockStep('new'); setNewPin(''); setConfirmPin(''); }}>
+                <i className="fa-solid fa-grid-2" /> PIN
+              </button>
+              <button className={`lock-type-tab ${lockSetupType === 'password' ? 'active' : ''}`} onClick={() => { setLockSetupType('password'); setLockStep('new'); setNewPassword(''); setConfirmPassword(''); }}>
+                <i className="fa-solid fa-key" /> Password
               </button>
             </div>
+
+            {lockSetupType === 'pin' ? (
+              <>
+                <p className="pin-setup-title">
+                  {lockStep === 'new' ? 'Enter new 4-digit PIN' : 'Confirm your PIN'}
+                </p>
+                <div className="pin-setup-input-row">
+                  <input
+                    type="tel"
+                    className="pin-setup-input"
+                    maxLength={4}
+                    value={lockStep === 'new' ? newPin : confirmPin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      if (lockStep === 'new') setNewPin(val);
+                      else setConfirmPin(val);
+                    }}
+                    placeholder="••••"
+                    autoFocus
+                  />
+                </div>
+                <div className="pin-setup-dots">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <span key={i} className={`pin-dot ${i < (lockStep === 'new' ? newPin : confirmPin).length ? 'filled' : ''}`} />
+                  ))}
+                </div>
+                <div className="pin-setup-actions">
+                  <button className="btn btn-sm btn-outline" onClick={resetLockSetup}>Cancel</button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={handleSetLock}
+                    disabled={(lockStep === 'new' ? newPin : confirmPin).length !== 4}
+                  >
+                    {lockStep === 'new' ? 'Next' : 'Set PIN'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="pin-setup-title">
+                  {lockStep === 'new' ? 'Enter new password' : 'Confirm your password'}
+                </p>
+                <div className="pin-setup-input-row">
+                  <input
+                    type="password"
+                    className="pin-setup-input pin-setup-input-wide"
+                    value={lockStep === 'new' ? newPassword : confirmPassword}
+                    onChange={(e) => {
+                      if (lockStep === 'new') setNewPassword(e.target.value);
+                      else setConfirmPassword(e.target.value);
+                    }}
+                    placeholder={lockStep === 'new' ? 'Min 4 characters' : 'Re-enter password'}
+                    autoFocus
+                  />
+                </div>
+                <div className="pin-setup-actions">
+                  <button className="btn btn-sm btn-outline" onClick={resetLockSetup}>Cancel</button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={handleSetLock}
+                    disabled={(lockStep === 'new' ? newPassword : confirmPassword).length < 4}
+                  >
+                    {lockStep === 'new' ? 'Next' : 'Set Password'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

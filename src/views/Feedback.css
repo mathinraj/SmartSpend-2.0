@@ -149,3 +149,14 @@
   color: var(--primary);
   line-height: 1.8;
 }
+
+.form-input-error {
+  border-color: var(--danger) !important;
+}
+
+.form-error-text {
+  font-size: 0.75rem;
+  color: var(--danger);
+  margin-top: 4px;
+  font-weight: 500;
+}

@@ -394,7 +394,7 @@ export default function Home() {
               <span className="split-summary-icon">🤝</span>
               <div>
                 <p className="split-summary-label">Others owe you</p>
-                <p className="split-summary-total">{maskAmount(formatCurrency(pendingSplitTotal, currency))}</p>
+                <p className="split-summary-total">{formatCurrency(pendingSplitTotal, currency)}</p>
               </div>
             </div>
             <i className="fa-solid fa-chevron-right split-summary-arrow" />
@@ -433,7 +433,7 @@ export default function Home() {
                       <p className="upcoming-payment-name">{payment.name}</p>
                       <p className={`upcoming-payment-due ${diffDays < 0 ? 'overdue-text' : ''}`}>{dueLabel}</p>
                     </div>
-                    <p className="upcoming-payment-amount">{maskAmount(formatCurrency(payment.amount, currency))}</p>
+                    <p className="upcoming-payment-amount">{formatCurrency(payment.amount, currency)}</p>
                   </Link>
                 );
               })}
@@ -483,7 +483,7 @@ export default function Home() {
                   </div>
                   <p className={`txn-amount ${txn.type === 'income' ? 'amount-positive' : txn.type === 'expense' ? 'amount-negative' : ''}`}>
                     {txn.type === 'income' ? '+' : txn.type === 'expense' ? '-' : ''}
-                    {maskAmount(formatCurrency(txn.amount, currency))}
+                    {formatCurrency(txn.amount, currency)}
                   </p>
                 </div>
               );

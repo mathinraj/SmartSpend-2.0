@@ -365,13 +365,34 @@ function appReducer(state, action) {
     }
 
     case 'ADD_SPLIT_OWE': {
+      const { accountId, ...rest } = action.payload;
       const entry = {
-        ...action.payload,
+        ...rest,
         id: generateId(),
         type: 'split_owed',
         createdAt: new Date().toISOString(),
       };
-      return { ...state, splitLedger: [entry, ...state.splitLedger] };
+      let newOweState = { ...state, splitLedger: [entry, ...state.splitLedger] };
+      if (accountId) {
+        const txn = {
+          id: generateId(),
+          type: 'income',
+          amount: rest.amount,
+          accountId,
+          categoryId: 'income_split_settlement',
+          note: `Split payment from ${rest.person}`,
+          date: rest.date || new Date().toISOString().slice(0, 10),
+          createdAt: new Date().toISOString(),
+        };
+        newOweState = {
+          ...newOweState,
+          transactions: [txn, ...newOweState.transactions],
+          accounts: newOweState.accounts.map((a) =>
+            a.id === accountId ? { ...a, balance: a.balance + rest.amount } : a
+          ),
+        };
+      }
+      return newOweState;
     }
 
     case 'RECORD_SETTLEMENT': {

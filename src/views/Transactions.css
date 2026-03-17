@@ -224,12 +224,6 @@
   opacity: 1;
 }
 
-@media (hover: none) {
-  .txn-action-btns {
-    opacity: 1;
-  }
-}
-
 .txn-action-btn {
   width: 28px;
   height: 28px;
@@ -251,6 +245,75 @@
 .txn-action-btn.delete:hover {
   color: var(--danger);
   background: rgba(255, 107, 107, 0.08);
+}
+
+/* Mobile three-dot menu */
+.txn-menu-wrap {
+  position: relative;
+}
+
+.txn-menu-trigger {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.txn-menu-trigger:active {
+  background: var(--bg);
+}
+
+.txn-menu-popover {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 50;
+  overflow: hidden;
+  min-width: 120px;
+  animation: menuFadeIn 0.15s ease;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.txn-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+.txn-menu-item:active {
+  background: var(--bg);
+}
+
+.txn-menu-item.danger {
+  color: var(--danger);
+}
+
+.txn-menu-item i {
+  width: 14px;
+  text-align: center;
+  font-size: 0.75rem;
 }
 
 /* Filter panel */
@@ -284,6 +347,60 @@
 
 .filter-actions .btn {
   flex: 1;
+}
+
+.filter-count {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.8rem;
+}
+
+.filter-chip-section {
+  margin-bottom: 8px;
+}
+
+.filter-chip-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.filter-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filter-chip:active {
+  transform: scale(0.95);
+}
+
+.filter-chip.selected {
+  background: rgba(108, 92, 231, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filter-chip-icon {
+  font-size: 0.8rem;
 }
 
 .txn-split-badge {

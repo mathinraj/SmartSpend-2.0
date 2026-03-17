@@ -24,7 +24,7 @@ export default function SplitTracker() {
   const [editEntry, setEditEntry] = useState(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', note: '', date: '' });
 
-  const [oweForm, setOweForm] = useState({ person: '', amount: '', totalAmount: '', note: '', date: toDateInputValue(new Date()) });
+  const [oweForm, setOweForm] = useState({ person: '', amount: '', totalAmount: '', note: '', date: toDateInputValue(new Date()), accountId: accounts[0]?.id || '', recordTransaction: false });
   const [settleForm, setSettleForm] = useState({ amount: '', direction: 'received', note: '', accountId: accounts[0]?.id || '', recordTransaction: true });
 
   const balances = useMemo(() => {
@@ -76,10 +76,11 @@ export default function SplitTracker() {
         amount: amt,
         note: oweForm.note.trim() || `${oweForm.person} paid`,
         date: oweForm.date,
+        accountId: oweForm.recordTransaction ? oweForm.accountId : null,
       },
     });
     setShowOweModal(false);
-    setOweForm({ person: '', amount: '', totalAmount: '', note: '', date: toDateInputValue(new Date()) });
+    setOweForm({ person: '', amount: '', totalAmount: '', note: '', date: toDateInputValue(new Date()), accountId: accounts[0]?.id || '', recordTransaction: false });
   }
 
   function handleSettle() {
@@ -406,6 +407,28 @@ export default function SplitTracker() {
             <label className="form-label">Date</label>
             <input type="date" className="form-input" value={oweForm.date} onChange={(e) => setOweForm({ ...oweForm, date: e.target.value })} />
           </div>
+          <div className="settle-record-toggle">
+            <label className="split-toggle-row" onClick={() => setOweForm({ ...oweForm, recordTransaction: !oweForm.recordTransaction })}>
+              <span className="split-toggle-text" style={{ fontSize: '0.82rem' }}>Update account balance</span>
+              <span className={`split-checkbox ${oweForm.recordTransaction ? 'checked' : ''}`}>
+                {oweForm.recordTransaction && <i className="fa-solid fa-check" />}
+              </span>
+            </label>
+          </div>
+          {oweForm.recordTransaction && (
+            <div className="form-group">
+              <label className="form-label"><i className="fa-solid fa-wallet" style={{ marginRight: 6 }} />Received in</label>
+              <div className="settle-account-grid">
+                {accounts.map((acc) => (
+                  <button key={acc.id} type="button" className={`settle-account-card ${oweForm.accountId === acc.id ? 'selected' : ''}`} onClick={() => setOweForm({ ...oweForm, accountId: acc.id })}>
+                    <span className="settle-account-icon">{getAccountIcon(acc.type, currency)}</span>
+                    <span className="settle-account-name">{acc.name}</span>
+                    {oweForm.accountId === acc.id && <span className="settle-account-check"><i className="fa-solid fa-circle-check" /></span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <button className="btn btn-primary btn-full" onClick={handleAddOwe} disabled={!oweForm.person || !oweForm.amount}>
             <i className="fa-solid fa-plus" /> Add Entry
           </button>

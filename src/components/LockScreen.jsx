@@ -5,41 +5,64 @@ import './LockScreen.css';
 
 const PIN_LENGTH = 4;
 
+function hashValue(val) {
+  let hash = 0;
+  for (let i = 0; i < val.length; i++) {
+    const char = val.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'pin_' + Math.abs(hash).toString(36);
+}
+
 export default function LockScreen({ onUnlock }) {
   const [pin, setPin] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [shake, setShake] = useState(false);
   const inputRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const storedHash = typeof window !== 'undefined'
     ? localStorage.getItem('spendtraq_app_lock')
     : null;
+  const lockType = typeof window !== 'undefined'
+    ? (localStorage.getItem('spendtraq_lock_type') || 'pin')
+    : 'pin';
 
-  const hashPin = useCallback((val) => {
-    let hash = 0;
-    for (let i = 0; i < val.length; i++) {
-      const char = val.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return 'pin_' + Math.abs(hash).toString(36);
+  const isPassword = lockType === 'password';
+
+  useEffect(() => {
+    if (isPassword) passwordRef.current?.focus();
+    else inputRef.current?.focus();
+  }, [isPassword]);
+
+  const triggerError = useCallback((msg) => {
+    setError(msg);
+    setShake(true);
+    setTimeout(() => { setShake(false); setPin(''); setPassword(''); setError(''); }, 1200);
   }, []);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
+    if (isPassword) return;
     if (pin.length === PIN_LENGTH) {
-      if (hashPin(pin) === storedHash) {
+      if (hashValue(pin) === storedHash) {
         onUnlock();
       } else {
-        setError('Wrong PIN. Try again.');
-        setShake(true);
-        setTimeout(() => { setShake(false); setPin(''); setError(''); }, 1200);
+        triggerError('Wrong PIN. Try again.');
       }
     }
-  }, [pin, storedHash, hashPin, onUnlock]);
+  }, [pin, storedHash, isPassword, onUnlock, triggerError]);
+
+  function handlePasswordSubmit(e) {
+    e.preventDefault();
+    if (!password) return;
+    if (hashValue(password) === storedHash) {
+      onUnlock();
+    } else {
+      triggerError('Wrong password. Try again.');
+    }
+  }
 
   function handleKeyPress(digit) {
     if (pin.length < PIN_LENGTH) {
@@ -60,45 +83,69 @@ export default function LockScreen({ onUnlock }) {
           <i className="fa-solid fa-lock" />
         </div>
         <h2 className="lock-title">SpendTraq</h2>
-        <p className="lock-subtitle">Enter your PIN to unlock</p>
+        <p className="lock-subtitle">
+          {isPassword ? 'Enter your password to unlock' : 'Enter your PIN to unlock'}
+        </p>
 
-        <div className={`lock-dots ${shake ? 'lock-shake' : ''}`}>
-          {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-            <span key={i} className={`lock-dot ${i < pin.length ? 'filled' : ''} ${error && i < pin.length ? 'error' : ''}`} />
-          ))}
-        </div>
-
-        {error && <p className="lock-error">{error}</p>}
-
-        <div className="lock-keypad">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'del'].map((key, i) => (
-            <button
-              key={i}
-              className={`lock-key ${key === null ? 'lock-key-empty' : ''} ${key === 'del' ? 'lock-key-action' : ''}`}
-              onClick={() => {
-                if (key === 'del') handleBackspace();
-                else if (key !== null) handleKeyPress(String(key));
-              }}
-              disabled={key === null}
-            >
-              {key === 'del' ? <i className="fa-solid fa-delete-left" /> : key !== null ? key : ''}
+        {isPassword ? (
+          <form className="lock-password-form" onSubmit={handlePasswordSubmit}>
+            <div className={`lock-password-wrap ${shake ? 'lock-shake' : ''}`}>
+              <input
+                ref={passwordRef}
+                type="password"
+                className={`lock-password-input ${error ? 'lock-password-error' : ''}`}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                placeholder="Password"
+                autoFocus
+              />
+            </div>
+            {error && <p className="lock-error">{error}</p>}
+            <button type="submit" className="lock-unlock-btn" disabled={!password}>
+              <i className="fa-solid fa-lock-open" /> Unlock
             </button>
-          ))}
-        </div>
+          </form>
+        ) : (
+          <>
+            <div className={`lock-dots ${shake ? 'lock-shake' : ''}`}>
+              {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+                <span key={i} className={`lock-dot ${i < pin.length ? 'filled' : ''} ${error && i < pin.length ? 'error' : ''}`} />
+              ))}
+            </div>
 
-        <input
-          ref={inputRef}
-          type="tel"
-          className="lock-hidden-input"
-          maxLength={PIN_LENGTH}
-          value={pin}
-          onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
-            setPin(val);
-            setError('');
-          }}
-          autoFocus
-        />
+            {error && <p className="lock-error">{error}</p>}
+
+            <div className="lock-keypad">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'del'].map((key, i) => (
+                <button
+                  key={i}
+                  className={`lock-key ${key === null ? 'lock-key-empty' : ''} ${key === 'del' ? 'lock-key-action' : ''}`}
+                  onClick={() => {
+                    if (key === 'del') handleBackspace();
+                    else if (key !== null) handleKeyPress(String(key));
+                  }}
+                  disabled={key === null}
+                >
+                  {key === 'del' ? <i className="fa-solid fa-delete-left" /> : key !== null ? key : ''}
+                </button>
+              ))}
+            </div>
+
+            <input
+              ref={inputRef}
+              type="tel"
+              className="lock-hidden-input"
+              maxLength={PIN_LENGTH}
+              value={pin}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
+                setPin(val);
+                setError('');
+              }}
+              autoFocus
+            />
+          </>
+        )}
       </div>
     </div>
   );

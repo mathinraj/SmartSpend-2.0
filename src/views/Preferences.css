@@ -564,6 +564,39 @@
   gap: 10px;
 }
 
+.pin-setup-input-wide {
+  width: 200px;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+.lock-type-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.lock-type-tab {
+  padding: 6px 18px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.lock-type-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
 /* ─── Backup Actions ─────────────────── */
 .backup-actions {
   display: grid;

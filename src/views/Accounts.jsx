@@ -39,7 +39,12 @@ export default function Accounts() {
   const [editAccount, setEditAccount] = useState(null);
   const [form, setForm] = useState({ name: '', type: 'bank', balance: '', billingDate: '', dueDate: '', creditLimit: '' });
   const [reorderMode, setReorderMode] = useState(false);
+  const [didReorder, setDidReorder] = useState(false);
   const dragIndex = useRef(null);
+
+  const [peekBalances, setPeekBalances] = useState(false);
+  const hideBalances = settings.hideBalances === true && !peekBalances;
+  const maskAmount = (val) => hideBalances ? 'xxxxx' : val;
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const bankAccounts = accounts.filter((a) => a.type === 'bank');
@@ -53,6 +58,18 @@ export default function Accounts() {
     });
     return groups;
   }, [accounts]);
+
+  const hasCustomOrder = useMemo(() => {
+    if (didReorder) return true;
+    const typeOrder = TYPE_SECTIONS.map((s) => s.type);
+    let lastTypeIdx = -1;
+    for (const acc of accounts) {
+      const idx = typeOrder.indexOf(acc.type);
+      if (idx < lastTypeIdx) return true;
+      lastTypeIdx = idx;
+    }
+    return false;
+  }, [accounts, didReorder]);
 
   function openAdd() {
     setEditAccount(null);
@@ -129,6 +146,7 @@ export default function Accounts() {
 
   function moveAccount(fromIdx, toIdx) {
     if (toIdx < 0 || toIdx >= accounts.length) return;
+    setDidReorder(true);
     dispatch({ type: 'REORDER_ACCOUNTS', payload: { fromIndex: fromIdx, toIndex: toIdx } });
   }
 
@@ -195,7 +213,7 @@ export default function Accounts() {
         {!reorderMode && (
           <div className="account-balance-wrap">
             <p className={`account-balance ${acc.balance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
-              {formatCurrency(acc.balance, currency)}
+              {maskAmount(formatCurrency(acc.balance, currency))}
             </p>
             <div className="account-card-actions">
               {acc.type === 'card' && acc.balance < 0 && (
@@ -233,8 +251,15 @@ export default function Accounts() {
       </div>
 
       <div className="accounts-total card">
-        <p className="accounts-total-label">Total Balance</p>
-        <h2 className="accounts-total-amount">{formatCurrency(totalBalance, currency)}</h2>
+        <div className="accounts-total-top">
+          <p className="accounts-total-label">Total Balance</p>
+          {settings.hideBalances && (
+            <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
+              <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+            </button>
+          )}
+        </div>
+        <h2 className="accounts-total-amount">{maskAmount(formatCurrency(totalBalance, currency))}</h2>
       </div>
 
       {accounts.length === 0 ? (
@@ -242,9 +267,34 @@ export default function Accounts() {
           <div className="empty-state-icon">🏦</div>
           <p>No accounts yet. Add your bank accounts, cards, or wallets.</p>
         </div>
-      ) : reorderMode ? (
+      ) : reorderMode || hasCustomOrder ? (
         <div className="accounts-list">
-          {accounts.map((acc) => renderAccountCard(acc))}
+          {accounts.map((acc, i) => {
+            const prevType = i > 0 ? accounts[i - 1].type : null;
+            const showDivider = acc.type !== prevType;
+            const section = TYPE_SECTIONS.find((s) => s.type === acc.type);
+            const sectionBalance = showDivider
+              ? accounts.filter((a) => a.type === acc.type).reduce((s, a) => s + a.balance, 0)
+              : 0;
+            return (
+              <div key={acc.id}>
+                {showDivider && section && (
+                  <div className={`account-section-header ${i > 0 ? 'account-section-header-gap' : ''}`}>
+                    <div className="account-section-title-row">
+                      <i className={`${section.icon} account-section-icon`} />
+                      <h3 className="account-section-title">{section.title}</h3>
+                    </div>
+                    {!reorderMode && (
+                      <span className={`account-section-total ${sectionBalance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
+                        {maskAmount(formatCurrency(sectionBalance, currency))}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {renderAccountCard(acc)}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="accounts-grouped">
@@ -260,7 +310,7 @@ export default function Accounts() {
                     <h3 className="account-section-title">{section.title}</h3>
                   </div>
                   <span className={`account-section-total ${sectionBalance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
-                    {formatCurrency(sectionBalance, currency)}
+                    {maskAmount(formatCurrency(sectionBalance, currency))}
                   </span>
                 </div>
                 <div className="accounts-list">
