@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
+import { useIsDesktop } from '../hooks/useMediaQuery';
 import { formatCurrency } from '../utils/currencies';
 import { formatDate, getAccountIcon, toDateInputValue } from '../utils/helpers';
 import Modal from '../components/Modal';
@@ -21,6 +22,20 @@ export default function Transactions() {
   const { accounts, transactions, categories, settings } = state;
   const currency = settings.currency;
   const router = useRouter();
+
+  const isDesktop = useIsDesktop();
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    function handleTap(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenuId(null);
+    }
+    document.addEventListener('mousedown', handleTap);
+    document.addEventListener('touchstart', handleTap);
+    return () => { document.removeEventListener('mousedown', handleTap); document.removeEventListener('touchstart', handleTap); };
+  }, [openMenuId]);
 
   const [typeFilter, setTypeFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -274,14 +289,32 @@ export default function Transactions() {
                         {txn.type === 'income' ? '+' : txn.type === 'expense' ? '-' : ''}
                         {formatCurrency(txn.amount, currency)}
                       </p>
-                      <div className="txn-action-btns">
-                        <button className="txn-action-btn edit" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} title="Edit">
-                          <i className="fa-solid fa-pen" />
-                        </button>
-                        <button className="txn-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} title="Delete">
-                          <i className="fa-solid fa-trash-can" />
-                        </button>
-                      </div>
+                      {isDesktop ? (
+                        <div className="txn-action-btns">
+                          <button className="txn-action-btn edit" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} title="Edit">
+                            <i className="fa-solid fa-pen" />
+                          </button>
+                          <button className="txn-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} title="Delete">
+                            <i className="fa-solid fa-trash-can" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="txn-menu-wrap" ref={openMenuId === txn.id ? menuRef : null}>
+                          <button className="txn-menu-trigger" onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === txn.id ? null : txn.id); }}>
+                            <i className="fa-solid fa-ellipsis-vertical" />
+                          </button>
+                          {openMenuId === txn.id && (
+                            <div className="txn-menu-popover">
+                              <button className="txn-menu-item" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handleEdit(txn); }}>
+                                <i className="fa-solid fa-pen" /> Edit
+                              </button>
+                              <button className="txn-menu-item danger" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handleDelete(txn.id); }}>
+                                <i className="fa-solid fa-trash-can" /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
