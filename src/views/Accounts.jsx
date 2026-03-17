@@ -39,6 +39,7 @@ export default function Accounts() {
   const [editAccount, setEditAccount] = useState(null);
   const [form, setForm] = useState({ name: '', type: 'bank', balance: '', billingDate: '', dueDate: '', creditLimit: '' });
   const [reorderMode, setReorderMode] = useState(false);
+  const [didReorder, setDidReorder] = useState(false);
   const dragIndex = useRef(null);
 
   const [peekBalances, setPeekBalances] = useState(false);
@@ -57,6 +58,18 @@ export default function Accounts() {
     });
     return groups;
   }, [accounts]);
+
+  const hasCustomOrder = useMemo(() => {
+    if (didReorder) return true;
+    const typeOrder = TYPE_SECTIONS.map((s) => s.type);
+    let lastTypeIdx = -1;
+    for (const acc of accounts) {
+      const idx = typeOrder.indexOf(acc.type);
+      if (idx < lastTypeIdx) return true;
+      lastTypeIdx = idx;
+    }
+    return false;
+  }, [accounts, didReorder]);
 
   function openAdd() {
     setEditAccount(null);
@@ -133,6 +146,7 @@ export default function Accounts() {
 
   function moveAccount(fromIdx, toIdx) {
     if (toIdx < 0 || toIdx >= accounts.length) return;
+    setDidReorder(true);
     dispatch({ type: 'REORDER_ACCOUNTS', payload: { fromIndex: fromIdx, toIndex: toIdx } });
   }
 
@@ -253,9 +267,34 @@ export default function Accounts() {
           <div className="empty-state-icon">🏦</div>
           <p>No accounts yet. Add your bank accounts, cards, or wallets.</p>
         </div>
-      ) : reorderMode ? (
+      ) : reorderMode || hasCustomOrder ? (
         <div className="accounts-list">
-          {accounts.map((acc) => renderAccountCard(acc))}
+          {accounts.map((acc, i) => {
+            const prevType = i > 0 ? accounts[i - 1].type : null;
+            const showDivider = acc.type !== prevType;
+            const section = TYPE_SECTIONS.find((s) => s.type === acc.type);
+            const sectionBalance = showDivider
+              ? accounts.filter((a) => a.type === acc.type).reduce((s, a) => s + a.balance, 0)
+              : 0;
+            return (
+              <div key={acc.id}>
+                {showDivider && section && (
+                  <div className={`account-section-header ${i > 0 ? 'account-section-header-gap' : ''}`}>
+                    <div className="account-section-title-row">
+                      <i className={`${section.icon} account-section-icon`} />
+                      <h3 className="account-section-title">{section.title}</h3>
+                    </div>
+                    {!reorderMode && (
+                      <span className={`account-section-total ${sectionBalance >= 0 ? 'amount-positive' : 'amount-negative'}`}>
+                        {maskAmount(formatCurrency(sectionBalance, currency))}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {renderAccountCard(acc)}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="accounts-grouped">

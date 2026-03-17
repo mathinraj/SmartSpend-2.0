@@ -80,6 +80,10 @@
   font-weight: 700;
 }
 
+.account-section-header-gap {
+  margin-top: 12px;
+}
+
 .accounts-list {
   display: flex;
   flex-direction: column;
