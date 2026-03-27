@@ -82,7 +82,7 @@ export default function LockScreen({ onUnlock }) {
         <div className="lock-icon">
           <i className="fa-solid fa-lock" />
         </div>
-        <h2 className="lock-title">SpendTraq</h2>
+        <h2 className="lock-title">SpendTrak</h2>
         <p className="lock-subtitle">
           {isPassword ? 'Enter your password to unlock' : 'Enter your PIN to unlock'}
         </p>

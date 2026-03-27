@@ -26,12 +26,12 @@ export function useReminder() {
     try {
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification('SpendTraq Reminder', options);
+        await reg.showNotification('SpendTrak Reminder', options);
         return;
       }
     } catch { /* fall through */ }
     try {
-      new Notification('SpendTraq Reminder', options);
+      new Notification('SpendTrak Reminder', options);
     } catch { /* constructor can fail on some mobile browsers */ }
   }, []);
 

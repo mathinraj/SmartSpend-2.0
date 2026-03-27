@@ -140,8 +140,8 @@ export default function Preferences() {
 
   function buildExportData() {
     return {
-      _app: 'SpendTraq',
-      _version: '1.2',
+      _app: 'SpendTrak',
+      _version: '1.3',
       _exportedAt: new Date().toISOString(),
       settings: { ...settings, onboardStep: undefined },
       accounts,
@@ -238,7 +238,7 @@ export default function Preferences() {
           toast('Data merged! Only new items were added.', 'success', 4000);
         }
       } catch {
-        toast('Failed to read backup file. Make sure it\'s a valid SpendTraq JSON export.', 'error', 4000);
+        toast('Failed to read backup file. Make sure it\'s a valid SpendTrak JSON export.', 'error', 4000);
       }
     };
     reader.readAsText(file);
@@ -1004,10 +1004,10 @@ export default function Preferences() {
         <div className="pref-card">
           <div className="pref-row">
             <div className="pref-row-info">
-              <p className="pref-row-label">SpendTraq</p>
-              <p className="pref-row-desc">Version 1.2 · Your money, your rules.</p>
+              <p className="pref-row-label">SpendTrak</p>
+              <p className="pref-row-desc">Version 1.3 · Your money, your rules.</p>
             </div>
-            <span className="pref-badge">v1.2</span>
+            <span className="pref-badge">v1.3</span>
           </div>
         </div>
 

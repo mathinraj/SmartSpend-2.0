@@ -53,7 +53,7 @@ function InstallBanner() {
           <i className="fa-solid fa-download" />
         </div>
         <div className="install-banner-text">
-          <p className="install-banner-title">Install SpendTraq</p>
+          <p className="install-banner-title">Install SpendTrak</p>
           <p className="install-banner-desc">Add to home screen for quick access</p>
         </div>
       </div>
@@ -167,10 +167,10 @@ function AppShell({ children }) {
       try {
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.ready.then((reg) =>
-            reg.showNotification('Back up your SpendTraq data', options)
+            reg.showNotification('Back up your SpendTrak data', options)
           ).catch(() => {});
         } else {
-          new Notification('Back up your SpendTraq data', options);
+          new Notification('Back up your SpendTrak data', options);
         }
       } catch { /* ignore */ }
     }
