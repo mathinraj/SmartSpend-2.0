@@ -1,6 +1,6 @@
 {
-  "name": "SpendTraq — Expense Tracker",
-  "short_name": "SpendTraq",
+  "name": "SpendTrak — Expense Tracker",
+  "short_name": "SpendTrak",
   "description": "Free expense tracker that works offline. Track spending, manage accounts, split bills, and analyze finances — private, no sign-up.",
   "start_url": "/",
   "display": "standalone",

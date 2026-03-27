@@ -179,7 +179,7 @@ export default function Home() {
             ) : (
               <>
                 <p className="home-greeting">Welcome to</p>
-                <h1 className="home-title">SpendTraq</h1>
+                <h1 className="home-title">SpendTrak</h1>
               </>
             )}
           </div>

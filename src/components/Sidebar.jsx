@@ -49,7 +49,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <Link href="/" className="sidebar-brand">
         <span className="sidebar-logo">{getCurrencySymbol(state.settings.currency)}</span>
-        <h2 className="sidebar-title">SpendTraq</h2>
+        <h2 className="sidebar-title">SpendTrak</h2>
       </Link>
 
       <nav className="sidebar-nav">
@@ -93,7 +93,7 @@ export default function Sidebar() {
       </Link>
 
       <div className="sidebar-footer">
-        <p className="sidebar-footer-text">SpendTraq v1.2</p>
+        <p className="sidebar-footer-text">SpendTrak v1.2</p>
         <p className="sidebar-footer-sub">Data stored locally</p>
         <p className="sidebar-footer-sub sidebar-footer-credit">Made by <span className="sidebar-dev-name">Mathinraj</span> 💚</p>
       </div>

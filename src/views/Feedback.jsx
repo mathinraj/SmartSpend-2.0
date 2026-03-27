@@ -87,7 +87,7 @@ export default function Feedback() {
           </div>
           <h2 className="feedback-success-title">Feedback Sent!</h2>
           <p className="feedback-success-desc">
-            Thank you for taking the time to share your thoughts. Your feedback helps make SpendTraq better.
+            Thank you for taking the time to share your thoughts. Your feedback helps make SpendTrak better.
           </p>
           <button className="btn btn-primary feedback-success-btn" onClick={handleReset}>
             <i className="fa-solid fa-plus" /> Send Another
