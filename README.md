@@ -76,6 +76,24 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 | Styling | Custom CSS with CSS variables |
 | Deployment | Vercel |
 
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Environment Variables (optional)
+
+For the feedback form to work, create a `.env.local` file:
+
+```
+NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
+NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
+NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
+```
 
 ## Changelog
 
