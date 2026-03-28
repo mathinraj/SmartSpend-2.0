@@ -93,7 +93,7 @@ export default function Sidebar() {
       </Link>
 
       <div className="sidebar-footer">
-        <p className="sidebar-footer-text">SpendTrak v1.2</p>
+        <p className="sidebar-footer-text">SpendTrak v2.0</p>
         <p className="sidebar-footer-sub">Data stored locally</p>
         <p className="sidebar-footer-sub sidebar-footer-credit">Made by <span className="sidebar-dev-name">Mathinraj</span> 💚</p>
       </div>
