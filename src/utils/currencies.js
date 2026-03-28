@@ -52,3 +52,11 @@ export function formatCurrency(amount, currencyCode) {
 
   return `${currency.symbol}${formatted}`;
 }
+
+export function formatCurrencyPlain(amount, currencyCode) {
+  const formatted = Math.abs(amount).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${currencyCode || ''} ${formatted}`.trim();
+}

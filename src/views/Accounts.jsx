@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
 import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
@@ -44,6 +45,7 @@ export default function Accounts() {
   const { accounts, settings } = state;
   const currency = settings.currency;
   const toast = useToast();
+  const router = useRouter();
   const ACCOUNT_TYPES = getAccountTypes(currency);
 
   const customTypes = settings.customAccountTypes || [];
@@ -296,6 +298,9 @@ export default function Accounts() {
               {maskAmount(formatCurrency(acc.balance, currency))}
             </p>
             <div className="account-card-actions">
+              <button className="account-analytics-btn" onClick={(e) => { e.stopPropagation(); router.push(`/analytics?account=${acc.id}`); }} title="View Analytics">
+                <i className="fa-solid fa-chart-pie" />
+              </button>
               {acc.type === 'card' && acc.subType === 'credit' && acc.balance < 0 && (
                 <button className="account-pay-btn" onClick={(e) => { e.stopPropagation(); openPayBill(acc); }} title="Pay Bill">
                   <i className="fa-solid fa-money-bill-transfer" />

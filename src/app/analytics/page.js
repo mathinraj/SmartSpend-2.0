@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Analytics from '../../views/Analytics';
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function AnalyticsPage() {
-  return <Analytics />;
+  return (
+    <Suspense>
+      <Analytics />
+    </Suspense>
+  );
 }

@@ -167,6 +167,20 @@
   margin-top: 4px;
 }
 
+.account-analytics-btn {
+  background: rgba(108, 92, 231, 0.08);
+  color: var(--primary);
+  font-size: 0.72rem;
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.account-analytics-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
 .account-pay-btn {
   background: rgba(0, 184, 148, 0.08);
   color: var(--success);
