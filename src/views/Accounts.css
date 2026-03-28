@@ -167,6 +167,20 @@
   margin-top: 4px;
 }
 
+.account-analytics-btn {
+  background: rgba(108, 92, 231, 0.08);
+  color: var(--primary);
+  font-size: 0.72rem;
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.account-analytics-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
 .account-pay-btn {
   background: rgba(0, 184, 148, 0.08);
   color: var(--success);
@@ -243,6 +257,83 @@
 .account-type-option.selected {
   border-color: var(--primary);
   background: rgba(108, 92, 231, 0.05);
+}
+
+.account-type-add {
+  border-style: dashed;
+  color: var(--text-light);
+}
+
+.account-type-add i {
+  font-size: 0.8rem;
+}
+
+/* Sub-type chips */
+.subtype-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subtype-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.15s;
+}
+
+.subtype-chip.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Custom type form */
+.custom-type-form {
+  padding: 14px;
+  margin-bottom: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border);
+}
+
+.custom-type-icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.custom-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.custom-icon-btn.selected {
+  border-color: var(--primary);
+  background: rgba(108, 92, 231, 0.08);
+}
+
+.custom-type-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-type-input-row .form-input {
+  flex: 1;
 }
 
 .section-header-actions {

@@ -6,6 +6,8 @@ import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
 import { hasSampleData } from '../utils/sampleData';
 import { generateId } from '../utils/helpers';
+import { formatCurrencyPlain } from '../utils/currencies';
+import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
 import './Preferences.css';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -141,7 +143,7 @@ export default function Preferences() {
   function buildExportData() {
     return {
       _app: 'SpendTrak',
-      _version: '1.3',
+      _version: '1.4',
       _exportedAt: new Date().toISOString(),
       settings: { ...settings, onboardStep: undefined },
       accounts,
@@ -203,6 +205,94 @@ export default function Preferences() {
     a.click();
     URL.revokeObjectURL(url);
     toast('Transactions exported as CSV', 'success');
+  }
+
+  function handleExportPDF() {
+    if (transactions.length === 0) { toast('No transactions to export', 'warning'); return; }
+    const accountMap = {};
+    accounts.forEach((a) => { accountMap[a.id] = a.name; });
+    const cur = settings.currency;
+    const fmt = (v) => formatCurrencyPlain(v, cur);
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthTxns = transactions.filter((t) => new Date(t.date) >= monthStart && t.type !== 'transfer');
+    const income = monthTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = monthTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+    const tables = [
+      {
+        title: 'Monthly Summary',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Income', fmt(income)],
+          ['Expense', fmt(expense)],
+          ['Net', fmt(income - expense)],
+          ['Accounts', String(accounts.length)],
+          ['Total Transactions', String(transactions.length)],
+        ],
+      },
+      {
+        title: 'Transactions',
+        headers: ['Date', 'Type', 'Amount', 'Category', 'Account', 'Note'],
+        rows: transactions.slice(0, 500).map((t) => [
+          t.date || '', t.type || '', fmt(t.amount),
+          t.category || '', accountMap[t.accountId] || accountMap[t.fromAccountId] || '',
+          t.note || '',
+        ]),
+      },
+      {
+        title: 'Accounts',
+        headers: ['Name', 'Type', 'Balance'],
+        rows: accounts.map((a) => [a.name, a.type, fmt(a.balance)]),
+      },
+    ];
+
+    exportToPDF({ title: 'SpendTrak — Data Export', subtitle: `${accounts.length} accounts · ${transactions.length} transactions`, tables, filename: `spendtrak-export-${new Date().toISOString().slice(0, 10)}.pdf` });
+    localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
+    toast('Exported as PDF', 'success');
+  }
+
+  function handleExportXLSX() {
+    if (transactions.length === 0) { toast('No transactions to export', 'warning'); return; }
+    const accountMap = {};
+    accounts.forEach((a) => { accountMap[a.id] = a.name; });
+
+    const sheets = [
+      {
+        name: 'Transactions',
+        headers: ['Date', 'Type', 'Amount', 'Category', 'Subcategory', 'Account', 'From Account', 'To Account', 'Note', 'Payment App'],
+        rows: transactions.map((t) => [
+          t.date || '', t.type || '', t.amount || 0, t.category || '', t.subcategory || '',
+          accountMap[t.accountId] || '', accountMap[t.fromAccountId] || '', accountMap[t.toAccountId] || '',
+          t.note || '', t.paymentApp || '',
+        ]),
+      },
+      {
+        name: 'Accounts',
+        headers: ['Name', 'Type', 'Sub-type', 'Balance'],
+        rows: accounts.map((a) => [a.name, a.type, a.subType || '', a.balance]),
+      },
+    ];
+
+    const monthMap = {};
+    transactions.filter((t) => t.type !== 'transfer').forEach((t) => {
+      const d = new Date(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthMap[key]) monthMap[key] = { month: key, income: 0, expense: 0 };
+      if (t.type === 'income') monthMap[key].income += t.amount;
+      if (t.type === 'expense') monthMap[key].expense += t.amount;
+    });
+    const summaryRows = Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
+    sheets.push({
+      name: 'Monthly Summary',
+      headers: ['Month', 'Income', 'Expense', 'Net'],
+      rows: summaryRows.map((r) => [r.month, r.income, r.expense, r.income - r.expense]),
+    });
+
+    exportToXLSX({ sheets, filename: `spendtrak-export-${new Date().toISOString().slice(0, 10)}.xlsx` });
+    localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
+    toast('Exported as XLSX', 'success');
   }
 
   function triggerImport(mode) {
@@ -709,6 +799,25 @@ export default function Preferences() {
             </div>
           </>
         )}
+
+        {settings.plannedEnabled && (
+          <div className="pref-card" style={{ marginTop: 16 }}>
+            <div className="pref-row">
+              <div className="pref-row-info">
+                <p className="pref-row-label">Payment due reminders</p>
+                <p className="pref-row-desc">Get notified when planned bills are due or overdue</p>
+              </div>
+              <label className="pref-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.plannedReminders === true}
+                  onChange={(e) => updatePref('plannedReminders', e.target.checked)}
+                />
+                <span className="pref-toggle-slider" />
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Data */}
@@ -820,6 +929,20 @@ export default function Preferences() {
                   <div>
                     <p className="backup-option-title">CSV export</p>
                     <p className="backup-option-desc">Transactions only — for Excel, Sheets</p>
+                  </div>
+                </button>
+                <button className="backup-option" onClick={() => { handleExportPDF(); setShowExportOptions(false); }}>
+                  <i className="fa-solid fa-file-pdf" />
+                  <div>
+                    <p className="backup-option-title">PDF report</p>
+                    <p className="backup-option-desc">Formatted summary with all transactions</p>
+                  </div>
+                </button>
+                <button className="backup-option" onClick={() => { handleExportXLSX(); setShowExportOptions(false); }}>
+                  <i className="fa-solid fa-file-excel" />
+                  <div>
+                    <p className="backup-option-title">Excel (XLSX)</p>
+                    <p className="backup-option-desc">Multi-sheet workbook — transactions, accounts, summary</p>
                   </div>
                 </button>
               </div>
@@ -1005,9 +1128,9 @@ export default function Preferences() {
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">SpendTrak</p>
-              <p className="pref-row-desc">Version 1.3 · Your money, your rules.</p>
+              <p className="pref-row-desc">Version 1.4 · Your money, your rules.</p>
             </div>
-            <span className="pref-badge">v1.3</span>
+            <span className="pref-badge">v1.4</span>
           </div>
         </div>
 

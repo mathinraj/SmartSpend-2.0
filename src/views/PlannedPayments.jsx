@@ -110,6 +110,10 @@ export default function PlannedPayments() {
       toast('Please enter a payment name', 'error');
       return;
     }
+    if (!/[a-zA-Z]/.test(form.name)) {
+      toast('Name must contain at least one letter', 'error');
+      return;
+    }
     if (!form.amount || parseFloat(form.amount) <= 0) {
       toast('Please enter a valid amount', 'error');
       return;
@@ -146,6 +150,8 @@ export default function PlannedPayments() {
   }
 
   function handleMarkPaid(payment) {
+    if (!window.confirm(`Mark "${payment.name}" as paid? This will log ${formatCurrency(payment.amount, currency)} as an expense.`)) return;
+
     dispatch({ type: 'MARK_PLANNED_PAID', payload: payment.id });
 
     if (payment.accountId) {
