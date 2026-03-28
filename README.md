@@ -60,29 +60,10 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 | Styling | Custom CSS with CSS variables |
 | Deployment | Vercel |
 
-## Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Environment Variables (optional)
-
-For the feedback form to work, create a `.env.local` file:
-
-```
-NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
-NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
-NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
-```
 
 ## Changelog
 
 ### v1.3
-- **Renamed to SpendTrak**
 - **App lock: PIN or password** — choose between a 4-digit PIN (keypad) or a text password
 - **Lock timeout settings** — configurable delay before locking (immediately, 30s, 1 min, 5 min)
 - **Split tracker: account selection** — "They paid for me" now optionally updates your bank balance
@@ -95,7 +76,7 @@ NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
 - **Email validation** — strict regex validation in the feedback form (rejects incomplete domains)
 - **Landing page** — full single-page design with scroll-triggered reveal animations, feature showcase, how-it-works, and FAQ schema for SEO
 - **SEO enhancements** — FAQ JSON-LD schema, expanded keywords, and richer structured data
-- Removed currency selector from preferences (set during onboarding, favicon follows selection)
+
 
 ### v1.2
 - **Migrated to Next.js 15 App Router** for improved SEO and performance
