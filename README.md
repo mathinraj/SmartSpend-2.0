@@ -21,6 +21,7 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 
 ### Export, Backup & Sync
 - **Google Drive Sync** — push/pull your data to your own Google Drive; connect with Google OAuth, sync across devices, private appDataFolder
+### Export & Backup
 - **JSON backup** — full data export (accounts, transactions, settings, planned payments)
 - **CSV export** — transactions only, for Excel or Google Sheets
 - **PDF report** — formatted summary tables with chart screenshots from the analytics page
