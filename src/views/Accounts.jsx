@@ -11,11 +11,26 @@ import './Accounts.css';
 function getAccountTypes(currencyCode) {
   return [
     { id: 'bank', label: 'Bank Account', icon: '🏦' },
-    { id: 'card', label: 'Credit/Debit Card', icon: '💳' },
+    { id: 'card', label: 'Card', icon: '💳' },
     { id: 'cash', label: 'Cash', icon: getAccountIcon('cash', currencyCode) },
     { id: 'wallet', label: 'Wallet / UPI', icon: '👛' },
   ];
 }
+
+const BANK_SUBTYPES = [
+  { id: 'savings', label: 'Savings' },
+  { id: 'current', label: 'Current' },
+  { id: 'salary', label: 'Salary' },
+  { id: 'fixed_deposit', label: 'Fixed Deposit' },
+  { id: 'recurring_deposit', label: 'Recurring Deposit' },
+];
+
+const CARD_SUBTYPES = [
+  { id: 'credit', label: 'Credit Card' },
+  { id: 'debit', label: 'Debit Card' },
+];
+
+const CUSTOM_ICONS = ['₿', '🪙', '💎', '📈', '🏠', '🚗', '🎮', '🛒', '💰', '🔗', '⭐', '🌐'];
 
 const TYPE_SECTIONS = [
   { type: 'bank', title: 'Bank Accounts', icon: 'fa-solid fa-building-columns' },
@@ -31,13 +46,18 @@ export default function Accounts() {
   const toast = useToast();
   const ACCOUNT_TYPES = getAccountTypes(currency);
 
+  const customTypes = settings.customAccountTypes || [];
+
   const [showModal, setShowModal] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [payBillCard, setPayBillCard] = useState(null);
   const [payBillAmount, setPayBillAmount] = useState('');
   const [payBillFrom, setPayBillFrom] = useState('');
   const [editAccount, setEditAccount] = useState(null);
-  const [form, setForm] = useState({ name: '', type: 'bank', balance: '', billingDate: '', dueDate: '', creditLimit: '' });
+  const [form, setForm] = useState({ name: '', type: 'bank', subType: '', balance: '', billingDate: '', dueDate: '', creditLimit: '', customTypeId: '' });
+  const [showAddCustom, setShowAddCustom] = useState(false);
+  const [newCustomLabel, setNewCustomLabel] = useState('');
+  const [newCustomIcon, setNewCustomIcon] = useState('🪙');
   const [reorderMode, setReorderMode] = useState(false);
   const [didReorder, setDidReorder] = useState(false);
   const dragIndex = useRef(null);
@@ -49,15 +69,27 @@ export default function Accounts() {
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const bankAccounts = accounts.filter((a) => a.type === 'bank');
 
+  const allSections = useMemo(() => {
+    const sections = [...TYPE_SECTIONS];
+    customTypes.forEach((ct) => {
+      sections.push({ type: 'custom', customTypeId: ct.id, title: ct.label, icon: 'fa-solid fa-circle' });
+    });
+    return sections;
+  }, [customTypes]);
+
   const groupedAccounts = useMemo(() => {
     const groups = {};
-    TYPE_SECTIONS.forEach((s) => { groups[s.type] = []; });
+    allSections.forEach((s) => {
+      const key = s.customTypeId || s.type;
+      groups[key] = [];
+    });
     accounts.forEach((acc) => {
-      if (groups[acc.type]) groups[acc.type].push(acc);
-      else groups[acc.type] = [acc];
+      const key = acc.type === 'custom' ? acc.customTypeId : acc.type;
+      if (groups[key]) groups[key].push(acc);
+      else groups[key] = [acc];
     });
     return groups;
-  }, [accounts]);
+  }, [accounts, allSections]);
 
   const hasCustomOrder = useMemo(() => {
     if (didReorder) return true;
@@ -73,7 +105,8 @@ export default function Accounts() {
 
   function openAdd() {
     setEditAccount(null);
-    setForm({ name: '', type: 'bank', balance: '', billingDate: '', dueDate: '', creditLimit: '' });
+    setForm({ name: '', type: 'bank', subType: '', balance: '', billingDate: '', dueDate: '', creditLimit: '', customTypeId: '' });
+    setShowAddCustom(false);
     setShowModal(true);
   }
 
@@ -82,11 +115,14 @@ export default function Accounts() {
     setForm({
       name: acc.name,
       type: acc.type,
+      subType: acc.subType || '',
       balance: acc.balance.toString(),
       billingDate: acc.billingDate || '',
       dueDate: acc.dueDate || '',
       creditLimit: acc.creditLimit ? acc.creditLimit.toString() : '',
+      customTypeId: acc.customTypeId || '',
     });
+    setShowAddCustom(false);
     setShowModal(true);
   }
 
@@ -95,7 +131,10 @@ export default function Accounts() {
     if (!form.name.trim()) return;
 
     const payload = { name: form.name.trim(), type: form.type };
-    if (form.type === 'card') {
+    if (form.subType) payload.subType = form.subType;
+    if (form.type === 'custom' && form.customTypeId) payload.customTypeId = form.customTypeId;
+
+    if (form.type === 'card' && form.subType === 'credit') {
       payload.billingDate = form.billingDate ? parseInt(form.billingDate) : null;
       payload.dueDate = form.dueDate ? parseInt(form.dueDate) : null;
       payload.creditLimit = form.creditLimit ? parseFloat(form.creditLimit) : null;
@@ -110,6 +149,22 @@ export default function Accounts() {
       });
     }
     setShowModal(false);
+  }
+
+  function handleAddCustomType() {
+    if (!newCustomLabel.trim()) return;
+    const id = 'custom_' + Date.now().toString(36);
+    const newType = { id, label: newCustomLabel.trim(), icon: newCustomIcon };
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { customAccountTypes: [...customTypes, newType] } });
+    setForm({ ...form, type: 'custom', customTypeId: id });
+    setShowAddCustom(false);
+    setNewCustomLabel('');
+    setNewCustomIcon('🪙');
+    toast('Custom type added!', 'success');
+  }
+
+  function removeCustomType(id) {
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { customAccountTypes: customTypes.filter((t) => t.id !== id) } });
   }
 
   function handleDelete(id) {
@@ -159,12 +214,37 @@ export default function Accounts() {
     dragIndex.current = null;
   }
 
+  function getTypeLabel(acc) {
+    if (acc.type === 'custom') {
+      const ct = customTypes.find((t) => t.id === acc.customTypeId);
+      return ct ? ct.label : 'Custom';
+    }
+    const base = ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label || acc.type;
+    if (acc.type === 'bank' && acc.subType) {
+      const sub = BANK_SUBTYPES.find((s) => s.id === acc.subType);
+      return sub ? `${sub.label} Account` : base;
+    }
+    if (acc.type === 'card' && acc.subType) {
+      const sub = CARD_SUBTYPES.find((s) => s.id === acc.subType);
+      return sub ? sub.label : base;
+    }
+    return base;
+  }
+
+  function getIconForAccount(acc) {
+    if (acc.type === 'custom') {
+      const ct = customTypes.find((t) => t.id === acc.customTypeId);
+      return ct ? ct.icon : '🪙';
+    }
+    return getAccountIcon(acc.type, currency);
+  }
+
   function getGlobalIndex(acc) {
     return accounts.findIndex((a) => a.id === acc.id);
   }
 
   function getBillingInfo(acc) {
-    if (acc.type !== 'card') return null;
+    if (acc.type !== 'card' || acc.subType !== 'credit') return null;
     const parts = [];
     if (acc.billingDate) parts.push(`Bills on ${acc.billingDate}${getOrdinal(acc.billingDate)}`);
     if (acc.dueDate) parts.push(`Due by ${acc.dueDate}${getOrdinal(acc.dueDate)}`);
@@ -203,11 +283,11 @@ export default function Accounts() {
           </div>
         )}
         <div className="account-icon-wrap" style={{ background: getAccountColor(acc.type) + '15' }}>
-          <span className="account-icon">{getAccountIcon(acc.type, currency)}</span>
+          <span className="account-icon">{getIconForAccount(acc)}</span>
         </div>
         <div className="account-info">
           <p className="account-name">{acc.name}</p>
-          <p className="account-type">{ACCOUNT_TYPES.find((t) => t.id === acc.type)?.label}</p>
+          <p className="account-type">{getTypeLabel(acc)}</p>
           {billingInfo && <p className="account-billing-info">{billingInfo}</p>}
         </div>
         {!reorderMode && (
@@ -216,7 +296,7 @@ export default function Accounts() {
               {maskAmount(formatCurrency(acc.balance, currency))}
             </p>
             <div className="account-card-actions">
-              {acc.type === 'card' && acc.balance < 0 && (
+              {acc.type === 'card' && acc.subType === 'credit' && acc.balance < 0 && (
                 <button className="account-pay-btn" onClick={(e) => { e.stopPropagation(); openPayBill(acc); }} title="Pay Bill">
                   <i className="fa-solid fa-money-bill-transfer" />
                 </button>
@@ -271,10 +351,13 @@ export default function Accounts() {
         <div className="accounts-list">
           {accounts.map((acc, i) => {
             const prevType = i > 0 ? accounts[i - 1].type : null;
-            const showDivider = acc.type !== prevType;
-            const section = TYPE_SECTIONS.find((s) => s.type === acc.type);
+            const prevCustomId = i > 0 ? accounts[i - 1].customTypeId : null;
+            const showDivider = acc.type !== prevType || (acc.type === 'custom' && acc.customTypeId !== prevCustomId);
+            const section = acc.type === 'custom'
+              ? (() => { const ct = customTypes.find((t) => t.id === acc.customTypeId); return ct ? { type: 'custom', title: ct.label, icon: 'fa-solid fa-plus-circle' } : null; })()
+              : TYPE_SECTIONS.find((s) => s.type === acc.type);
             const sectionBalance = showDivider
-              ? accounts.filter((a) => a.type === acc.type).reduce((s, a) => s + a.balance, 0)
+              ? accounts.filter((a) => a.type === acc.type && (acc.type !== 'custom' || a.customTypeId === acc.customTypeId)).reduce((s, a) => s + a.balance, 0)
               : 0;
             return (
               <div key={acc.id}>
@@ -298,12 +381,13 @@ export default function Accounts() {
         </div>
       ) : (
         <div className="accounts-grouped">
-          {TYPE_SECTIONS.map((section) => {
-            const sectionAccounts = groupedAccounts[section.type] || [];
+          {allSections.map((section) => {
+            const key = section.customTypeId || section.type;
+            const sectionAccounts = groupedAccounts[key] || [];
             if (sectionAccounts.length === 0) return null;
             const sectionBalance = sectionAccounts.reduce((s, a) => s + a.balance, 0);
             return (
-              <div key={section.type} className="account-section">
+              <div key={key} className="account-section">
                 <div className="account-section-header">
                   <div className="account-section-title-row">
                     <i className={`${section.icon} account-section-icon`} />
@@ -322,7 +406,7 @@ export default function Accounts() {
         </div>
       )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editAccount ? 'Edit Account' : 'Add Account'}>
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); setShowAddCustom(false); }} title={editAccount ? 'Edit Account' : 'Add Account'}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Account Type</label>
@@ -332,21 +416,87 @@ export default function Accounts() {
                   key={t.id}
                   type="button"
                   className={`account-type-option ${form.type === t.id ? 'selected' : ''}`}
-                  onClick={() => setForm({ ...form, type: t.id })}
+                  onClick={() => setForm({ ...form, type: t.id, subType: '', customTypeId: '' })}
                 >
                   <span>{t.icon}</span>
                   <span>{t.label}</span>
                 </button>
               ))}
+              {customTypes.map((ct) => (
+                <button
+                  key={ct.id}
+                  type="button"
+                  className={`account-type-option ${form.type === 'custom' && form.customTypeId === ct.id ? 'selected' : ''}`}
+                  onClick={() => setForm({ ...form, type: 'custom', customTypeId: ct.id, subType: '' })}
+                >
+                  <span>{ct.icon}</span>
+                  <span>{ct.label}</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                className="account-type-option account-type-add"
+                onClick={() => setShowAddCustom(!showAddCustom)}
+              >
+                <span><i className="fa-solid fa-plus" /></span>
+                <span>Custom</span>
+              </button>
             </div>
           </div>
+
+          {showAddCustom && (
+            <div className="custom-type-form">
+              <div className="custom-type-icon-row">
+                {CUSTOM_ICONS.map((ic) => (
+                  <button key={ic} type="button" className={`custom-icon-btn ${newCustomIcon === ic ? 'selected' : ''}`} onClick={() => setNewCustomIcon(ic)}>{ic}</button>
+                ))}
+              </div>
+              <div className="custom-type-input-row">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Type name (e.g. Bitcoin)"
+                  value={newCustomLabel}
+                  onChange={(e) => setNewCustomLabel(e.target.value)}
+                  maxLength={20}
+                />
+                <button type="button" className="btn btn-primary btn-sm" onClick={handleAddCustomType} disabled={!newCustomLabel.trim()}>Add</button>
+              </div>
+            </div>
+          )}
+
+          {form.type === 'bank' && (
+            <div className="form-group">
+              <label className="form-label">Account Sub-type</label>
+              <div className="subtype-chips">
+                {BANK_SUBTYPES.map((s) => (
+                  <button key={s.id} type="button" className={`subtype-chip ${form.subType === s.id ? 'selected' : ''}`} onClick={() => setForm({ ...form, subType: form.subType === s.id ? '' : s.id })}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {form.type === 'card' && (
+            <div className="form-group">
+              <label className="form-label">Card Type</label>
+              <div className="subtype-chips">
+                {CARD_SUBTYPES.map((s) => (
+                  <button key={s.id} type="button" className={`subtype-chip ${form.subType === s.id ? 'selected' : ''}`} onClick={() => setForm({ ...form, subType: form.subType === s.id ? '' : s.id })}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Account Name</label>
             <input
               type="text"
               className="form-input"
-              placeholder="e.g. HDFC Savings"
+              placeholder={form.type === 'card' ? 'e.g. HDFC Credit Card' : 'e.g. HDFC Savings'}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
@@ -355,7 +505,9 @@ export default function Accounts() {
 
           {!editAccount && (
             <div className="form-group">
-              <label className="form-label">Initial Balance {form.type === 'card' ? '(use negative for outstanding)' : ''}</label>
+              <label className="form-label">
+                Initial Balance {form.type === 'card' && form.subType === 'credit' ? '(use negative for outstanding)' : ''}
+              </label>
               <input
                 type="number"
                 className="form-input"
@@ -367,8 +519,20 @@ export default function Accounts() {
             </div>
           )}
 
-          {form.type === 'card' && (
+          {form.type === 'card' && form.subType === 'credit' && (
             <>
+              <div className="form-group">
+                <label className="form-label">Credit Limit</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 100000"
+                  min="0"
+                  step="0.01"
+                  value={form.creditLimit}
+                  onChange={(e) => setForm({ ...form, creditLimit: e.target.value })}
+                />
+              </div>
               <div className="form-group">
                 <label className="form-label">Billing Date (day of month)</label>
                 <input
@@ -391,18 +555,6 @@ export default function Accounts() {
                   max="31"
                   value={form.dueDate}
                   onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Credit Limit</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  placeholder="e.g. 100000"
-                  min="0"
-                  step="0.01"
-                  value={form.creditLimit}
-                  onChange={(e) => setForm({ ...form, creditLimit: e.target.value })}
                 />
               </div>
             </>
