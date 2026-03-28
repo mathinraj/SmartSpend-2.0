@@ -114,7 +114,7 @@ export async function uploadSyncData(appData) {
 
   const content = JSON.stringify({
     _app: 'SpendTrak',
-    _version: '1.2',
+    _version: '2.0',
     _syncedAt: new Date().toISOString(),
     ...appData,
   }, null, 2);

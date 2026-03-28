@@ -144,7 +144,7 @@ export default function Preferences() {
   function buildExportData() {
     return {
       _app: 'SpendTrak',
-      _version: '1.4',
+      _version: '2.0',
       _exportedAt: new Date().toISOString(),
       settings: { ...settings, onboardStep: undefined },
       accounts,
@@ -1397,9 +1397,9 @@ export default function Preferences() {
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">SpendTrak</p>
-              <p className="pref-row-desc">Version 1.4 · Your money, your rules.</p>
+              <p className="pref-row-desc">Version 2.0 · Your money, your rules.</p>
             </div>
-            <span className="pref-badge">v1.4</span>
+            <span className="pref-badge">v2.0</span>
           </div>
         </div>
 

@@ -19,7 +19,8 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Trends** — monthly income vs expense line chart across the last 12 months
 - **Account filter** — multi-select accounts to filter all analytics data globally
 
-### Export & Backup
+### Export, Backup & Sync
+- **Google Drive Sync** — push/pull your data to your own Google Drive; connect with Google OAuth, sync across devices, private appDataFolder
 - **JSON backup** — full data export (accounts, transactions, settings, planned payments)
 - **CSV export** — transactions only, for Excel or Google Sheets
 - **PDF report** — formatted summary tables with chart screenshots from the analytics page
@@ -31,6 +32,11 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Settlement with account selection** — record settlements and update bank balances in one step
 - **Planned payments** — track subscriptions, EMIs, and recurring bills with due-date reminders
 - **"They paid for me" with account update** — optionally record which account received the money
+
+### Profile & Personalization
+- **User profile** — add your name and photo (stored locally); personalized greeting on the dashboard
+- **Customize dashboard** — expandable options to toggle balance view, income/expense stats, accounts section, split money card, and hide balances
+- **PWA install prompt** — native "Add to Home Screen" banner for quick app access
 
 ### Privacy & Security
 - **App lock** — protect your data with a 4-digit PIN or a password
@@ -73,6 +79,7 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 | Dates | date-fns |
 | IDs | uuid |
 | Email | EmailJS (feedback form) |
+| Cloud Sync | Google Drive API (appDataFolder) |
 | Styling | Custom CSS with CSS variables |
 | Deployment | Vercel |
 
@@ -87,15 +94,38 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Environment Variables (optional)
 
-For the feedback form to work, create a `.env.local` file:
+Create a `.env.local` file for optional integrations:
 
 ```
+# Feedback form (EmailJS)
 NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
 NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
 NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
+
+# Google Drive Sync
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
+For Google Drive sync, you also need:
+1. A Google Cloud project with the **Google Drive API** enabled
+2. An OAuth consent screen with scopes: `drive.appdata`, `userinfo.email`, `userinfo.profile`
+3. OAuth client credentials with your domains as authorized JavaScript origins
+
 ## Changelog
+
+### v2.0
+- **Google Drive Sync** — connect your Google account and push/pull data to your own Google Drive; private appDataFolder storage, session refresh, and cloud backup deletion
+- **User profile** — add name and photo in Preferences; personalized "Welcome back, [name]" greeting with profile photo on the dashboard
+- **Inline category management** — add, edit, and delete categories directly from the Add Transaction page; dedicated Categories page removed from navigation
+- **Split entry editing** — edit amount, note, and date of existing split entries; delete entries from the person detail view
+- **Feedback page** — report bugs, request features, or send feedback via EmailJS; accessible from sidebar and Preferences
+- **PWA install prompt** — native "Install SpendTrak" banner for supported browsers; dismissible with localStorage persistence
+- **Enhanced analytics** — average daily spend, savings rate, transaction count stats; spending by day of week chart; top 5 expenses list; dark mode chart fixes
+- **Compact Preferences** — dashboard toggles collapsed into a single expandable "Customize dashboard" row; backup section streamlined into Export/Import dropdown buttons
+- **Rotating feedback label** — sidebar feedback link cycles between "Feedback", "Suggestions", and "Report Bug" daily
+- **SEO overhaul** — rich metadata, Open Graph/Twitter cards, JSON-LD structured data, per-page titles, sitemap.xml, robots.txt, web manifest
+- **Dark mode chart fix** — tooltips, grid lines, and axis labels now adapt to dark theme
+- **LinkedIn logo fix** — replaced Font Awesome icon with inline SVG for reliable rendering
 
 ### v1.4
 - **Enhanced analytics** — credit card utilization, per-account analytics, category comparison with month-by-month pickers

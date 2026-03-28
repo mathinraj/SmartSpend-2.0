@@ -6,6 +6,7 @@ import './Welcome.css';
 
 const heroHighlights = [
   { icon: '⚡', text: 'Instant setup — no sign-up needed' },
+  { icon: '☁️', text: 'Sync across devices with Google Drive' },
   { icon: '📴', text: 'Works 100% offline, always' },
   { icon: '🔐', text: 'Your data never leaves your device' },
 ];
@@ -14,7 +15,12 @@ const features = [
   {
     icon: '📊',
     title: 'Smart Analytics',
-    desc: 'Beautiful charts that reveal your spending patterns. See exactly where every rupee goes — by category, by week, by trend.',
+    desc: 'Daily spend trends, savings rate, top expenses, category breakdowns, and credit card utilization — all in beautiful charts.',
+  },
+  {
+    icon: '☁️',
+    title: 'Google Drive Sync',
+    desc: 'Push and pull your data to your own Google Drive. Access your finances across devices — private, encrypted, under your control.',
   },
   {
     icon: '🏦',
@@ -24,12 +30,17 @@ const features = [
   {
     icon: '🤝',
     title: 'Split with Friends',
-    desc: 'Track shared expenses effortlessly. Know who owes what, settle up, and keep friendships drama-free.',
+    desc: 'Track shared expenses, edit entries anytime, settle up, and keep friendships drama-free.',
   },
   {
     icon: '📅',
     title: 'Planned Payments',
     desc: 'Never miss a bill again. Track subscriptions, EMIs, and recurring expenses with smart due-date reminders.',
+  },
+  {
+    icon: '📤',
+    title: 'Export Anywhere',
+    desc: 'Export your data as JSON, CSV, PDF reports, or Excel workbooks — with embedded charts and formatted tables.',
   },
   {
     icon: '🔔',
@@ -39,7 +50,7 @@ const features = [
   {
     icon: '🔒',
     title: 'Privacy First',
-    desc: 'PIN or password lock, hide balances with one tap, and zero cloud dependency. Your finances are yours alone.',
+    desc: 'PIN or password lock, hide balances with one tap, and a profile that stays on your device. Your finances are yours alone.',
   },
 ];
 
@@ -47,13 +58,16 @@ const howItWorks = [
   { step: '1', title: 'Add your accounts', desc: 'Set up your bank, cards, cash, or wallets in seconds.' },
   { step: '2', title: 'Log as you spend', desc: 'Quick-add expenses and income — takes under 5 seconds.' },
   { step: '3', title: 'Watch the insights', desc: 'Analytics, trends, and balances update automatically.' },
+  { step: '4', title: 'Sync & back up', desc: 'Push to Google Drive or export as PDF, Excel, or JSON anytime.' },
 ];
 
 const whyPoints = [
   { icon: '💸', title: 'Completely Free', desc: 'No premium tier, no ads, no hidden costs. Ever.' },
   { icon: '🌐', title: 'Works Offline', desc: 'No internet? No problem. Everything runs locally in your browser.' },
   { icon: '🛡️', title: 'No Sign-up', desc: 'Open it and start tracking. No email, no password, no accounts to create.' },
-  { icon: '📦', title: 'Export Anytime', desc: 'Your data belongs to you. Export as JSON backup or CSV for spreadsheets.' },
+  { icon: '📲', title: 'Install as App', desc: 'Add to your home screen for a native app experience — fast, fullscreen, always ready.' },
+  { icon: '☁️', title: 'Sync with Drive', desc: 'Optionally back up to your Google Drive. Your data, your cloud, your choice.' },
+  { icon: '📦', title: 'Export Anytime', desc: 'JSON, CSV, PDF, or Excel — your data belongs to you, in the format you want.' },
 ];
 
 function Reveal({ children, delay = 0, className = '' }) {
