@@ -131,6 +131,10 @@ export default function Accounts() {
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim()) return;
+    if (!/[a-zA-Z]/.test(form.name)) {
+      toast('Name must contain at least one letter', 'error');
+      return;
+    }
 
     const payload = { name: form.name.trim(), type: form.type };
     if (form.subType) payload.subType = form.subType;
@@ -155,6 +159,7 @@ export default function Accounts() {
 
   function handleAddCustomType() {
     if (!newCustomLabel.trim()) return;
+    if (!/[a-zA-Z]/.test(newCustomLabel)) { toast('Name must contain at least one letter', 'error'); return; }
     const id = 'custom_' + Date.now().toString(36);
     const newType = { id, label: newCustomLabel.trim(), icon: newCustomIcon };
     dispatch({ type: 'UPDATE_SETTINGS', payload: { customAccountTypes: [...customTypes, newType] } });

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../components/Toast';
 import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { formatDate, getAccountIcon, toDateInputValue } from '../utils/helpers';
 import Modal from '../components/Modal';
@@ -10,6 +11,7 @@ import './SplitTracker.css';
 
 export default function SplitTracker() {
   const { state, dispatch } = useApp();
+  const toast = useToast();
   const { splitLedger, accounts, settings } = state;
   const currency = settings.currency;
   const people = settings.splitPeople || [];
@@ -56,7 +58,9 @@ export default function SplitTracker() {
 
   function addPerson() {
     const name = newPersonName.trim();
-    if (!name || people.includes(name)) return;
+    if (!name) return;
+    if (people.includes(name)) { toast('This person is already added', 'error'); return; }
+    if (!/[a-zA-Z]/.test(name)) { toast('Name must contain at least one letter', 'error'); return; }
     dispatch({ type: 'UPDATE_SETTINGS', payload: { splitPeople: [...people, name] } });
     setNewPersonName('');
   }

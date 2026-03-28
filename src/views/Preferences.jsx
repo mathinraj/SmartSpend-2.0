@@ -799,6 +799,25 @@ export default function Preferences() {
             </div>
           </>
         )}
+
+        {settings.plannedEnabled && (
+          <div className="pref-card" style={{ marginTop: 16 }}>
+            <div className="pref-row">
+              <div className="pref-row-info">
+                <p className="pref-row-label">Payment due reminders</p>
+                <p className="pref-row-desc">Get notified when planned bills are due or overdue</p>
+              </div>
+              <label className="pref-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.plannedReminders === true}
+                  onChange={(e) => updatePref('plannedReminders', e.target.checked)}
+                />
+                <span className="pref-toggle-slider" />
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Data */}

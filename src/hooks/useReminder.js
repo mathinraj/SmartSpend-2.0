@@ -104,5 +104,52 @@ export function useReminder() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [settings.reminders, settings.dndEnabled, settings.dndStart, settings.dndEnd, sendNotification]);
 
+  useEffect(() => {
+    if (!settings.plannedReminders) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const plannedPayments = state.plannedPayments || [];
+    if (plannedPayments.length === 0) return;
+
+    const PLANNED_NOTIF_KEY = 'spendtraq_planned_reminder_last';
+
+    function checkPlannedDue() {
+      const lastCheck = localStorage.getItem(PLANNED_NOTIF_KEY);
+      const todayKey = new Date().toDateString();
+      if (lastCheck === todayKey) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const due = plannedPayments.filter((p) => {
+        if (!p.enabled) return false;
+        const d = new Date(p.nextDate);
+        d.setHours(0, 0, 0, 0);
+        return d <= tomorrow;
+      });
+
+      if (due.length === 0) return;
+      localStorage.setItem(PLANNED_NOTIF_KEY, todayKey);
+
+      const overdue = due.filter((p) => new Date(p.nextDate) < today);
+      const dueToday = due.filter((p) => { const d = new Date(p.nextDate); d.setHours(0,0,0,0); return d.getTime() === today.getTime(); });
+      const dueTomorrow = due.filter((p) => { const d = new Date(p.nextDate); d.setHours(0,0,0,0); return d.getTime() === tomorrow.getTime(); });
+
+      const parts = [];
+      if (overdue.length) parts.push(`${overdue.length} overdue`);
+      if (dueToday.length) parts.push(`${dueToday.length} due today`);
+      if (dueTomorrow.length) parts.push(`${dueTomorrow.length} due tomorrow`);
+
+      sendNotification(
+        `You have ${parts.join(', ')}: ${due.slice(0, 3).map((p) => p.name).join(', ')}${due.length > 3 ? '...' : ''}`,
+        'spendtrak-planned-due'
+      );
+    }
+
+    const timer = setTimeout(checkPlannedDue, 8000);
+    return () => clearTimeout(timer);
+  }, [settings.plannedReminders, state.plannedPayments, sendNotification]);
+
   return { requestPermission };
 }
