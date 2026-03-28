@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
@@ -8,6 +8,7 @@ import { hasSampleData } from '../utils/sampleData';
 import { generateId } from '../utils/helpers';
 import { formatCurrencyPlain } from '../utils/currencies';
 import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
+import * as gDrive from '../utils/googleDrive';
 import './Preferences.css';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -332,6 +333,183 @@ export default function Preferences() {
       }
     };
     reader.readAsText(file);
+  }
+
+  // Google Drive Sync
+  const [gdriveLoading, setGdriveLoading] = useState(false);
+  const [gdriveSyncing, setGdriveSyncing] = useState(false);
+  const [gdriveUser, setGdriveUser] = useState(null);
+  const gdriveConfigured = gDrive.isConfigured();
+  const gdriveConnected = !!settings.gdriveEmail;
+
+  useEffect(() => {
+    if (gdriveConnected && gDrive.getAccessToken()) {
+      gDrive.getUserInfo().then((info) => {
+        if (info) setGdriveUser(info);
+      });
+    }
+  }, [gdriveConnected]);
+
+  async function handleGdriveConnect() {
+    if (!gdriveConfigured) {
+      toast('Google Drive is not configured. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your environment.', 'error', 5000);
+      return;
+    }
+    setGdriveLoading(true);
+    try {
+      await gDrive.loadGisScript();
+      const token = await gDrive.requestAccessToken({ prompt: 'consent' });
+      if (!token) {
+        toast('Google sign-in was cancelled', 'warning');
+        setGdriveLoading(false);
+        return;
+      }
+      const userInfo = await gDrive.getUserInfo();
+      if (userInfo) {
+        setGdriveUser(userInfo);
+        updatePref('gdriveEmail', userInfo.email);
+        updatePref('gdriveName', userInfo.name);
+        updatePref('gdrivePhoto', userInfo.picture);
+        toast(`Connected as ${userInfo.email}`, 'success');
+      }
+    } catch (err) {
+      console.error('GDrive connect error:', err);
+      toast('Failed to connect Google Drive', 'error');
+    }
+    setGdriveLoading(false);
+  }
+
+  function handleGdriveDisconnect() {
+    if (!window.confirm('Disconnect Google Drive? Your cloud backup will remain in your Drive.')) return;
+    gDrive.revokeToken();
+    setGdriveUser(null);
+    dispatch({
+      type: 'UPDATE_SETTINGS',
+      payload: {
+        gdriveEmail: null,
+        gdriveName: null,
+        gdrivePhoto: null,
+        gdriveLastSync: null,
+        gdriveAutoSync: false,
+      },
+    });
+    toast('Google Drive disconnected', 'info');
+  }
+
+  function buildSyncPayload() {
+    return {
+      settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined },
+      accounts,
+      transactions,
+      categories: state.categories,
+      plannedPayments: state.plannedPayments,
+      splitLedger: state.splitLedger,
+    };
+  }
+
+  async function ensureToken() {
+    if (gDrive.getAccessToken()) return true;
+    try {
+      const token = await gDrive.requestAccessToken({ prompt: 'none' });
+      return !!token;
+    } catch {
+      return false;
+    }
+  }
+
+  async function handleGdrivePush() {
+    setGdriveSyncing(true);
+    try {
+      if (!(await ensureToken())) {
+        toast('Please reconnect Google Drive — session expired', 'warning');
+        setGdriveSyncing(false);
+        return;
+      }
+      await gDrive.uploadSyncData(buildSyncPayload());
+      const now = new Date().toISOString();
+      updatePref('gdriveLastSync', now);
+      toast('Data pushed to Google Drive', 'success');
+    } catch (err) {
+      if (err.message === 'AUTH_EXPIRED') {
+        toast('Session expired. Please reconnect Google Drive.', 'warning');
+        handleGdriveDisconnect();
+      } else {
+        console.error('GDrive push error:', err);
+        toast('Failed to push data to Google Drive', 'error');
+      }
+    }
+    setGdriveSyncing(false);
+  }
+
+  async function handleGdrivePull() {
+    setGdriveSyncing(true);
+    try {
+      if (!(await ensureToken())) {
+        toast('Please reconnect Google Drive — session expired', 'warning');
+        setGdriveSyncing(false);
+        return;
+      }
+      const data = await gDrive.downloadSyncData();
+      if (!data) {
+        toast('No backup found in your Google Drive', 'info');
+        setGdriveSyncing(false);
+        return;
+      }
+      if (data.settings) {
+        const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
+        dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
+      const now = new Date().toISOString();
+      updatePref('gdriveLastSync', now);
+      toast('Data and settings restored from Google Drive', 'success');
+    } catch (err) {
+      if (err.message === 'AUTH_EXPIRED') {
+        toast('Session expired. Please reconnect Google Drive.', 'warning');
+        handleGdriveDisconnect();
+      } else {
+        console.error('GDrive pull error:', err);
+        toast('Failed to pull data from Google Drive', 'error');
+      }
+    }
+    setGdriveSyncing(false);
+  }
+
+  async function handleGdriveDelete() {
+    if (!window.confirm('Delete the backup from your Google Drive? This cannot be undone.')) return;
+    setGdriveSyncing(true);
+    try {
+      if (!(await ensureToken())) {
+        toast('Please reconnect Google Drive — session expired', 'warning');
+        setGdriveSyncing(false);
+        return;
+      }
+      await gDrive.deleteSyncFile();
+      updatePref('gdriveLastSync', null);
+      toast('Backup deleted from Google Drive', 'info');
+    } catch (err) {
+      if (err.message === 'AUTH_EXPIRED') {
+        toast('Session expired. Please reconnect Google Drive.', 'warning');
+        handleGdriveDisconnect();
+      } else {
+        console.error('GDrive delete error:', err);
+        toast('Failed to delete backup', 'error');
+      }
+    }
+    setGdriveSyncing(false);
+  }
+
+  function formatSyncTime(iso) {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   const [showDashboardOptions, setShowDashboardOptions] = useState(false);
@@ -895,17 +1073,108 @@ export default function Preferences() {
           onChange={handleFileSelected}
         />
 
-        <div className="pref-card coming-soon-card" style={{ marginBottom: 14 }}>
+        <div className="pref-card gdrive-card" style={{ marginBottom: 14 }}>
           <div className="pref-row">
             <div className="pref-row-info">
-              <p className="pref-row-label coming-soon-label">
-                <i className="fa-solid fa-cloud" style={{ color: '#4285F4' }} />
-                Cloud Sync
+              <p className="pref-row-label gdrive-label">
+                <i className="fa-brands fa-google-drive" style={{ color: '#4285F4' }} />
+                Google Drive Sync
               </p>
-              <p className="pref-row-desc">Sync your data across devices seamlessly</p>
+              <p className="pref-row-desc">
+                {gdriveConnected
+                  ? `Connected as ${settings.gdriveEmail}`
+                  : 'Sync data to your own Google Drive — free, private'}
+              </p>
             </div>
-            <span className="pref-badge coming-soon-badge">Coming Soon</span>
+            {!gdriveConnected ? (
+              <button
+                className="pref-btn gdrive-connect-btn"
+                onClick={handleGdriveConnect}
+                disabled={gdriveLoading}
+              >
+                {gdriveLoading ? (
+                  <><i className="fa-solid fa-spinner fa-spin" /> Connecting…</>
+                ) : (
+                  <><i className="fa-brands fa-google" /> Connect</>
+                )}
+              </button>
+            ) : (
+              <button className="pref-btn danger gdrive-disconnect-btn" onClick={handleGdriveDisconnect}>
+                <i className="fa-solid fa-link-slash" /> Disconnect
+              </button>
+            )}
           </div>
+
+          {gdriveConnected && (
+            <>
+              <div className="pref-divider" />
+
+              {settings.gdrivePhoto && (
+                <div className="gdrive-user-bar">
+                  <img src={settings.gdrivePhoto} alt="" className="gdrive-avatar" referrerPolicy="no-referrer" />
+                  <div>
+                    <p className="gdrive-user-name">{settings.gdriveName}</p>
+                    <p className="gdrive-user-email">{settings.gdriveEmail}</p>
+                  </div>
+                  <span className="gdrive-last-sync">
+                    <i className="fa-solid fa-clock" /> {formatSyncTime(settings.gdriveLastSync)}
+                  </span>
+                </div>
+              )}
+
+              <div className="gdrive-sync-actions">
+                <button
+                  className="gdrive-action-btn push"
+                  onClick={handleGdrivePush}
+                  disabled={gdriveSyncing}
+                >
+                  {gdriveSyncing ? (
+                    <i className="fa-solid fa-spinner fa-spin" />
+                  ) : (
+                    <i className="fa-solid fa-cloud-arrow-up" />
+                  )}
+                  <span>Push to Drive</span>
+                  <small>Upload your local data</small>
+                </button>
+                <button
+                  className="gdrive-action-btn pull"
+                  onClick={handleGdrivePull}
+                  disabled={gdriveSyncing}
+                >
+                  {gdriveSyncing ? (
+                    <i className="fa-solid fa-spinner fa-spin" />
+                  ) : (
+                    <i className="fa-solid fa-cloud-arrow-down" />
+                  )}
+                  <span>Pull from Drive</span>
+                  <small>Merge cloud data here</small>
+                </button>
+              </div>
+
+              <div className="pref-divider" />
+
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label danger-text">Delete cloud backup</p>
+                  <p className="pref-row-desc">Permanently remove the backup file from your Google Drive</p>
+                </div>
+                <button
+                  className="pref-btn danger"
+                  onClick={handleGdriveDelete}
+                  disabled={gdriveSyncing}
+                >
+                  <i className="fa-solid fa-trash-can" /> Delete
+                </button>
+              </div>
+            </>
+          )}
+
+          {!gdriveConfigured && (
+            <div className="gdrive-setup-hint">
+              <i className="fa-solid fa-circle-info" />
+              <p>To enable Google Drive sync, set <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> in your <code>.env.local</code> file.</p>
+            </div>
+          )}
         </div>
 
         <div className="backup-actions">
