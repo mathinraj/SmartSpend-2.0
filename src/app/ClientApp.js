@@ -179,6 +179,58 @@ function AppShell({ children }) {
     return () => clearTimeout(timer);
   }, [state.settings.onboardStep]);
 
+  useEffect(() => {
+    if (state.settings.onboardStep < 2) return;
+    if (!state.settings.plannedEnabled || !state.plannedPayments?.length) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const NOTIF_KEY = 'spendtraq_due_payment_notif';
+    const lastNotif = localStorage.getItem(NOTIF_KEY);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (lastNotif === todayStr) return;
+
+    function checkDuePayments() {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const overdue = [];
+      const dueToday = [];
+      state.plannedPayments.filter((p) => p.enabled).forEach((p) => {
+        const d = new Date(p.nextDate);
+        d.setHours(0, 0, 0, 0);
+        const diff = Math.ceil((d - now) / 86400000);
+        if (diff < 0) overdue.push(p);
+        else if (diff === 0) dueToday.push(p);
+      });
+
+      if (overdue.length === 0 && dueToday.length === 0) return;
+      localStorage.setItem(NOTIF_KEY, todayStr);
+
+      let title, body;
+      if (overdue.length > 0 && dueToday.length > 0) {
+        title = `${overdue.length + dueToday.length} payments need attention`;
+        body = `${overdue.length} overdue and ${dueToday.length} due today. Open SpendTrak to review.`;
+      } else if (overdue.length > 0) {
+        title = overdue.length === 1 ? `${overdue[0].name} is overdue` : `${overdue.length} payments are overdue`;
+        body = 'Open SpendTrak to pay or update your planned payments.';
+      } else {
+        title = dueToday.length === 1 ? `${dueToday[0].name} is due today` : `${dueToday.length} payments due today`;
+        body = 'Tap to review and mark as paid.';
+      }
+
+      const options = { body, tag: 'spendtraq-due-payments' };
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => reg.showNotification(title, options)).catch(() => {});
+        } else {
+          new Notification(title, options);
+        }
+      } catch { /* ignore */ }
+    }
+
+    const timer = setTimeout(checkDuePayments, 3000);
+    return () => clearTimeout(timer);
+  }, [state.settings.onboardStep, state.settings.plannedEnabled, state.plannedPayments]);
+
   const handleUnlock = useCallback(() => setLocked(false), []);
 
   if (!mounted) {

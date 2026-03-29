@@ -41,6 +41,9 @@ export default function Transactions() {
   const [search, setSearch] = useState('');
   const [searchField, setSearchField] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [selectedDate, setSelectedDate] = useState(null);
 
   // Advanced filters
   const [filterCategoryIds, setFilterCategoryIds] = useState([]);
@@ -169,6 +172,55 @@ export default function Transactions() {
 
   const allCategories = [...categories.expense, ...categories.income];
 
+  const calendarData = useMemo(() => {
+    const map = {};
+    transactions.forEach((t) => {
+      if (!map[t.date]) map[t.date] = { count: 0, income: 0, expense: 0 };
+      map[t.date].count++;
+      if (t.type === 'income') map[t.date].income += t.amount;
+      if (t.type === 'expense') map[t.date].expense += t.amount;
+    });
+    return map;
+  }, [transactions]);
+
+  const calendarDays = useMemo(() => {
+    const { year, month } = calMonth;
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      days.push({ day: d, date: dateStr, data: calendarData[dateStr] || null });
+    }
+    return days;
+  }, [calMonth, calendarData]);
+
+  const calMonthLabel = new Date(calMonth.year, calMonth.month).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  function handleCalPrev() {
+    setCalMonth((prev) => prev.month === 0 ? { year: prev.year - 1, month: 11 } : { ...prev, month: prev.month - 1 });
+  }
+
+  function handleCalNext() {
+    setCalMonth((prev) => prev.month === 11 ? { year: prev.year + 1, month: 0 } : { ...prev, month: prev.month + 1 });
+  }
+
+  function handleDayClick(dateStr) {
+    if (selectedDate === dateStr) {
+      setSelectedDate(null);
+      setFilterDateFrom('');
+      setFilterDateTo('');
+    } else {
+      setSelectedDate(dateStr);
+      setFilterDateFrom(dateStr);
+      setFilterDateTo(dateStr);
+      setShowCalendar(false);
+    }
+  }
+
+  const todayStr = toDateInputValue(new Date());
+
   return (
     <div className="page">
       <h1 className="page-title">Transactions</h1>
@@ -188,6 +240,22 @@ export default function Transactions() {
             <i className="fa-solid fa-xmark" />
           </button>
         )}
+        <button
+          className={`txn-filter-btn ${showCalendar || selectedDate ? 'has-filters' : ''}`}
+          onClick={() => {
+            if (selectedDate) {
+              setSelectedDate(null);
+              setFilterDateFrom('');
+              setFilterDateTo('');
+              setShowCalendar(false);
+            } else {
+              setShowCalendar(!showCalendar);
+            }
+          }}
+          title="Calendar view"
+        >
+          <i className={`fa-regular fa-calendar${selectedDate ? '-check' : ''}`} />
+        </button>
         <button className={`txn-filter-btn ${activeFilterCount > 0 ? 'has-filters' : ''}`} onClick={() => setShowFilters(true)}>
           <i className="fa-solid fa-sliders" />
           {activeFilterCount > 0 && <span className="filter-badge">{activeFilterCount}</span>}
@@ -207,6 +275,54 @@ export default function Transactions() {
               {f.label}
             </button>
           ))}
+        </div>
+      )}
+
+      {showCalendar && (
+        <div className="txn-calendar">
+          <div className="cal-header">
+            <button className="cal-nav-btn" onClick={handleCalPrev}><i className="fa-solid fa-chevron-left" /></button>
+            <span className="cal-month-label">{calMonthLabel}</span>
+            <button className="cal-nav-btn" onClick={handleCalNext}><i className="fa-solid fa-chevron-right" /></button>
+          </div>
+          <div className="cal-weekdays">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+              <span key={i} className="cal-weekday">{d}</span>
+            ))}
+          </div>
+          <div className="cal-grid">
+            {calendarDays.map((cell, i) => (
+              <button
+                key={i}
+                className={`cal-day ${!cell ? 'empty' : ''} ${cell?.date === todayStr ? 'today' : ''} ${cell?.date === selectedDate ? 'selected' : ''} ${cell?.data ? 'has-data' : ''}`}
+                disabled={!cell}
+                onClick={() => cell && handleDayClick(cell.date)}
+              >
+                {cell && (
+                  <>
+                    <span className="cal-day-num">{cell.day}</span>
+                    {cell.data && (
+                      <div className="cal-day-dots">
+                        {cell.data.expense > 0 && <span className="cal-dot cal-dot-expense" />}
+                        {cell.data.income > 0 && <span className="cal-dot cal-dot-income" />}
+                      </div>
+                    )}
+                    {cell.data && <span className="cal-day-count">{cell.data.count}</span>}
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
+          {selectedDate && calendarData[selectedDate] && (
+            <div className="cal-day-summary">
+              <span className="cal-summary-date">{formatDate(selectedDate)}</span>
+              <span className="cal-summary-stat">
+                {calendarData[selectedDate].count} txn{calendarData[selectedDate].count !== 1 ? 's' : ''}
+                {calendarData[selectedDate].income > 0 && <span className="amount-positive"> +{formatCurrency(calendarData[selectedDate].income, currency)}</span>}
+                {calendarData[selectedDate].expense > 0 && <span className="amount-negative"> -{formatCurrency(calendarData[selectedDate].expense, currency)}</span>}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

@@ -277,7 +277,7 @@ export default function PlannedPayments() {
       ) : (
         <div className="planned-list">
           {sortedPayments.map((payment) => (
-            <div key={payment.id} className={`planned-item ${!payment.enabled ? 'paused' : ''} ${isOverdue(payment.nextDate) && payment.enabled ? 'overdue' : ''}`}>
+            <div key={payment.id} className={`planned-item ${!payment.enabled ? 'paused' : ''} ${isOverdue(payment.nextDate) && payment.enabled ? 'overdue' : ''} ${!isOverdue(payment.nextDate) && getDaysUntil(payment.nextDate) === 'Due today' && payment.enabled ? 'due-today' : ''}`}>
               <div className="planned-item-icon">
                 {getCategoryIcon(payment.categoryId)}
               </div>
@@ -288,7 +288,7 @@ export default function PlannedPayments() {
                   {payment.accountId && ` · ${getAccountName(payment.accountId)}`}
                   {payment.categoryId && ` · ${getCategoryName(payment.categoryId)}`}
                 </p>
-                <p className={`planned-item-due ${isOverdue(payment.nextDate) && payment.enabled ? 'overdue-text' : ''}`}>
+                <p className={`planned-item-due ${isOverdue(payment.nextDate) && payment.enabled ? 'overdue-text' : ''} ${!isOverdue(payment.nextDate) && getDaysUntil(payment.nextDate) === 'Due today' && payment.enabled ? 'due-today-text' : ''}`}>
                   {getDaysUntil(payment.nextDate)} · {formatDate(payment.nextDate)}
                 </p>
               </div>
