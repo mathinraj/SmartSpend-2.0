@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
 import { getCurrencySymbol } from '../utils/currencies';
@@ -27,6 +27,7 @@ const baseNavItems = [
 export default function Sidebar() {
   const { state, dispatch } = useApp();
   const pathname = usePathname();
+  const router = useRouter();
   const sampleLoaded = hasSampleData(state.accounts);
 
   const feedbackLabel = useMemo(() => {
@@ -45,6 +46,16 @@ export default function Sidebar() {
     return pathname === path;
   }
 
+  function handleNav(e, path) {
+    e.preventDefault();
+    if (path === pathname) return;
+    if (path === '/' || pathname === '/') {
+      router.push(path);
+    } else {
+      router.replace(path);
+    }
+  }
+
   return (
     <aside className="sidebar">
       <Link href="/" className="sidebar-brand">
@@ -58,14 +69,15 @@ export default function Sidebar() {
           if (item.requiresPlanned && !state.settings.plannedEnabled) return false;
           return true;
         }).map((item) => (
-          <Link
+          <a
             key={item.path}
             href={item.path}
             className={`sidebar-link ${isActive(item.path) ? 'active' : ''}`}
+            onClick={(e) => handleNav(e, item.path)}
           >
             <i className={`${item.icon} sidebar-link-icon`} />
             <span className="sidebar-link-label">{item.label}</span>
-          </Link>
+          </a>
         ))}
       </nav>
 
@@ -76,21 +88,23 @@ export default function Sidebar() {
         </button>
       )}
 
-      <Link
+      <a
         href="/feedback"
         className={`sidebar-link sidebar-prefs-link ${isActive('/feedback') ? 'active' : ''}`}
+        onClick={(e) => handleNav(e, '/feedback')}
       >
         <i className={`${feedbackLabel.icon} sidebar-link-icon`} />
         <span className="sidebar-link-label">{feedbackLabel.label}</span>
-      </Link>
+      </a>
 
-      <Link
+      <a
         href="/preferences"
         className={`sidebar-link sidebar-prefs-link ${isActive('/preferences') ? 'active' : ''}`}
+        onClick={(e) => handleNav(e, '/preferences')}
       >
         <i className="fa-solid fa-gear sidebar-link-icon" />
         <span className="sidebar-link-label">Preferences</span>
-      </Link>
+      </a>
 
       <div className="sidebar-footer">
         <p className="sidebar-footer-text">SpendTrak v2.0</p>

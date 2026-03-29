@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import './BottomNav.css';
 
 const navItems = [
@@ -14,20 +13,32 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   function isActive(path) {
     if (path === '/') return pathname === '/';
     return pathname === path;
   }
 
+  function handleNav(e, path) {
+    e.preventDefault();
+    if (path === pathname) return;
+    if (path === '/' || pathname === '/') {
+      router.push(path);
+    } else {
+      router.replace(path);
+    }
+  }
+
   return (
     <nav className="bottom-nav">
       <div className="bottom-nav-inner">
         {navItems.map((item) => (
-          <Link
+          <a
             key={item.path}
             href={item.path}
             className={`nav-item ${isActive(item.path) ? 'active' : ''} ${item.isCenter ? 'nav-center' : ''}`}
+            onClick={(e) => handleNav(e, item.path)}
           >
             {item.isCenter ? (
               <span className="nav-center-btn">
@@ -39,7 +50,7 @@ export default function BottomNav() {
                 <span className="nav-label">{item.label}</span>
               </>
             )}
-          </Link>
+          </a>
         ))}
       </div>
     </nav>
