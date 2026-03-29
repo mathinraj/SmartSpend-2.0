@@ -35,6 +35,18 @@ export default function Sidebar() {
     return FEEDBACK_LABELS[idx];
   }, []);
 
+  const dueCount = useMemo(() => {
+    if (!state.settings.plannedEnabled || !state.plannedPayments) return 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return state.plannedPayments.filter((p) => {
+      if (!p.enabled) return false;
+      const d = new Date(p.nextDate);
+      d.setHours(0, 0, 0, 0);
+      return d <= now;
+    }).length;
+  }, [state.plannedPayments, state.settings.plannedEnabled]);
+
   function handleRemoveSample() {
     if (window.confirm('Remove all sample data? Your own data will be kept.')) {
       dispatch({ type: 'REMOVE_SAMPLE_DATA' });
@@ -77,6 +89,7 @@ export default function Sidebar() {
           >
             <i className={`${item.icon} sidebar-link-icon`} />
             <span className="sidebar-link-label">{item.label}</span>
+            {item.path === '/planned' && dueCount > 0 && <span className="sidebar-badge">{dueCount}</span>}
           </a>
         ))}
       </nav>

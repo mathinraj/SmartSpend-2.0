@@ -1,6 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useApp } from '../context/AppContext';
 import './BottomNav.css';
 
 const navItems = [
@@ -14,6 +16,19 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { state } = useApp();
+
+  const dueCount = useMemo(() => {
+    if (!state.settings.plannedEnabled || !state.plannedPayments) return 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return state.plannedPayments.filter((p) => {
+      if (!p.enabled) return false;
+      const d = new Date(p.nextDate);
+      d.setHours(0, 0, 0, 0);
+      return d <= now;
+    }).length;
+  }, [state.plannedPayments, state.settings.plannedEnabled]);
 
   function isActive(path) {
     if (path === '/') return pathname === '/';
@@ -47,6 +62,7 @@ export default function BottomNav() {
             ) : (
               <>
                 <i className={`${item.icon} nav-icon`} />
+                {item.path === '/' && dueCount > 0 && <span className="nav-badge">{dueCount}</span>}
                 <span className="nav-label">{item.label}</span>
               </>
             )}

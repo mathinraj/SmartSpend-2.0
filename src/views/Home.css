@@ -320,6 +320,80 @@
   color: var(--text);
 }
 
+/* Due payment alert banner */
+.due-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  animation: fadeIn 0.3s ease;
+  transition: transform 0.15s;
+}
+
+.due-alert-banner:hover {
+  transform: translateY(-1px);
+}
+
+.due-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.due-alert i {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.due-alert-arrow {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.due-alert-overdue {
+  color: #c0392b;
+}
+
+.due-alert-banner:has(.due-alert-overdue) {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1.5px solid rgba(255, 107, 107, 0.25);
+}
+
+.due-alert-banner:has(.due-alert-overdue) .due-alert-arrow {
+  color: rgba(255, 107, 107, 0.5);
+}
+
+.due-alert-today {
+  color: #e67e22;
+}
+
+.due-alert-banner:has(.due-alert-today) {
+  background: rgba(253, 203, 110, 0.12);
+  border: 1.5px solid rgba(253, 203, 110, 0.35);
+}
+
+.due-alert-banner:has(.due-alert-today) .due-alert-arrow {
+  color: rgba(253, 203, 110, 0.6);
+}
+
+.due-alert-upcoming {
+  color: #4285F4;
+}
+
+.due-alert-banner:has(.due-alert-upcoming) {
+  background: rgba(66, 133, 244, 0.06);
+  border: 1.5px solid rgba(66, 133, 244, 0.18);
+}
+
+.due-alert-banner:has(.due-alert-upcoming) .due-alert-arrow {
+  color: rgba(66, 133, 244, 0.4);
+}
+
 .balance-card {
   background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
   border-radius: var(--radius);

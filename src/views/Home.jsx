@@ -227,6 +227,28 @@ export default function Home() {
     return Object.values(balMap).filter((v) => v > 0).reduce((s, v) => s + v, 0);
   }, [state.splitLedger, settings]);
 
+  const duePayments = useMemo(() => {
+    if (!settings.plannedEnabled || !state.plannedPayments) return { overdue: [], dueToday: [], upcoming: [] };
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const weekFromNow = new Date(now);
+    weekFromNow.setDate(weekFromNow.getDate() + 3);
+    const overdue = [];
+    const dueToday = [];
+    const upcoming = [];
+    state.plannedPayments.filter((p) => p.enabled).forEach((p) => {
+      const d = new Date(p.nextDate);
+      d.setHours(0, 0, 0, 0);
+      const diff = Math.ceil((d - now) / 86400000);
+      if (diff < 0) overdue.push({ ...p, diffDays: Math.abs(diff) });
+      else if (diff === 0) dueToday.push(p);
+      else if (diff <= 3) upcoming.push({ ...p, diffDays: diff });
+    });
+    return { overdue, dueToday, upcoming };
+  }, [state.plannedPayments, settings.plannedEnabled]);
+
+  const dueAlertCount = duePayments.overdue.length + duePayments.dueToday.length;
+
   const recentTransactions = transactions.slice(0, isDesktop ? 8 : 5);
 
   function getCategoryInfo(txn) {
@@ -287,6 +309,40 @@ export default function Home() {
             </button>
           </div>
         </div>
+      )}
+
+      {(duePayments.overdue.length > 0 || duePayments.dueToday.length > 0 || duePayments.upcoming.length > 0) && (
+        <Link href="/planned" className="due-alert-banner">
+          {duePayments.overdue.length > 0 ? (
+            <div className="due-alert due-alert-overdue">
+              <i className="fa-solid fa-circle-exclamation" />
+              <span>
+                {duePayments.overdue.length === 1
+                  ? `${duePayments.overdue[0].name} is ${duePayments.overdue[0].diffDays}d overdue`
+                  : `${duePayments.overdue.length} payments are overdue`}
+              </span>
+            </div>
+          ) : duePayments.dueToday.length > 0 ? (
+            <div className="due-alert due-alert-today">
+              <i className="fa-solid fa-bell" />
+              <span>
+                {duePayments.dueToday.length === 1
+                  ? `${duePayments.dueToday[0].name} is due today`
+                  : `${duePayments.dueToday.length} payments due today`}
+              </span>
+            </div>
+          ) : (
+            <div className="due-alert due-alert-upcoming">
+              <i className="fa-solid fa-calendar-day" />
+              <span>
+                {duePayments.upcoming.length === 1
+                  ? `${duePayments.upcoming[0].name} due in ${duePayments.upcoming[0].diffDays}d`
+                  : `${duePayments.upcoming.length} payments coming up`}
+              </span>
+            </div>
+          )}
+          <i className="fa-solid fa-chevron-right due-alert-arrow" />
+        </Link>
       )}
 
       {showReminderHint && (

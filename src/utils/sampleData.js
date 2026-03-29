@@ -148,11 +148,12 @@ export function generateSampleData() {
   }
 
   const plannedPaymentsData = [
-    { name: 'ICICI Credit Card Bill', amount: 18640, frequency: 'monthly', nextDate: getNextDueDate(5), accountId: 'acc_sbi', categoryId: 'bills', note: 'Auto-pay from SBI', enabled: true },
+    { name: 'ICICI Credit Card Bill', amount: 18640, frequency: 'monthly', nextDate: daysAgo(3), accountId: 'acc_sbi', categoryId: 'bills', note: 'Auto-pay from SBI', enabled: true },
+    { name: 'Mobile Recharge', amount: 299, frequency: 'monthly', nextDate: daysAgo(1), accountId: 'acc_paytm', categoryId: 'bills', note: 'Airtel prepaid', enabled: true },
+    { name: 'Room Rent', amount: 8500, frequency: 'monthly', nextDate: toDateInputValue(new Date()), accountId: 'acc_sbi', categoryId: 'bills', note: 'Monthly rent share', enabled: true },
+    { name: 'Netflix Subscription', amount: 649, frequency: 'monthly', nextDate: daysFromNow(2), accountId: 'acc_icici_cc', categoryId: 'entertainment', note: 'Premium plan', enabled: true },
     { name: 'HDFC Credit Card Bill', amount: 11280, frequency: 'monthly', nextDate: getNextDueDate(18), accountId: 'acc_hdfc', categoryId: 'bills', note: 'Pay from HDFC Savings', enabled: true },
-    { name: 'Netflix Subscription', amount: 649, frequency: 'monthly', nextDate: daysFromNow(5), accountId: 'acc_icici_cc', categoryId: 'entertainment', note: 'Premium plan', enabled: true },
     { name: 'Jio Fiber Internet', amount: 1199, frequency: 'monthly', nextDate: daysFromNow(12), accountId: 'acc_hdfc', categoryId: 'bills', note: '100 Mbps plan', enabled: true },
-    { name: 'Room Rent', amount: 8500, frequency: 'monthly', nextDate: daysFromNow(1), accountId: 'acc_sbi', categoryId: 'bills', note: 'Monthly rent share', enabled: true },
     { name: 'Gym Membership', amount: 4500, frequency: 'monthly', nextDate: daysFromNow(18), accountId: 'acc_hdfc', categoryId: 'health', note: 'Cult.fit yearly split', enabled: true },
     { name: 'Electricity Bill', amount: 2100, frequency: 'monthly', nextDate: daysFromNow(8), accountId: 'acc_hdfc', categoryId: 'bills', note: '', enabled: true },
     { name: 'Health Insurance', amount: 15000, frequency: 'quarterly', nextDate: daysFromNow(45), accountId: 'acc_hdfc', categoryId: 'bills', note: 'HDFC Ergo policy', enabled: true },
