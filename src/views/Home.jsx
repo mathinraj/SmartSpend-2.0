@@ -2,13 +2,23 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
 import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { formatDate, getAccountIcon, generateId } from '../utils/helpers';
 import { hasSampleData } from '../utils/sampleData';
+import * as gDrive from '../utils/googleDrive';
 import './Home.css';
+
+const BACKUP_MESSAGES = [
+  { icon: 'fa-solid fa-shield-halved', text: 'Your data is stored locally. Back it up to stay safe!', action: 'backup' },
+  { icon: 'fa-brands fa-google-drive', text: 'Sync to Google Drive so you never lose your data', action: 'gdrive' },
+  { icon: 'fa-solid fa-cloud-arrow-up', text: 'One tap to back up. Don\'t risk losing your finances!', action: 'gdrive' },
+  { icon: 'fa-solid fa-triangle-exclamation', text: 'Clearing browser data will erase everything. Back up now!', action: 'backup' },
+  { icon: 'fa-brands fa-google-drive', text: 'Push your data to Google Drive — free and private', action: 'gdrive' },
+];
 
 export default function Home() {
   const { state, dispatch } = useApp();
@@ -16,6 +26,113 @@ export default function Home() {
   const currency = settings.currency;
   const isDesktop = useIsDesktop();
   const toast = useToast();
+  const router = useRouter();
+
+  const [showBackupHint, setShowBackupHint] = useState(false);
+  const [backupMsg, setBackupMsg] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [showSyncMenu, setShowSyncMenu] = useState(false);
+
+  useEffect(() => {
+    if (settings.onboardStep < 2) return;
+    if (accounts.length === 0 && transactions.length === 0) return;
+    const dismissed = sessionStorage.getItem('spendtraq_backup_hint_dismissed');
+    if (dismissed) return;
+    const lastBackup = parseInt(localStorage.getItem('spendtraq_last_backup_reminder') || '0', 10);
+    const daysSince = (Date.now() - lastBackup) / 86400000;
+    if (daysSince < 1) return;
+    const idx = Math.floor(Date.now() / 86400000) % BACKUP_MESSAGES.length;
+    setBackupMsg(BACKUP_MESSAGES[idx]);
+    setShowBackupHint(true);
+  }, []);
+
+  function dismissBackupHint() {
+    setShowBackupHint(false);
+    sessionStorage.setItem('spendtraq_backup_hint_dismissed', '1');
+  }
+
+  async function handleQuickSync() {
+    if (!gDrive.isConfigured()) {
+      router.push('/preferences');
+      toast('Set up Google Drive sync in Backup & Sync', 'info');
+      return;
+    }
+    if (!settings.gdriveEmail) {
+      router.push('/preferences');
+      toast('Connect Google Drive first in Backup & Sync', 'info');
+      return;
+    }
+    setSyncing(true);
+    try {
+      let token = gDrive.getAccessToken();
+      if (!token) {
+        try { token = await gDrive.requestAccessToken({ prompt: 'none' }); } catch {}
+      }
+      if (!token) {
+        toast('Google Drive session expired. Please reconnect in Preferences.', 'warning');
+        setSyncing(false);
+        return;
+      }
+      const payload = {
+        settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined },
+        accounts,
+        transactions,
+        categories: state.categories,
+        plannedPayments: state.plannedPayments,
+        splitLedger: state.splitLedger,
+      };
+      await gDrive.uploadSyncData(payload);
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
+      localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
+      toast('Synced to Google Drive!', 'success');
+      dismissBackupHint();
+    } catch (err) {
+      if (err.message === 'AUTH_EXPIRED') {
+        toast('Session expired. Reconnect Google Drive in Preferences.', 'warning');
+      } else {
+        console.error('Quick sync error:', err);
+        toast('Sync failed. Try again or use Preferences → Backup.', 'error');
+      }
+    }
+    setSyncing(false);
+  }
+
+  async function handleQuickPull() {
+    setShowSyncMenu(false);
+    setSyncing(true);
+    try {
+      let token = gDrive.getAccessToken();
+      if (!token) {
+        try { token = await gDrive.requestAccessToken({ prompt: 'none' }); } catch {}
+      }
+      if (!token) {
+        toast('Google Drive session expired. Please reconnect in Preferences.', 'warning');
+        setSyncing(false);
+        return;
+      }
+      const data = await gDrive.downloadSyncData();
+      if (!data) {
+        toast('No backup found in your Google Drive', 'info');
+        setSyncing(false);
+        return;
+      }
+      if (data.settings) {
+        const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
+        dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
+      toast('Data restored from Google Drive!', 'success');
+    } catch (err) {
+      if (err.message === 'AUTH_EXPIRED') {
+        toast('Session expired. Reconnect Google Drive in Preferences.', 'warning');
+      } else {
+        console.error('Quick pull error:', err);
+        toast('Pull failed. Try again in Preferences → Backup.', 'error');
+      }
+    }
+    setSyncing(false);
+  }
 
   const [showReminderHint, setShowReminderHint] = useState(false);
   useEffect(() => {
@@ -149,6 +266,29 @@ export default function Home() {
         </div>
       )}
 
+      {showBackupHint && backupMsg && (
+        <div className="backup-hint">
+          <div className="backup-hint-content">
+            <i className={backupMsg.icon} />
+            <span>{backupMsg.text}</span>
+          </div>
+          <div className="backup-hint-actions">
+            {backupMsg.action === 'gdrive' ? (
+              <button className="backup-hint-btn" onClick={handleQuickSync} disabled={syncing}>
+                {syncing ? <i className="fa-solid fa-spinner fa-spin" /> : 'Sync'}
+              </button>
+            ) : (
+              <button className="backup-hint-btn" onClick={() => { dismissBackupHint(); router.push('/preferences'); }}>
+                Backup
+              </button>
+            )}
+            <button className="backup-hint-dismiss" onClick={dismissBackupHint}>
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {showReminderHint && (
         <div className="reminder-hint">
           <div className="reminder-hint-content">
@@ -184,9 +324,44 @@ export default function Home() {
             )}
           </div>
         </div>
-        <Link href="/preferences" className="home-settings-btn" title="Preferences">
-          <i className="fa-solid fa-gear" />
-        </Link>
+        <div className="home-header-actions">
+          {settings.gdriveEmail && (
+            <div className="home-sync-wrap">
+              <button
+                className="home-sync-btn"
+                onClick={() => !syncing && setShowSyncMenu(!showSyncMenu)}
+                disabled={syncing}
+                title="Google Drive Sync"
+              >
+                {syncing ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-cloud" />}
+              </button>
+              {showSyncMenu && (
+                <>
+                  <div className="sync-menu-backdrop" onClick={() => setShowSyncMenu(false)} />
+                  <div className="sync-menu">
+                    <button className="sync-menu-item" onClick={() => { setShowSyncMenu(false); handleQuickSync(); }}>
+                      <i className="fa-solid fa-cloud-arrow-up" style={{ color: '#4285F4' }} />
+                      <div>
+                        <p className="sync-menu-title">Push to Drive</p>
+                        <p className="sync-menu-desc">Upload local data</p>
+                      </div>
+                    </button>
+                    <button className="sync-menu-item" onClick={handleQuickPull}>
+                      <i className="fa-solid fa-cloud-arrow-down" style={{ color: '#34A853' }} />
+                      <div>
+                        <p className="sync-menu-title">Pull from Drive</p>
+                        <p className="sync-menu-desc">Merge cloud data</p>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <Link href="/preferences" className="home-settings-btn" title="Preferences">
+            <i className="fa-solid fa-gear" />
+          </Link>
+        </div>
       </div>
 
       {isDesktop ? (
