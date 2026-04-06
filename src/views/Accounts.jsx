@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
@@ -33,38 +33,33 @@ const CARD_SUBTYPES = [
 
 const CUSTOM_ICONS = ['₿', '🪙', '💎', '📈', '🏠', '🚗', '🎮', '🛒', '💰', '🔗', '⭐', '🌐'];
 
-const LOGO_DEV_TOKEN = 'pk_SqOogVpDQOG4Mn_cpMwthw';
+const BRANDFETCH_CLIENT_ID = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || '';
 
 function getLogoUrl(domain) {
-  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=64&format=png`;
+  return `https://cdn.brandfetch.io/${domain}/w/128/h/128/theme/light/fallback/lettermark/type/icon?c=${BRANDFETCH_CLIENT_ID}`;
 }
 
-const COMMON_BANKS = [
-  { name: 'HDFC Bank', domain: 'hdfcbank.com' },
-  { name: 'SBI', domain: 'sbi.co.in' },
-  { name: 'ICICI Bank', domain: 'icicibank.com' },
-  { name: 'Axis Bank', domain: 'axisbank.com' },
-  { name: 'Kotak', domain: 'kotak.com' },
-  { name: 'IndusInd', domain: 'indusind.com' },
-  { name: 'Yes Bank', domain: 'yesbank.in' },
-  { name: 'PNB', domain: 'pnbindia.in' },
-  { name: 'Bank of Baroda', domain: 'bankofbaroda.in' },
-  { name: 'Canara Bank', domain: 'canarabank.com' },
-  { name: 'IDFC First', domain: 'idfcfirstbank.com' },
-  { name: 'Federal Bank', domain: 'federalbank.co.in' },
-  { name: 'RBL Bank', domain: 'rblbank.com' },
-  { name: 'DBS', domain: 'dbs.com' },
-  { name: 'GPay', domain: 'pay.google.com' },
-  { name: 'PhonePe', domain: 'phonepe.com' },
-  { name: 'Paytm', domain: 'paytm.com' },
-  { name: 'Amazon Pay', domain: 'amazon.in' },
-  { name: 'CRED', domain: 'cred.club' },
-  { name: 'Visa', domain: 'visa.com' },
-  { name: 'Mastercard', domain: 'mastercard.com' },
-  { name: 'RuPay', domain: 'rupay.co.in' },
-  { name: 'American Express', domain: 'americanexpress.com' },
-  { name: 'PayPal', domain: 'paypal.com' },
-];
+const logoSearchCache = {};
+
+async function searchLogos(query) {
+  if (!query.trim()) return [];
+  const cacheKey = query.trim().toLowerCase();
+  if (logoSearchCache[cacheKey]) return logoSearchCache[cacheKey];
+  try {
+    const res = await fetch(`https://api.brandfetch.io/v2/search/${encodeURIComponent(query)}?c=${BRANDFETCH_CLIENT_ID}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results = (Array.isArray(data) ? data : []).map((item) => ({
+      name: item.name || item.domain,
+      domain: item.domain,
+      icon: item.icon,
+    })).filter((item) => item.domain);
+    logoSearchCache[cacheKey] = results;
+    return results;
+  } catch {
+    return [];
+  }
+}
 
 const TYPE_SECTIONS = [
   { type: 'bank', title: 'Bank Accounts', icon: 'fa-solid fa-building-columns' },
@@ -94,6 +89,8 @@ export default function Accounts() {
   const [showLogoSearch, setShowLogoSearch] = useState(false);
   const [logoQuery, setLogoQuery] = useState('');
   const [logoResults, setLogoResults] = useState([]);
+  const [logoSearching, setLogoSearching] = useState(false);
+  const logoDebounceRef = useRef(null);
   const [newCustomLabel, setNewCustomLabel] = useState('');
   const [newCustomIcon, setNewCustomIcon] = useState('🪙');
   const [reorderMode, setReorderMode] = useState(false);
@@ -237,18 +234,21 @@ export default function Accounts() {
     toast('Custom type added!', 'success');
   }
 
-  function handleLogoSearch(query) {
+  const handleLogoSearch = useCallback((query) => {
     setLogoQuery(query);
+    if (logoDebounceRef.current) clearTimeout(logoDebounceRef.current);
     if (!query.trim()) {
-      setLogoResults(COMMON_BANKS);
+      setLogoResults([]);
+      setLogoSearching(false);
       return;
     }
-    const q = query.toLowerCase();
-    const filtered = COMMON_BANKS.filter((b) => b.name.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q));
-    const custom = { name: query.trim(), domain: query.trim().toLowerCase().replace(/\s+/g, '') + '.com' };
-    const hasExact = filtered.some((b) => b.domain === custom.domain);
-    setLogoResults(hasExact ? filtered : [custom, ...filtered]);
-  }
+    setLogoSearching(true);
+    logoDebounceRef.current = setTimeout(async () => {
+      const results = await searchLogos(query);
+      setLogoResults(results);
+      setLogoSearching(false);
+    }, 350);
+  }, []);
 
   function selectLogo(domain) {
     setForm({ ...form, logoUrl: getLogoUrl(domain) });
@@ -612,11 +612,11 @@ export default function Accounts() {
               <div className="logo-preview-row">
                 <img src={form.logoUrl} alt="" className="logo-preview-img" />
                 <span className="logo-preview-label">Logo selected</span>
-                <button type="button" className="logo-preview-change" onClick={() => { setShowLogoSearch(true); setLogoResults(COMMON_BANKS); setLogoQuery(''); }}>Change</button>
+                <button type="button" className="logo-preview-change" onClick={() => { setShowLogoSearch(true); setLogoResults([]); setLogoQuery(''); }}>Change</button>
                 <button type="button" className="logo-preview-remove" onClick={removeLogo}><i className="fa-solid fa-xmark" /></button>
               </div>
             ) : (
-              <button type="button" className="logo-search-trigger" onClick={() => { setShowLogoSearch(true); setLogoResults(COMMON_BANKS); setLogoQuery(''); }}>
+              <button type="button" className="logo-search-trigger" onClick={() => { setShowLogoSearch(true); setLogoResults([]); setLogoQuery(''); }}>
                 <i className="fa-solid fa-magnifying-glass" />
                 <span>Search for bank / app logo</span>
               </button>
@@ -626,19 +626,30 @@ export default function Accounts() {
                 <input
                   type="text"
                   className="form-input logo-search-input"
-                  placeholder="Search bank, app, or type domain..."
+                  placeholder="Search bank, wallet, app name..."
                   value={logoQuery}
                   onChange={(e) => handleLogoSearch(e.target.value)}
                   autoFocus
                 />
-                <div className="logo-results-grid">
-                  {logoResults.map((item) => (
-                    <button key={item.domain} type="button" className="logo-result-item" onClick={() => selectLogo(item.domain)}>
-                      <img src={getLogoUrl(item.domain)} alt="" className="logo-result-img" onError={(e) => { e.target.src = ''; e.target.style.display = 'none'; }} />
-                      <span className="logo-result-name">{item.name}</span>
-                    </button>
-                  ))}
-                </div>
+                {logoSearching && (
+                  <p className="logo-search-status"><i className="fa-solid fa-spinner fa-spin" /> Searching...</p>
+                )}
+                {!logoSearching && logoQuery.trim() && logoResults.length === 0 && (
+                  <p className="logo-search-status">No results found</p>
+                )}
+                {!logoSearching && !logoQuery.trim() && (
+                  <p className="logo-search-status"><i className="fa-solid fa-magnifying-glass" /> Type a name to search logos</p>
+                )}
+                {logoResults.length > 0 && (
+                  <div className="logo-results-grid">
+                    {logoResults.map((item) => (
+                      <button key={item.domain} type="button" className="logo-result-item" onClick={() => selectLogo(item.domain)}>
+                        <img src={item.icon || getLogoUrl(item.domain)} alt="" className="logo-result-img" onError={(e) => { e.target.style.opacity = '0.2'; }} />
+                        <span className="logo-result-name">{item.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <button type="button" className="logo-search-close" onClick={() => setShowLogoSearch(false)}>
                   Close
                 </button>
