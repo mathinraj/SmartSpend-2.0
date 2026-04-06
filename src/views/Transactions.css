@@ -178,6 +178,13 @@
   padding: 4px 8px;
 }
 
+.txn-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
 .txn-result-count {
   display: inline-flex;
   align-items: center;
@@ -188,8 +195,42 @@
   background: var(--bg-card);
   padding: 5px 12px;
   border-radius: 20px;
-  margin-bottom: 12px;
   box-shadow: var(--shadow);
+}
+
+.txn-balance-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-light);
+  background: var(--bg-card);
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.txn-balance-toggle i {
+  font-size: 0.68rem;
+}
+
+.txn-balance-toggle:hover {
+  color: var(--primary);
+}
+
+.txn-balance-toggle.active {
+  background: var(--primary);
+  color: white;
+}
+
+.txn-running-bal {
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-top: 2px;
+  color: var(--text-secondary);
 }
 
 /* Transaction layout (must be here, not only in Home.css) */

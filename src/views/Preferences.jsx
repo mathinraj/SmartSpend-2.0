@@ -800,6 +800,42 @@ export default function Preferences() {
             </label>
           </div>
 
+          {settings.splitEnabled && (
+            <>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Bank deduction on split</p>
+                  <p className="pref-row-desc">How much to deduct from your account balance</p>
+                </div>
+                <select
+                  className="pref-select"
+                  value={settings.splitBankDeduction || 'full'}
+                  onChange={(e) => updatePref('splitBankDeduction', e.target.value)}
+                >
+                  <option value="full">Full amount</option>
+                  <option value="my_share">Only my share</option>
+                </select>
+              </div>
+
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Record expense as</p>
+                  <p className="pref-row-desc">What shows as your expense in analytics</p>
+                </div>
+                <select
+                  className="pref-select"
+                  value={settings.splitExpenseRecord || 'my_share'}
+                  onChange={(e) => updatePref('splitExpenseRecord', e.target.value)}
+                >
+                  <option value="my_share">Only my share</option>
+                  <option value="full">Full amount</option>
+                </select>
+              </div>
+            </>
+          )}
+
           <div className="pref-divider" />
 
           <div className="pref-row">

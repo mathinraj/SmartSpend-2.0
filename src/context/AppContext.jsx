@@ -82,8 +82,10 @@ function appReducer(state, action) {
           a.id === txn.accountId ? { ...a, balance: a.balance + txn.amount } : a
         );
       } else if (txn.type === 'expense') {
+        const deductMyShareOnly = state.settings.splitBankDeduction === 'my_share' && txn.isSplit && txn.splitAmount > 0;
+        const deductAmount = deductMyShareOnly ? (txn.amount - txn.splitAmount) : txn.amount;
         updatedAccounts = updatedAccounts.map((a) =>
-          a.id === txn.accountId ? { ...a, balance: a.balance - txn.amount } : a
+          a.id === txn.accountId ? { ...a, balance: a.balance - deductAmount } : a
         );
       } else if (txn.type === 'transfer') {
         updatedAccounts = updatedAccounts.map((a) => {

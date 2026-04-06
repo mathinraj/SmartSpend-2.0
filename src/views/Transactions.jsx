@@ -44,6 +44,7 @@ export default function Transactions() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showRunningBalance, setShowRunningBalance] = useState(false);
 
   // Advanced filters
   const [filterCategoryIds, setFilterCategoryIds] = useState([]);
@@ -169,6 +170,32 @@ export default function Transactions() {
     setFilterAmountMin('');
     setFilterAmountMax('');
   }
+
+  const runningBalances = useMemo(() => {
+    if (!showRunningBalance) return {};
+    const balMap = {};
+    accounts.forEach((a) => { balMap[a.id] = a.balance; });
+    const sorted = [...transactions].sort((a, b) => {
+      const dateCmp = b.date.localeCompare(a.date);
+      if (dateCmp !== 0) return dateCmp;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    const result = {};
+    sorted.forEach((t) => {
+      if (t.type === 'income' && t.accountId) {
+        result[t.id] = balMap[t.accountId] ?? null;
+        balMap[t.accountId] = (balMap[t.accountId] || 0) - t.amount;
+      } else if (t.type === 'expense' && t.accountId) {
+        result[t.id] = balMap[t.accountId] ?? null;
+        balMap[t.accountId] = (balMap[t.accountId] || 0) + t.amount;
+      } else if (t.type === 'transfer') {
+        result[t.id] = balMap[t.toAccountId] ?? null;
+        if (t.fromAccountId) balMap[t.fromAccountId] = (balMap[t.fromAccountId] || 0) + t.amount;
+        if (t.toAccountId) balMap[t.toAccountId] = (balMap[t.toAccountId] || 0) - t.amount;
+      }
+    });
+    return result;
+  }, [showRunningBalance, transactions, accounts]);
 
   const allCategories = [...categories.expense, ...categories.income];
 
@@ -368,7 +395,17 @@ export default function Transactions() {
         </div>
       )}
 
-      <p className="txn-result-count">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</p>
+      <div className="txn-toolbar">
+        <p className="txn-result-count">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</p>
+        <button
+          className={`txn-balance-toggle ${showRunningBalance ? 'active' : ''}`}
+          onClick={() => setShowRunningBalance(!showRunningBalance)}
+          title="Show running balance"
+        >
+          <i className="fa-solid fa-scale-balanced" />
+          <span>Balance</span>
+        </button>
+      </div>
 
       {grouped.length === 0 ? (
         <div className="empty-state">
@@ -405,6 +442,11 @@ export default function Transactions() {
                         {txn.type === 'income' ? '+' : txn.type === 'expense' ? '-' : ''}
                         {formatCurrency(txn.amount, currency)}
                       </p>
+                      {showRunningBalance && runningBalances[txn.id] != null && (
+                        <p className="txn-running-bal">
+                          Bal: {formatCurrency(runningBalances[txn.id], currency)}
+                        </p>
+                      )}
                       {isDesktop ? (
                         <div className="txn-action-btns">
                           <button className="txn-action-btn edit" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} title="Edit">
