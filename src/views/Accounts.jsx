@@ -91,7 +91,9 @@ export default function Accounts() {
     return () => clearTimeout(timer);
   }, [settings.balancePeekUntil, dispatch]);
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalBalance = accounts
+    .filter((a) => !(settings.excludeCCFromBalance && a.type === 'card' && a.subType === 'credit'))
+    .reduce((s, a) => s + a.balance, 0);
   const bankAccounts = accounts.filter((a) => a.type === 'bank');
 
   const allSections = useMemo(() => {

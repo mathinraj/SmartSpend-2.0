@@ -198,8 +198,10 @@ export default function Home() {
   }
 
   const totalBalance = useMemo(
-    () => accounts.reduce((sum, a) => sum + a.balance, 0),
-    [accounts]
+    () => accounts
+      .filter((a) => !(settings.excludeCCFromBalance && a.type === 'card' && a.subType === 'credit'))
+      .reduce((sum, a) => sum + a.balance, 0),
+    [accounts, settings.excludeCCFromBalance]
   );
 
   const monthlyStats = useMemo(() => {

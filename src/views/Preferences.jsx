@@ -708,6 +708,7 @@ export default function Preferences() {
                 { label: 'Income/Expense stats', desc: 'Below the main balance card', checked: settings.showBalanceStats !== false, onChange: (v) => updatePref('showBalanceStats', v) },
                 { label: 'Accounts section', desc: 'My Accounts on the home page', checked: settings.showAccountsOnHome !== false, onChange: (v) => updatePref('showAccountsOnHome', v) },
                 ...(settings.splitEnabled ? [{ label: 'Split money', desc: '"Others owe you" card', checked: settings.showSplitOnHome !== false, onChange: (v) => updatePref('showSplitOnHome', v) }] : []),
+                { label: 'Exclude credit cards', desc: 'Remove CC dues from total balance', checked: settings.excludeCCFromBalance === true, onChange: (v) => updatePref('excludeCCFromBalance', v) },
                 { label: 'Hide balances', desc: 'Mask amounts with *** for privacy', checked: settings.hideBalances === true, onChange: (v) => updatePref('hideBalances', v) },
               ].map((item) => (
                 <label key={item.label} className="dashboard-option-row">
