@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
@@ -33,6 +33,39 @@ const CARD_SUBTYPES = [
 
 const CUSTOM_ICONS = ['₿', '🪙', '💎', '📈', '🏠', '🚗', '🎮', '🛒', '💰', '🔗', '⭐', '🌐'];
 
+const LOGO_DEV_TOKEN = 'pk_SqOogVpDQOG4Mn_cpMwthw';
+
+function getLogoUrl(domain) {
+  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=64&format=png`;
+}
+
+const COMMON_BANKS = [
+  { name: 'HDFC Bank', domain: 'hdfcbank.com' },
+  { name: 'SBI', domain: 'sbi.co.in' },
+  { name: 'ICICI Bank', domain: 'icicibank.com' },
+  { name: 'Axis Bank', domain: 'axisbank.com' },
+  { name: 'Kotak', domain: 'kotak.com' },
+  { name: 'IndusInd', domain: 'indusind.com' },
+  { name: 'Yes Bank', domain: 'yesbank.in' },
+  { name: 'PNB', domain: 'pnbindia.in' },
+  { name: 'Bank of Baroda', domain: 'bankofbaroda.in' },
+  { name: 'Canara Bank', domain: 'canarabank.com' },
+  { name: 'IDFC First', domain: 'idfcfirstbank.com' },
+  { name: 'Federal Bank', domain: 'federalbank.co.in' },
+  { name: 'RBL Bank', domain: 'rblbank.com' },
+  { name: 'DBS', domain: 'dbs.com' },
+  { name: 'GPay', domain: 'pay.google.com' },
+  { name: 'PhonePe', domain: 'phonepe.com' },
+  { name: 'Paytm', domain: 'paytm.com' },
+  { name: 'Amazon Pay', domain: 'amazon.in' },
+  { name: 'CRED', domain: 'cred.club' },
+  { name: 'Visa', domain: 'visa.com' },
+  { name: 'Mastercard', domain: 'mastercard.com' },
+  { name: 'RuPay', domain: 'rupay.co.in' },
+  { name: 'American Express', domain: 'americanexpress.com' },
+  { name: 'PayPal', domain: 'paypal.com' },
+];
+
 const TYPE_SECTIONS = [
   { type: 'bank', title: 'Bank Accounts', icon: 'fa-solid fa-building-columns' },
   { type: 'card', title: 'Cards', icon: 'fa-solid fa-credit-card' },
@@ -56,19 +89,47 @@ export default function Accounts() {
   const [payBillAmount, setPayBillAmount] = useState('');
   const [payBillFrom, setPayBillFrom] = useState('');
   const [editAccount, setEditAccount] = useState(null);
-  const [form, setForm] = useState({ name: '', type: 'bank', subType: '', balance: '', billingDate: '', dueDate: '', creditLimit: '', customTypeId: '' });
+  const [form, setForm] = useState({ name: '', type: 'bank', subType: '', balance: '', billingDate: '', dueDate: '', creditLimit: '', customTypeId: '', logoUrl: '' });
   const [showAddCustom, setShowAddCustom] = useState(false);
+  const [showLogoSearch, setShowLogoSearch] = useState(false);
+  const [logoQuery, setLogoQuery] = useState('');
+  const [logoResults, setLogoResults] = useState([]);
   const [newCustomLabel, setNewCustomLabel] = useState('');
   const [newCustomIcon, setNewCustomIcon] = useState('🪙');
   const [reorderMode, setReorderMode] = useState(false);
   const [didReorder, setDidReorder] = useState(false);
   const dragIndex = useRef(null);
 
-  const [peekBalances, setPeekBalances] = useState(false);
-  const hideBalances = settings.hideBalances === true && !peekBalances;
+  const [, forceUpdate] = useState(0);
+  const peekActive = settings.balancePeekUntil && Date.now() < settings.balancePeekUntil;
+  const hideBalances = settings.hideBalances === true && !peekActive;
   const maskAmount = (val) => hideBalances ? 'xxxxx' : val;
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  function togglePeek() {
+    if (peekActive) {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+    } else {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: Date.now() + 60000 } });
+    }
+  }
+
+  useEffect(() => {
+    if (!settings.balancePeekUntil) return;
+    const remaining = settings.balancePeekUntil - Date.now();
+    if (remaining <= 0) {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+      return;
+    }
+    const timer = setTimeout(() => {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+      forceUpdate((n) => n + 1);
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [settings.balancePeekUntil, dispatch]);
+
+  const totalBalance = accounts
+    .filter((a) => !(settings.excludeCCFromBalance && a.type === 'card' && a.subType === 'credit'))
+    .reduce((s, a) => s + a.balance, 0);
   const bankAccounts = accounts.filter((a) => a.type === 'bank');
 
   const allSections = useMemo(() => {
@@ -107,8 +168,9 @@ export default function Accounts() {
 
   function openAdd() {
     setEditAccount(null);
-    setForm({ name: '', type: 'bank', subType: '', balance: '', billingDate: '', dueDate: '', creditLimit: '', customTypeId: '' });
+    setForm({ name: '', type: 'bank', subType: '', balance: '', billingDate: '', dueDate: '', creditLimit: '', customTypeId: '', logoUrl: '' });
     setShowAddCustom(false);
+    setShowLogoSearch(false);
     setShowModal(true);
   }
 
@@ -123,8 +185,10 @@ export default function Accounts() {
       dueDate: acc.dueDate || '',
       creditLimit: acc.creditLimit ? acc.creditLimit.toString() : '',
       customTypeId: acc.customTypeId || '',
+      logoUrl: acc.logoUrl || '',
     });
     setShowAddCustom(false);
+    setShowLogoSearch(false);
     setShowModal(true);
   }
 
@@ -139,6 +203,7 @@ export default function Accounts() {
     const payload = { name: form.name.trim(), type: form.type };
     if (form.subType) payload.subType = form.subType;
     if (form.type === 'custom' && form.customTypeId) payload.customTypeId = form.customTypeId;
+    payload.logoUrl = form.logoUrl || null;
 
     if (form.type === 'card' && form.subType === 'credit') {
       payload.billingDate = form.billingDate ? parseInt(form.billingDate) : null;
@@ -149,9 +214,11 @@ export default function Accounts() {
     if (editAccount) {
       dispatch({ type: 'UPDATE_ACCOUNT', payload: { id: editAccount.id, ...payload } });
     } else {
+      const rawBalance = parseFloat(form.balance) || 0;
+      const isCreditCard = form.type === 'card' && form.subType === 'credit';
       dispatch({
         type: 'ADD_ACCOUNT',
-        payload: { ...payload, balance: parseFloat(form.balance) || 0 },
+        payload: { ...payload, balance: isCreditCard ? -Math.abs(rawBalance) : rawBalance },
       });
     }
     setShowModal(false);
@@ -168,6 +235,29 @@ export default function Accounts() {
     setNewCustomLabel('');
     setNewCustomIcon('🪙');
     toast('Custom type added!', 'success');
+  }
+
+  function handleLogoSearch(query) {
+    setLogoQuery(query);
+    if (!query.trim()) {
+      setLogoResults(COMMON_BANKS);
+      return;
+    }
+    const q = query.toLowerCase();
+    const filtered = COMMON_BANKS.filter((b) => b.name.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q));
+    const custom = { name: query.trim(), domain: query.trim().toLowerCase().replace(/\s+/g, '') + '.com' };
+    const hasExact = filtered.some((b) => b.domain === custom.domain);
+    setLogoResults(hasExact ? filtered : [custom, ...filtered]);
+  }
+
+  function selectLogo(domain) {
+    setForm({ ...form, logoUrl: getLogoUrl(domain) });
+    setShowLogoSearch(false);
+    setLogoQuery('');
+  }
+
+  function removeLogo() {
+    setForm({ ...form, logoUrl: '' });
   }
 
   function removeCustomType(id) {
@@ -289,8 +379,11 @@ export default function Accounts() {
             </button>
           </div>
         )}
-        <div className="account-icon-wrap" style={{ background: getAccountColor(acc.type) + '15' }}>
-          <span className="account-icon">{getIconForAccount(acc)}</span>
+        <div className="account-icon-wrap" style={{ background: acc.logoUrl ? 'transparent' : getAccountColor(acc.type) + '15' }}>
+          {acc.logoUrl ? (
+            <img src={acc.logoUrl} alt="" className="account-logo-img" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+          ) : null}
+          <span className="account-icon" style={acc.logoUrl ? { display: 'none' } : undefined}>{getIconForAccount(acc)}</span>
         </div>
         <div className="account-info">
           <p className="account-name">{acc.name}</p>
@@ -344,8 +437,8 @@ export default function Accounts() {
         <div className="accounts-total-top">
           <p className="accounts-total-label">Total Balance</p>
           {settings.hideBalances && (
-            <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
-              <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+            <button className="balance-peek-btn" onClick={() => togglePeek()}>
+              <i className={`fa-solid ${peekActive ? 'fa-eye-slash' : 'fa-eye'}`} />
             </button>
           )}
         </div>
@@ -513,16 +606,57 @@ export default function Accounts() {
             />
           </div>
 
+          <div className="form-group">
+            <label className="form-label">Logo (optional)</label>
+            {form.logoUrl ? (
+              <div className="logo-preview-row">
+                <img src={form.logoUrl} alt="" className="logo-preview-img" />
+                <span className="logo-preview-label">Logo selected</span>
+                <button type="button" className="logo-preview-change" onClick={() => { setShowLogoSearch(true); setLogoResults(COMMON_BANKS); setLogoQuery(''); }}>Change</button>
+                <button type="button" className="logo-preview-remove" onClick={removeLogo}><i className="fa-solid fa-xmark" /></button>
+              </div>
+            ) : (
+              <button type="button" className="logo-search-trigger" onClick={() => { setShowLogoSearch(true); setLogoResults(COMMON_BANKS); setLogoQuery(''); }}>
+                <i className="fa-solid fa-magnifying-glass" />
+                <span>Search for bank / app logo</span>
+              </button>
+            )}
+            {showLogoSearch && (
+              <div className="logo-search-panel">
+                <input
+                  type="text"
+                  className="form-input logo-search-input"
+                  placeholder="Search bank, app, or type domain..."
+                  value={logoQuery}
+                  onChange={(e) => handleLogoSearch(e.target.value)}
+                  autoFocus
+                />
+                <div className="logo-results-grid">
+                  {logoResults.map((item) => (
+                    <button key={item.domain} type="button" className="logo-result-item" onClick={() => selectLogo(item.domain)}>
+                      <img src={getLogoUrl(item.domain)} alt="" className="logo-result-img" onError={(e) => { e.target.src = ''; e.target.style.display = 'none'; }} />
+                      <span className="logo-result-name">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className="logo-search-close" onClick={() => setShowLogoSearch(false)}>
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+
           {!editAccount && (
             <div className="form-group">
               <label className="form-label">
-                Initial Balance {form.type === 'card' && form.subType === 'credit' ? '(use negative for outstanding)' : ''}
+                {form.type === 'card' && form.subType === 'credit' ? 'Current Limit Used' : 'Initial Balance'}
               </label>
               <input
                 type="number"
                 className="form-input"
-                placeholder="0.00"
+                placeholder={form.type === 'card' && form.subType === 'credit' ? 'Enter 0 if no outstanding' : '0.00'}
                 step="0.01"
+                min="0"
                 value={form.balance}
                 onChange={(e) => setForm({ ...form, balance: e.target.value })}
               />

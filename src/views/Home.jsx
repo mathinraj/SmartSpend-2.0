@@ -34,7 +34,7 @@ export default function Home() {
   const [showSyncMenu, setShowSyncMenu] = useState(false);
 
   useEffect(() => {
-    if (settings.onboardStep < 2) return;
+    if (settings.onboardStep < 3) return;
     if (accounts.length === 0 && transactions.length === 0) return;
     const dismissed = sessionStorage.getItem('spendtraq_backup_hint_dismissed');
     if (dismissed) return;
@@ -74,13 +74,17 @@ export default function Home() {
         return;
       }
       const payload = {
-        settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined },
+        settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined, balancePeekUntil: undefined },
         accounts,
         transactions,
         categories: state.categories,
         plannedPayments: state.plannedPayments,
         splitLedger: state.splitLedger,
       };
+      if (settings.syncProfilePhoto) {
+        const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
+        if (photo) payload.profilePhoto = photo;
+      }
       await gDrive.uploadSyncData(payload);
       dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
       localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
@@ -119,6 +123,10 @@ export default function Home() {
       if (data.settings) {
         const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
         dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      if (data.profilePhoto) {
+        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
       }
       dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
       dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
@@ -190,8 +198,10 @@ export default function Home() {
   }
 
   const totalBalance = useMemo(
-    () => accounts.reduce((sum, a) => sum + a.balance, 0),
-    [accounts]
+    () => accounts
+      .filter((a) => !(settings.excludeCCFromBalance && a.type === 'card' && a.subType === 'credit'))
+      .reduce((sum, a) => sum + a.balance, 0),
+    [accounts, settings.excludeCCFromBalance]
   );
 
   const monthlyStats = useMemo(() => {
@@ -268,9 +278,32 @@ export default function Home() {
     return acc ? acc.name : 'Unknown';
   }
 
-  const [peekBalances, setPeekBalances] = useState(false);
-  const hideBalances = settings.hideBalances === true && !peekBalances;
-  const maskAmount = (val) => hideBalances ? 'xxxxx' : val;
+  const [, forceUpdate] = useState(0);
+  const peekActive = settings.balancePeekUntil && Date.now() < settings.balancePeekUntil;
+  const hideBalances = settings.hideBalances === true && !peekActive;
+  const maskBalance = (val) => hideBalances ? 'xxxxx' : val;
+
+  function togglePeek() {
+    if (peekActive) {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+    } else {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: Date.now() + 60000 } });
+    }
+  }
+
+  useEffect(() => {
+    if (!settings.balancePeekUntil) return;
+    const remaining = settings.balancePeekUntil - Date.now();
+    if (remaining <= 0) {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+      return;
+    }
+    const timer = setTimeout(() => {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+      forceUpdate((n) => n + 1);
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [settings.balancePeekUntil, dispatch]);
   const sampleLoaded = hasSampleData(accounts);
 
   function handleRemoveSample() {
@@ -426,10 +459,10 @@ export default function Home() {
             <div className="balance-card">
               <p className="balance-label">Total Balance</p>
               <div className="balance-amount-row">
-                <h2 className="balance-amount">{maskAmount(formatCurrency(totalBalance, currency))}</h2>
+                <h2 className="balance-amount">{maskBalance(formatCurrency(totalBalance, currency))}</h2>
                 {settings.hideBalances && (
-                  <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
-                    <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+                  <button className="balance-peek-btn" onClick={() => togglePeek()}>
+                    <i className={`fa-solid ${peekActive ? 'fa-eye-slash' : 'fa-eye'}`} />
                   </button>
                 )}
               </div>
@@ -440,7 +473,7 @@ export default function Home() {
                     <div>
                       <p className="stat-label">Income this month</p>
                       <p className="stat-value amount-positive">
-                        +{maskAmount(formatCurrency(monthlyStats.income, currency))}
+                        +{formatCurrency(monthlyStats.income, currency)}
                       </p>
                     </div>
                   </div>
@@ -449,7 +482,7 @@ export default function Home() {
                     <div>
                       <p className="stat-label">Expense this month</p>
                       <p className="stat-value amount-negative">
-                        -{maskAmount(formatCurrency(monthlyStats.expense, currency))}
+                        -{formatCurrency(monthlyStats.expense, currency)}
                       </p>
                     </div>
                   </div>
@@ -460,12 +493,7 @@ export default function Home() {
             <div className="balance-card balance-card-expense">
               <p className="balance-label">This Month's Expenses</p>
               <div className="balance-amount-row">
-                <h2 className="balance-amount">-{maskAmount(formatCurrency(monthlyStats.expense, currency))}</h2>
-                {settings.hideBalances && (
-                  <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
-                    <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
-                  </button>
-                )}
+                <h2 className="balance-amount">-{formatCurrency(monthlyStats.expense, currency)}</h2>
               </div>
               {settings.showBalanceStats !== false && (
                 <div className="balance-stats">
@@ -474,7 +502,7 @@ export default function Home() {
                     <div>
                       <p className="stat-label">Income this month</p>
                       <p className="stat-value amount-positive">
-                        +{maskAmount(formatCurrency(monthlyStats.income, currency))}
+                        +{formatCurrency(monthlyStats.income, currency)}
                       </p>
                     </div>
                   </div>
@@ -483,7 +511,7 @@ export default function Home() {
                     <div>
                       <p className="stat-label">Balance</p>
                       <p className="stat-value">
-                        {maskAmount(formatCurrency(totalBalance, currency))}
+                        {maskBalance(formatCurrency(totalBalance, currency))}
                       </p>
                     </div>
                   </div>
@@ -526,10 +554,10 @@ export default function Home() {
         <div className="balance-card">
           <p className="balance-label">Total Balance</p>
           <div className="balance-amount-row">
-            <h2 className="balance-amount">{maskAmount(formatCurrency(totalBalance, currency))}</h2>
+            <h2 className="balance-amount">{maskBalance(formatCurrency(totalBalance, currency))}</h2>
             {settings.hideBalances && (
-              <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
-                <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+              <button className="balance-peek-btn" onClick={() => togglePeek()}>
+                <i className={`fa-solid ${peekActive ? 'fa-eye-slash' : 'fa-eye'}`} />
               </button>
             )}
           </div>
@@ -540,7 +568,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Income</p>
                   <p className="stat-value amount-positive">
-                    +{maskAmount(formatCurrency(monthlyStats.income, currency))}
+                    +{formatCurrency(monthlyStats.income, currency)}
                   </p>
                 </div>
               </div>
@@ -549,7 +577,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Expense</p>
                   <p className="stat-value amount-negative">
-                    -{maskAmount(formatCurrency(monthlyStats.expense, currency))}
+                    -{formatCurrency(monthlyStats.expense, currency)}
                   </p>
                 </div>
               </div>
@@ -560,12 +588,7 @@ export default function Home() {
         <div className="balance-card balance-card-expense">
           <p className="balance-label">This Month's Expenses</p>
           <div className="balance-amount-row">
-            <h2 className="balance-amount">-{maskAmount(formatCurrency(monthlyStats.expense, currency))}</h2>
-            {settings.hideBalances && (
-              <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
-                <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
-              </button>
-            )}
+            <h2 className="balance-amount">-{formatCurrency(monthlyStats.expense, currency)}</h2>
           </div>
           {settings.showBalanceStats !== false && (
             <div className="balance-stats">
@@ -574,7 +597,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Income</p>
                   <p className="stat-value amount-positive">
-                    +{maskAmount(formatCurrency(monthlyStats.income, currency))}
+                    +{formatCurrency(monthlyStats.income, currency)}
                   </p>
                 </div>
               </div>
@@ -583,7 +606,7 @@ export default function Home() {
                 <div>
                   <p className="stat-label">Balance</p>
                   <p className="stat-value">
-                    {maskAmount(formatCurrency(totalBalance, currency))}
+                    {maskBalance(formatCurrency(totalBalance, currency))}
                   </p>
                 </div>
               </div>
@@ -602,10 +625,14 @@ export default function Home() {
             <div className="accounts-scroll">
               {accounts.map((acc) => (
                 <div key={acc.id} className="account-mini-card">
-                  <span className="account-mini-icon">{getAccountIcon(acc.type, currency)}</span>
+                  {acc.logoUrl ? (
+                    <img src={acc.logoUrl} alt="" className="account-mini-logo" />
+                  ) : (
+                    <span className="account-mini-icon">{getAccountIcon(acc.type, currency)}</span>
+                  )}
                   <p className="account-mini-name">{acc.name}</p>
                   <p className="account-mini-balance">
-                    {maskAmount(formatCurrency(acc.balance, currency))}
+                    {maskBalance(formatCurrency(acc.balance, currency))}
                   </p>
                 </div>
               ))}

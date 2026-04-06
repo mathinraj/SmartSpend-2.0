@@ -108,6 +108,13 @@
   font-size: 1.2rem;
 }
 
+.acct-picker-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
 .acct-picker-name {
   font-size: 0.78rem;
   font-weight: 600;
@@ -683,8 +690,25 @@
 }
 
 .category-item.editing {
-  cursor: default;
+  cursor: grab;
   opacity: 0.85;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.category-item.editing.drag-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
+  background: rgba(108, 92, 231, 0.08);
+}
+
+.category-item.editing.touch-dragging {
+  opacity: 0.5;
+  transform: scale(0.92);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  position: relative;
 }
 
 .category-edit-overlay {
@@ -732,7 +756,25 @@
 .subcategory-chip.editing {
   padding-right: 30px;
   position: relative;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.subcategory-chip.editing.drag-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.subcategory-chip.editing.touch-dragging {
+  opacity: 0.5;
+  transform: scale(0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  position: relative;
 }
 
 .subcategory-remove {

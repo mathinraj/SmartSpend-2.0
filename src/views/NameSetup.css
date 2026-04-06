@@ -1,0 +1,126 @@
+.name-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.name-page-content {
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+}
+
+.name-header {
+  margin-bottom: 32px;
+}
+
+.name-header-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.name-page-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.name-page-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.name-input-wrap {
+  margin-bottom: 28px;
+}
+
+.name-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  font-size: 1.1rem;
+  color: var(--text);
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.name-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.name-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.name-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.name-continue-btn {
+  width: 100%;
+  padding: 16px 28px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.name-continue-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.name-continue-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.name-btn-arrow {
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+.name-continue-btn:hover:not(:disabled) .name-btn-arrow {
+  transform: translateX(3px);
+}
+
+.name-skip-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: color 0.2s;
+}
+
+.name-skip-btn:hover {
+  color: var(--text);
+}
+
+@media (min-width: 768px) {
+  .name-page-title {
+    font-size: 2rem;
+  }
+}

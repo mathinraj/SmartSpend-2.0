@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
-import { hasSampleData } from '../utils/sampleData';
+import { hasSampleData, SAMPLE_ACCOUNT_IDS } from '../utils/sampleData';
 import { generateId } from '../utils/helpers';
 import { formatCurrencyPlain } from '../utils/currencies';
 import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
@@ -30,6 +30,12 @@ export default function Preferences() {
   const { state, dispatch } = useApp();
   const { settings, accounts, transactions } = state;
   const sampleLoaded = hasSampleData(accounts);
+  const sampleIdSet = new Set(SAMPLE_ACCOUNT_IDS);
+  const hasUserData = accounts.some((a) => !sampleIdSet.has(a.id)) ||
+    transactions.some((t) => {
+      const refs = [t.accountId, t.fromAccountId, t.toAccountId].filter(Boolean);
+      return refs.length > 0 && refs.every((id) => !sampleIdSet.has(id));
+    });
   const toast = useToast();
   const isDesktop = useIsDesktop();
   const [notifStatus, setNotifStatus] = useState(
@@ -67,7 +73,7 @@ export default function Preferences() {
 
   function handleRemovePhoto() {
     localStorage.removeItem('spendtraq_profile_photo');
-    updatePref('hasProfilePhoto', false);
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: false, syncProfilePhoto: false } });
     toast('Profile photo removed', 'info');
   }
 
@@ -144,7 +150,7 @@ export default function Preferences() {
   function buildExportData() {
     return {
       _app: 'SpendTrak',
-      _version: '2.0',
+      _version: '2.0.2',
       _exportedAt: new Date().toISOString(),
       settings: { ...settings, onboardStep: undefined },
       accounts,
@@ -397,14 +403,19 @@ export default function Preferences() {
   }
 
   function buildSyncPayload() {
-    return {
-      settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined },
+    const payload = {
+      settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined, balancePeekUntil: undefined },
       accounts,
       transactions,
       categories: state.categories,
       plannedPayments: state.plannedPayments,
       splitLedger: state.splitLedger,
     };
+    if (settings.syncProfilePhoto) {
+      const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
+      if (photo) payload.profilePhoto = photo;
+    }
+    return payload;
   }
 
   async function ensureToken() {
@@ -458,6 +469,10 @@ export default function Preferences() {
       if (data.settings) {
         const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
         dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      if (data.profilePhoto) {
+        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
       }
       dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
       const now = new Date().toISOString();
@@ -623,8 +638,23 @@ export default function Preferences() {
               <div className="pref-divider" />
               <div className="pref-row">
                 <div className="pref-row-info">
+                  <p className="pref-row-label">Backup photo to Google Drive</p>
+                  <p className="pref-row-desc">Include your profile photo in cloud backups</p>
+                </div>
+                <label className="pref-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.syncProfilePhoto}
+                    onChange={(e) => updatePref('syncProfilePhoto', e.target.checked)}
+                  />
+                  <span className="pref-toggle-slider" />
+                </label>
+              </div>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
                   <p className="pref-row-label">Remove photo</p>
-                  <p className="pref-row-desc">Photo is stored locally on this device only</p>
+                  <p className="pref-row-desc">{settings.syncProfilePhoto ? 'Photo will also be removed from future backups' : 'Photo is stored locally on this device only'}</p>
                 </div>
                 <button className="pref-btn danger" onClick={handleRemovePhoto}>
                   <i className="fa-solid fa-trash-can" /> Remove
@@ -678,6 +708,7 @@ export default function Preferences() {
                 { label: 'Income/Expense stats', desc: 'Below the main balance card', checked: settings.showBalanceStats !== false, onChange: (v) => updatePref('showBalanceStats', v) },
                 { label: 'Accounts section', desc: 'My Accounts on the home page', checked: settings.showAccountsOnHome !== false, onChange: (v) => updatePref('showAccountsOnHome', v) },
                 ...(settings.splitEnabled ? [{ label: 'Split money', desc: '"Others owe you" card', checked: settings.showSplitOnHome !== false, onChange: (v) => updatePref('showSplitOnHome', v) }] : []),
+                { label: 'Exclude credit cards', desc: 'Remove CC dues from total balance', checked: settings.excludeCCFromBalance === true, onChange: (v) => updatePref('excludeCCFromBalance', v) },
                 { label: 'Hide balances', desc: 'Mask amounts with *** for privacy', checked: settings.hideBalances === true, onChange: (v) => updatePref('hideBalances', v) },
               ].map((item) => (
                 <label key={item.label} className="dashboard-option-row">
@@ -768,6 +799,42 @@ export default function Preferences() {
               <span className="pref-toggle-slider" />
             </label>
           </div>
+
+          {settings.splitEnabled && (
+            <>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Bank deduction on split</p>
+                  <p className="pref-row-desc">How much to deduct from your account balance</p>
+                </div>
+                <select
+                  className="pref-select"
+                  value={settings.splitBankDeduction || 'full'}
+                  onChange={(e) => updatePref('splitBankDeduction', e.target.value)}
+                >
+                  <option value="full">Full amount</option>
+                  <option value="my_share">Only my share</option>
+                </select>
+              </div>
+
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label">Record expense as</p>
+                  <p className="pref-row-desc">What shows as your expense in analytics</p>
+                </div>
+                <select
+                  className="pref-select"
+                  value={settings.splitExpenseRecord || 'my_share'}
+                  onChange={(e) => updatePref('splitExpenseRecord', e.target.value)}
+                >
+                  <option value="my_share">Only my share</option>
+                  <option value="full">Full amount</option>
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="pref-divider" />
 
@@ -1015,7 +1082,7 @@ export default function Preferences() {
             <span className="pref-badge">Local</span>
           </div>
 
-          {!sampleLoaded && (
+          {!hasUserData && !sampleLoaded && (
             <>
               <div className="pref-divider" />
               <div className="pref-row">
@@ -1030,7 +1097,7 @@ export default function Preferences() {
             </>
           )}
 
-          {sampleLoaded && (
+          {!hasUserData && sampleLoaded && (
             <>
               <div className="pref-divider" />
               <div className="pref-row">
@@ -1293,7 +1360,7 @@ export default function Preferences() {
                 </div>
                 <select
                   className="pref-select"
-                  value={settings.appLockTimeout ?? 0}
+                  value={settings.appLockTimeout ?? 30}
                   onChange={(e) => updatePref('appLockTimeout', parseInt(e.target.value))}
                 >
                   <option value={0}>Immediately</option>
@@ -1397,9 +1464,9 @@ export default function Preferences() {
           <div className="pref-row">
             <div className="pref-row-info">
               <p className="pref-row-label">SpendTrak</p>
-              <p className="pref-row-desc">Version 2.0 · Your money, your rules.</p>
+              <p className="pref-row-desc">Version 2.0.2 · Your money, your rules.</p>
             </div>
-            <span className="pref-badge">v2.0</span>
+            <span className="pref-badge">v2.0.2</span>
           </div>
         </div>
 

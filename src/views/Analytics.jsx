@@ -36,18 +36,19 @@ function computeDateRange(period, customStart, customEnd) {
   return { start, end };
 }
 
-function getExpenseAmount(t) {
-  return t.isSplit ? (t.amount - (t.splitAmount || 0)) : t.amount;
+function getExpenseAmount(t, splitExpenseRecord = 'my_share') {
+  if (!t.isSplit || !t.splitAmount) return t.amount;
+  return splitExpenseRecord === 'full' ? t.amount : (t.amount - (t.splitAmount || 0));
 }
 
-function computeExpenseByCategory(txns, categories) {
+function computeExpenseByCategory(txns, categories, amtFn) {
   const map = {};
   txns.filter((t) => t.type === 'expense').forEach((t) => {
     const cat = categories.expense.find((c) => c.id === t.categoryId);
     const name = cat ? cat.name : 'Other';
     const color = cat ? cat.color : '#B2BEC3';
     if (!map[t.categoryId]) map[t.categoryId] = { id: t.categoryId, name, value: 0, color };
-    map[t.categoryId].value += getExpenseAmount(t);
+    map[t.categoryId].value += amtFn(t);
   });
   return Object.values(map).sort((a, b) => b.value - a.value);
 }
@@ -62,6 +63,8 @@ export default function Analytics() {
   const { transactions, accounts, categories, settings } = state;
   const currency = settings.currency;
   const isDark = settings.theme === 'dark';
+  const splitRecord = settings.splitExpenseRecord || 'my_share';
+  const expAmt = (t) => getExpenseAmount(t, splitRecord);
   const gridColor = isDark ? '#333' : '#E8ECF4';
   const tickColor = isDark ? '#9e9e9e' : '#636E72';
   const searchParams = useSearchParams();
@@ -160,13 +163,13 @@ export default function Analytics() {
 
   const totals = useMemo(() => {
     const income = filteredTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const expense = filteredTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + getExpenseAmount(t), 0);
+    const expense = filteredTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + expAmt(t), 0);
     return { income, expense, net: income - expense };
   }, [filteredTxns]);
 
-  const expenseByCategory = useMemo(() => computeExpenseByCategory(filteredTxns, categories), [filteredTxns, categories]);
-  const compareExpByCatA = useMemo(() => compareMode ? computeExpenseByCategory(compareTxnsA, categories) : [], [compareTxnsA, categories, compareMode]);
-  const compareExpByCatB = useMemo(() => compareMode ? computeExpenseByCategory(compareTxnsB, categories) : [], [compareTxnsB, categories, compareMode]);
+  const expenseByCategory = useMemo(() => computeExpenseByCategory(filteredTxns, categories, expAmt), [filteredTxns, categories, splitRecord]);
+  const compareExpByCatA = useMemo(() => compareMode ? computeExpenseByCategory(compareTxnsA, categories, expAmt) : [], [compareTxnsA, categories, compareMode, splitRecord]);
+  const compareExpByCatB = useMemo(() => compareMode ? computeExpenseByCategory(compareTxnsB, categories, expAmt) : [], [compareTxnsB, categories, compareMode, splitRecord]);
 
   const incomeByCategory = useMemo(() => {
     const map = {};
@@ -185,7 +188,7 @@ export default function Analytics() {
     filteredTxns.forEach((t) => {
       if (!map[t.date]) map[t.date] = { date: t.date, income: 0, expense: 0 };
       if (t.type === 'income') map[t.date].income += t.amount;
-      if (t.type === 'expense') map[t.date].expense += getExpenseAmount(t);
+      if (t.type === 'expense') map[t.date].expense += expAmt(t);
     });
     return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
   }, [filteredTxns]);
@@ -200,7 +203,7 @@ export default function Analytics() {
   const avgDaily = useMemo(() => {
     const expenses = filteredTxns.filter((t) => t.type === 'expense');
     if (expenses.length === 0) return 0;
-    const total = expenses.reduce((s, t) => s + getExpenseAmount(t), 0);
+    const total = expenses.reduce((s, t) => s + expAmt(t), 0);
     const days = new Set(expenses.map((t) => t.date)).size;
     return days > 0 ? total / days : 0;
   }, [filteredTxns]);
@@ -212,7 +215,7 @@ export default function Analytics() {
     const map = dayNames.map((name) => ({ name, expense: 0 }));
     filteredTxns.filter((t) => t.type === 'expense').forEach((t) => {
       const day = new Date(t.date + 'T00:00:00').getDay();
-      map[day].expense += getExpenseAmount(t);
+      map[day].expense += expAmt(t);
     });
     return map;
   }, [filteredTxns]);
@@ -227,7 +230,7 @@ export default function Analytics() {
       const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
       if (!map[key]) map[key] = { month: label, key, income: 0, expense: 0 };
       if (t.type === 'income') map[key].income += t.amount;
-      if (t.type === 'expense') map[key].expense += getExpenseAmount(t);
+      if (t.type === 'expense') map[key].expense += expAmt(t);
     });
     return Object.values(map).sort((a, b) => a.key.localeCompare(b.key)).slice(-12);
   }, [transactions, filterAccountIds]);
@@ -257,7 +260,7 @@ export default function Analytics() {
   const creditCardSpending = useMemo(() => {
     return creditCards.map((card) => {
       const cardTxns = filteredTxns.filter((t) => t.type === 'expense' && t.accountId === card.id);
-      const spent = cardTxns.reduce((s, t) => s + getExpenseAmount(t), 0);
+      const spent = cardTxns.reduce((s, t) => s + expAmt(t), 0);
       return { id: card.id, name: card.name, spent, balance: card.balance, limit: card.creditLimit || 0 };
     });
   }, [creditCards, filteredTxns]);
@@ -281,13 +284,13 @@ export default function Analytics() {
       return t.accountId === selectedAccountId || t.fromAccountId === selectedAccountId || t.toAccountId === selectedAccountId;
     });
     const income = accTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const expense = accTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + getExpenseAmount(t), 0);
-    const catBreakdown = computeExpenseByCategory(accTxns, categories);
+    const expense = accTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + expAmt(t), 0);
+    const catBreakdown = computeExpenseByCategory(accTxns, categories, expAmt);
     const dailyMap = {};
     accTxns.filter((t) => t.type !== 'transfer').forEach((t) => {
       if (!dailyMap[t.date]) dailyMap[t.date] = { date: t.date, income: 0, expense: 0 };
       if (t.type === 'income') dailyMap[t.date].income += t.amount;
-      if (t.type === 'expense') dailyMap[t.date].expense += getExpenseAmount(t);
+      if (t.type === 'expense') dailyMap[t.date].expense += expAmt(t);
     });
     const daily = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
     const monthMap = {};
@@ -298,7 +301,7 @@ export default function Analytics() {
         const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
         if (!monthMap[key]) monthMap[key] = { month: label, key, income: 0, expense: 0 };
         if (t.type === 'income') monthMap[key].income += t.amount;
-        if (t.type === 'expense') monthMap[key].expense += getExpenseAmount(t);
+        if (t.type === 'expense') monthMap[key].expense += expAmt(t);
       });
     const monthly = Object.values(monthMap).sort((a, b) => a.key.localeCompare(b.key)).slice(-12);
     return { income, expense, txnCount: accTxns.length, catBreakdown, daily, monthly };

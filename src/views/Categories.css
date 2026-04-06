@@ -8,9 +8,10 @@
 .cat-card {
   background: var(--bg-card);
   border-radius: var(--radius);
+  border: 2px solid transparent;
   box-shadow: var(--shadow);
   overflow: hidden;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, border-color 0.2s, opacity 0.2s, transform 0.2s;
 }
 
 .cat-card.expanded {
@@ -324,51 +325,44 @@
   color: var(--text);
 }
 
-.cat-card.reorder-active {
-  cursor: grab;
-  border: 1.5px dashed var(--primary-light);
-  border-radius: var(--radius);
-}
-
-.cat-card.reorder-active:active {
-  cursor: grabbing;
-  opacity: 0.7;
-}
-
-.reorder-controls-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-.reorder-controls-row .reorder-btn {
-  width: 26px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
+.cat-drag-handle {
   color: var(--text-secondary);
-  border-radius: 4px;
-  font-size: 0.6rem;
-  transition: all 0.15s;
-}
-
-.reorder-controls-row .reorder-btn:hover:not(:disabled) {
-  background: var(--primary);
-  color: white;
-}
-
-.reorder-controls-row .reorder-btn:disabled {
-  opacity: 0.2;
-  cursor: not-allowed;
-}
-
-.reorder-controls-row .reorder-handle {
-  color: var(--text-light);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   cursor: grab;
+  padding: 8px 4px;
+  margin-right: 4px;
+  opacity: 0.35;
+  transition: opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.cat-card:hover .cat-drag-handle {
+  opacity: 0.7;
+  color: var(--primary);
+}
+
+.cat-drag-handle:active {
+  cursor: grabbing;
+  opacity: 1;
+}
+
+.cat-card[draggable="true"] {
+  transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.cat-card.drag-over {
+  border: 2px dashed var(--primary);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.15);
+  background: rgba(108, 92, 231, 0.03);
+}
+
+.cat-card.touch-dragging {
+  opacity: 0.7;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: scale(1.02);
+  z-index: 10;
+  position: relative;
 }

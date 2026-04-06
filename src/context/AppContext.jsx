@@ -10,7 +10,7 @@ const AppContext = createContext(null);
 
 const initialSettings = {
   currency: null,
-  onboardStep: 0, // 0=welcome, 1=currency, 2=done
+  onboardStep: 0, // 0=welcome, 1=name, 2=currency, 3=done
 };
 
 function loadInitialState() {
@@ -35,10 +35,16 @@ function appReducer(state, action) {
         settings: { ...state.settings, onboardStep: state.settings.onboardStep + 1 },
       };
 
+    case 'SET_PROFILE_NAME':
+      return {
+        ...state,
+        settings: { ...state.settings, profileName: action.payload, onboardStep: state.settings.onboardStep + 1 },
+      };
+
     case 'SET_CURRENCY':
       return {
         ...state,
-        settings: { ...state.settings, currency: action.payload, onboardStep: 2 },
+        settings: { ...state.settings, currency: action.payload, onboardStep: 3 },
       };
 
     case 'UPDATE_SETTINGS':
@@ -76,8 +82,10 @@ function appReducer(state, action) {
           a.id === txn.accountId ? { ...a, balance: a.balance + txn.amount } : a
         );
       } else if (txn.type === 'expense') {
+        const deductMyShareOnly = state.settings.splitBankDeduction === 'my_share' && txn.isSplit && txn.splitAmount > 0;
+        const deductAmount = deductMyShareOnly ? (txn.amount - txn.splitAmount) : txn.amount;
         updatedAccounts = updatedAccounts.map((a) =>
-          a.id === txn.accountId ? { ...a, balance: a.balance - txn.amount } : a
+          a.id === txn.accountId ? { ...a, balance: a.balance - deductAmount } : a
         );
       } else if (txn.type === 'transfer') {
         updatedAccounts = updatedAccounts.map((a) => {
@@ -237,6 +245,23 @@ function appReducer(state, action) {
               ? { ...c, subcategories: c.subcategories.filter((s) => s.id !== subcategoryId) }
               : c
           ),
+        },
+      };
+    }
+
+    case 'REORDER_SUBCATEGORIES': {
+      const { categoryId, fromIndex, toIndex } = action.payload;
+      return {
+        ...state,
+        categories: {
+          ...state.categories,
+          expense: state.categories.expense.map((c) => {
+            if (c.id !== categoryId) return c;
+            const subs = [...c.subcategories];
+            const [moved] = subs.splice(fromIndex, 1);
+            subs.splice(toIndex, 0, moved);
+            return { ...c, subcategories: subs };
+          }),
         },
       };
     }
