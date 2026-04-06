@@ -419,7 +419,11 @@ export default function AddTransaction() {
   function renderAccountCard(acc, isSelected, onClick) {
     return (
       <button key={acc.id} type="button" className={`acct-picker-card ${isSelected ? 'selected' : ''}`} onClick={onClick}>
-        <span className="acct-picker-icon" style={{ background: getAccountColor(acc.type) + '18' }}>{getAccountIcon(acc.type, settings.currency)}</span>
+        {acc.logoUrl ? (
+          <img src={acc.logoUrl} alt="" className="acct-picker-logo" />
+        ) : (
+          <span className="acct-picker-icon" style={{ background: getAccountColor(acc.type) + '18' }}>{getAccountIcon(acc.type, settings.currency)}</span>
+        )}
         <span className="acct-picker-name">{acc.name}</span>
         <span className="acct-picker-bal">{formatCurrency(acc.balance, settings.currency)}</span>
         {isSelected && <span className="acct-picker-check"><i className="fa-solid fa-circle-check" /></span>}

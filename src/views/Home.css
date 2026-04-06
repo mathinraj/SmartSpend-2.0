@@ -536,6 +536,14 @@
   margin-bottom: 8px;
 }
 
+.account-mini-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
 .account-mini-name {
   font-size: 0.8rem;
   color: var(--text-secondary);

@@ -625,7 +625,11 @@ export default function Home() {
             <div className="accounts-scroll">
               {accounts.map((acc) => (
                 <div key={acc.id} className="account-mini-card">
-                  <span className="account-mini-icon">{getAccountIcon(acc.type, currency)}</span>
+                  {acc.logoUrl ? (
+                    <img src={acc.logoUrl} alt="" className="account-mini-logo" />
+                  ) : (
+                    <span className="account-mini-icon">{getAccountIcon(acc.type, currency)}</span>
+                  )}
                   <p className="account-mini-name">{acc.name}</p>
                   <p className="account-mini-balance">
                     {maskBalance(formatCurrency(acc.balance, currency))}
