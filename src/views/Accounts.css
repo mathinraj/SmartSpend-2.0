@@ -503,6 +503,21 @@
   margin-bottom: 10px;
 }
 
+.logo-search-status {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  padding: 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.logo-search-status i {
+  font-size: 0.75rem;
+}
+
 .logo-results-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
