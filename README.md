@@ -8,7 +8,7 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Dashboard** — at-a-glance view of monthly expenses or total balance, recent transactions, and account summaries
 - **Multi-account support** — bank accounts (savings, current, salary), credit/debit cards, cash, wallets, and custom types (Bitcoin, investments, etc.)
 - **Transactions** — add, edit, and delete expenses, income, and account-to-account transfers
-- **Categories & subcategories** — organize spending with customizable expense and income categories
+- **Categories & subcategories** — organize spending with customizable expense and income categories, managed directly from the Add Transaction page
 
 ### Analytics & Insights
 - **Overview** — daily income/expense chart, spending by day of week, top expenses, quick stats (avg daily spend, savings rate)
@@ -20,8 +20,7 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Account filter** — multi-select accounts to filter all analytics data globally
 
 ### Export, Backup & Sync
-- **Google Drive Sync** — push/pull your data to your own Google Drive; connect with Google OAuth, sync across devices, private appDataFolder
-### Export & Backup
+- **Google Drive Sync** — push/pull your data to your own Google Drive; connect with Google OAuth, sync across devices, private appDataFolder; quick sync button on the dashboard
 - **JSON backup** — full data export (accounts, transactions, settings, planned payments)
 - **CSV export** — transactions only, for Excel or Google Sheets
 - **PDF report** — formatted summary tables with chart screenshots from the analytics page
@@ -29,14 +28,15 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Import** — restore from backup (replace all or merge without duplicates)
 
 ### Split & Planned Payments
-- **Split expense tracking** — track shared expenses with friends, per-person balances, and settlements
+- **Split expense tracking** — track shared expenses with friends, per-person balances, and settlements; configurable bank deduction and expense recording modes
 - **Settlement with account selection** — record settlements and update bank balances in one step
-- **Planned payments** — track subscriptions, EMIs, and recurring bills with due-date reminders
+- **Planned payments** — track subscriptions, EMIs, and recurring bills with due-date reminders; overdue/due-today alerts on the dashboard
 - **"They paid for me" with account update** — optionally record which account received the money
 
 ### Profile & Personalization
 - **User profile** — add your name and photo (stored locally); personalized greeting on the dashboard
-- **Customize dashboard** — expandable options to toggle balance view, income/expense stats, accounts section, split money card, and hide balances
+- **Bank logos** — search and assign real bank/app logos to accounts via Logo.dev API; logos appear everywhere accounts are shown
+- **Customize dashboard** — expandable options to toggle balance view, income/expense stats, accounts section, split money card, credit card exclusion, and hide balances
 - **PWA install prompt** — native "Add to Home Screen" banner for quick app access
 
 ### Privacy & Security
@@ -47,9 +47,14 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 
 ### Reminders & Notifications
 - **Custom reminders** — daily, weekly, or interval-based browser notifications at any time
-- **Service Worker notifications** — reliable delivery even in PWA / background tabs
+- **Due payment alerts** — overdue/due-today banner on the dashboard, red badge on nav icons, and browser notifications on app load
 - **Backup reminders** — periodic nudge (every 7 days) to export your data, resets on actual backup
 - **Do Not Disturb** — pause all reminders during a configurable quiet window
+
+### History & Transactions
+- **Calendar view** — tap the calendar icon in History to browse transactions by month; days with activity show colored dots and count badges; tap a day to filter
+- **Running balance toggle** — enable in History to see the account balance at the time of each transaction
+- **Transaction count badge** — pill-shaped indicator showing the filtered count
 
 ### Organization & Filtering
 - **Custom account types** — add your own types (Bitcoin, investment, etc.) with custom icons
@@ -63,7 +68,6 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Landing page** — full-viewport hero with scroll-triggered feature reveal animations
 - **Responsive** — mobile-first design with bottom navigation; desktop layout with sidebar
 - **Dark mode** — toggle between light and dark themes
-- **Customizable home page** — toggle balance vs. expenses view, show/hide accounts, income & expense stats, and split money card
 - **Dynamic favicon** — changes to match your selected currency symbol
 - **Sample data** — 4 months of realistic demo data (70+ transactions) to explore the app, with easy removal
 
@@ -81,38 +85,30 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 | IDs | uuid |
 | Email | EmailJS (feedback form) |
 | Cloud Sync | Google Drive API (appDataFolder) |
+| Logo API | Logo.dev |
 | Styling | Custom CSS with CSS variables |
 | Deployment | Vercel |
 
-## Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Environment Variables (optional)
-
-Create a `.env.local` file for optional integrations:
-
-```
-# Feedback form (EmailJS)
-NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
-NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
-NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
-
-# Google Drive Sync
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-```
-
-For Google Drive sync, you also need:
-1. A Google Cloud project with the **Google Drive API** enabled
-2. An OAuth consent screen with scopes: `drive.appdata`, `userinfo.email`, `userinfo.profile`
-3. OAuth client credentials with your domains as authorized JavaScript origins
-
 ## Changelog
+
+### v2.0.2
+- **Bank logos** — search and assign logos to accounts via Logo.dev; logos appear on account cards, home page mini-cards, and the Add Transaction picker
+- **Running balance in History** — toggle to see account balance at the time of each transaction
+- **Calendar view in History** — month calendar with transaction dots and counts per day; tap a day to filter
+- **Split expense customization** — separate controls for bank deduction (full vs. my share) and expense recording in analytics
+- **Credit card onboarding** — "Current Limit Used" field instead of confusing "Initial Balance (use negative)" prompt
+- **Exclude credit cards from total balance** — toggle in Customize Dashboard
+- **Due payment reminders** — red alert banner on dashboard, badge on nav icons, and browser notification on app load for overdue/due-today planned payments
+- **Planned payments highlighting** — overdue items have red background/border; due-today items have orange highlighting
+- **Transaction count badge** — result count is now a styled pill badge
+- **History page layout fix** — transaction styles now load correctly regardless of navigation order
+
+### v2.0.1
+- **Back navigation fix** — bottom nav and sidebar now use `router.replace` for page-to-page navigation; pressing Back always returns to Home in one step
+- **Quick Google Drive sync** — cloud icon button on dashboard; tap to choose Push or Pull from a small dropdown; no need to go to Preferences
+- **Rotating backup reminders** — daily backup hint banner on the dashboard with rotating messages (incl. Google Drive nudge); dismissible per session
+- **Planned payments in sample data** — overdue and due-today entries added for demo visualization
+- **Google Search Console** — sitemap submitted, verification meta tag added
 
 ### v2.0
 - **Google Drive Sync** — connect your Google account and push/pull data to your own Google Drive; private appDataFolder storage, session refresh, and cloud backup deletion
@@ -125,8 +121,6 @@ For Google Drive sync, you also need:
 - **Compact Preferences** — dashboard toggles collapsed into a single expandable "Customize dashboard" row; backup section streamlined into Export/Import dropdown buttons
 - **Rotating feedback label** — sidebar feedback link cycles between "Feedback", "Suggestions", and "Report Bug" daily
 - **SEO overhaul** — rich metadata, Open Graph/Twitter cards, JSON-LD structured data, per-page titles, sitemap.xml, robots.txt, web manifest
-- **Dark mode chart fix** — tooltips, grid lines, and axis labels now adapt to dark theme
-- **LinkedIn logo fix** — replaced Font Awesome icon with inline SVG for reliable rendering
 
 ### v1.4
 - **Enhanced analytics** — credit card utilization, per-account analytics, category comparison with month-by-month pickers
@@ -138,7 +132,6 @@ For Google Drive sync, you also need:
 - **Bank sub-types** — savings, current, salary, fixed deposit, recurring deposit
 - **Card sub-types** — debit card vs credit card; credit-specific fields only appear for credit cards
 - **Account analytics link** — chart icon on each account card navigates to per-account analytics
-- **Tab reorder** — Trends tab moved after Accounts for better flow
 - **Sample data expanded** — 4 months of realistic transactions across 6 accounts with splits, transfers, and planned payments
 
 ### v1.3
@@ -149,31 +142,17 @@ For Google Drive sync, you also need:
 - **Backup reminder notifications** — periodic nudge every 7 days to export your data
 - **Multi-select transaction filters** — select multiple categories and accounts in the filter modal
 - **Mobile three-dot menu** — transaction edit/delete actions behind a three-dot popover on mobile
-- **Hide balances scoped** — only hides totals, income/expense stats, and account balances; transactions and payments remain visible; also works in the accounts page
-- **Accounts reorder fix** — custom order is now respected after clicking Done, with inline type section headers
-- **Notification fix** — immediate check on mount + Service Worker API for PWA reliability
-- **Email validation** — strict regex validation in the feedback form (rejects incomplete domains)
 - **Landing page** — full single-page design with scroll-triggered reveal animations, feature showcase, how-it-works, and FAQ schema for SEO
-- **SEO enhancements** — FAQ JSON-LD schema, expanded keywords, and richer structured data
 
 ### v1.2
 - **Migrated to Next.js 15 App Router** for improved SEO and performance
-- Server-side rendering (SSR) for faster initial page loads
 - Enhanced SEO with proper meta tags, Open Graph, and robots.txt
-- File-based routing with Next.js App Router
-- Maintained identical UI/UX and SPA navigation experience
-- All client-side features preserved (localStorage, notifications, etc.)
 
 ### v1.1
 - Reminders with daily/weekly scheduling and browser notifications
 - Privacy mode to hide all monetary amounts on the dashboard
 - Customizable home page (toggle accounts section, balance stats)
 - Drag-and-drop / arrow reorder for accounts and categories
-- Notification permission flow with user guidance
-- Random reminder opt-in prompt on the home page
-- Clickable logo navigates to home
-- Balance card properly collapses when stats are hidden
-- Preferences link moved to bottom of sidebar
 
 ### v1.0
 - Initial release with dashboard, multi-account support, transactions, categories, analytics, sample data, and responsive design
