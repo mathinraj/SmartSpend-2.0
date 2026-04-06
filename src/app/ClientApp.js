@@ -131,7 +131,7 @@ function AppShell({ children }) {
   useEffect(() => {
     if (!state.settings.appLockEnabled || !hasLock) return;
     let hiddenAt = null;
-    const timeout = (state.settings.appLockTimeout ?? 0) * 1000;
+    const timeout = (state.settings.appLockTimeout ?? 30) * 1000;
 
     function handleVisibility() {
       if (document.visibilityState === 'hidden') {

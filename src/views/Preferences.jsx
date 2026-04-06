@@ -1323,7 +1323,7 @@ export default function Preferences() {
                 </div>
                 <select
                   className="pref-select"
-                  value={settings.appLockTimeout ?? 0}
+                  value={settings.appLockTimeout ?? 30}
                   onChange={(e) => updatePref('appLockTimeout', parseInt(e.target.value))}
                 >
                   <option value={0}>Immediately</option>
