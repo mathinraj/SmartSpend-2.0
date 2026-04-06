@@ -85,14 +85,14 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 | IDs | uuid |
 | Email | EmailJS (feedback form) |
 | Cloud Sync | Google Drive API (appDataFolder) |
-| Logo API | Logo.dev |
+| Logo API | Brandfetch |
 | Styling | Custom CSS with CSS variables |
 | Deployment | Vercel |
 
 ## Changelog
 
 ### v2.0.2
-- **Bank logos** — search and assign logos to accounts via Logo.dev; logos appear on account cards, home page mini-cards, and the Add Transaction picker
+- **Bank logos** — search and assign logos to accounts via Brandfetch; logos appear on account cards, home page mini-cards, and the Add Transaction picker
 - **Running balance in History** — toggle to see account balance at the time of each transaction
 - **Calendar view in History** — month calendar with transaction dots and counts per day; tap a day to filter
 - **Split expense customization** — separate controls for bank deduction (full vs. my share) and expense recording in analytics
