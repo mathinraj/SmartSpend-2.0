@@ -172,9 +172,11 @@ export default function Accounts() {
     if (editAccount) {
       dispatch({ type: 'UPDATE_ACCOUNT', payload: { id: editAccount.id, ...payload } });
     } else {
+      const rawBalance = parseFloat(form.balance) || 0;
+      const isCreditCard = form.type === 'card' && form.subType === 'credit';
       dispatch({
         type: 'ADD_ACCOUNT',
-        payload: { ...payload, balance: parseFloat(form.balance) || 0 },
+        payload: { ...payload, balance: isCreditCard ? -Math.abs(rawBalance) : rawBalance },
       });
     }
     setShowModal(false);
@@ -539,13 +541,14 @@ export default function Accounts() {
           {!editAccount && (
             <div className="form-group">
               <label className="form-label">
-                Initial Balance {form.type === 'card' && form.subType === 'credit' ? '(use negative for outstanding)' : ''}
+                {form.type === 'card' && form.subType === 'credit' ? 'Current Limit Used' : 'Initial Balance'}
               </label>
               <input
                 type="number"
                 className="form-input"
-                placeholder="0.00"
+                placeholder={form.type === 'card' && form.subType === 'credit' ? 'Enter 0 if no outstanding' : '0.00'}
                 step="0.01"
+                min="0"
                 value={form.balance}
                 onChange={(e) => setForm({ ...form, balance: e.target.value })}
               />
