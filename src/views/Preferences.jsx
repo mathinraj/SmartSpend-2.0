@@ -67,7 +67,7 @@ export default function Preferences() {
 
   function handleRemovePhoto() {
     localStorage.removeItem('spendtraq_profile_photo');
-    updatePref('hasProfilePhoto', false);
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: false, syncProfilePhoto: false } });
     toast('Profile photo removed', 'info');
   }
 
@@ -397,7 +397,7 @@ export default function Preferences() {
   }
 
   function buildSyncPayload() {
-    return {
+    const payload = {
       settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined },
       accounts,
       transactions,
@@ -405,6 +405,11 @@ export default function Preferences() {
       plannedPayments: state.plannedPayments,
       splitLedger: state.splitLedger,
     };
+    if (settings.syncProfilePhoto) {
+      const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
+      if (photo) payload.profilePhoto = photo;
+    }
+    return payload;
   }
 
   async function ensureToken() {
@@ -458,6 +463,10 @@ export default function Preferences() {
       if (data.settings) {
         const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
         dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      if (data.profilePhoto) {
+        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
       }
       dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
       const now = new Date().toISOString();
@@ -623,8 +632,23 @@ export default function Preferences() {
               <div className="pref-divider" />
               <div className="pref-row">
                 <div className="pref-row-info">
+                  <p className="pref-row-label">Backup photo to Google Drive</p>
+                  <p className="pref-row-desc">Include your profile photo in cloud backups</p>
+                </div>
+                <label className="pref-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.syncProfilePhoto}
+                    onChange={(e) => updatePref('syncProfilePhoto', e.target.checked)}
+                  />
+                  <span className="pref-toggle-slider" />
+                </label>
+              </div>
+              <div className="pref-divider" />
+              <div className="pref-row">
+                <div className="pref-row-info">
                   <p className="pref-row-label">Remove photo</p>
-                  <p className="pref-row-desc">Photo is stored locally on this device only</p>
+                  <p className="pref-row-desc">{settings.syncProfilePhoto ? 'Photo will also be removed from future backups' : 'Photo is stored locally on this device only'}</p>
                 </div>
                 <button className="pref-btn danger" onClick={handleRemovePhoto}>
                   <i className="fa-solid fa-trash-can" /> Remove

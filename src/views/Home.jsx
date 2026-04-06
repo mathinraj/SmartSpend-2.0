@@ -34,7 +34,7 @@ export default function Home() {
   const [showSyncMenu, setShowSyncMenu] = useState(false);
 
   useEffect(() => {
-    if (settings.onboardStep < 2) return;
+    if (settings.onboardStep < 3) return;
     if (accounts.length === 0 && transactions.length === 0) return;
     const dismissed = sessionStorage.getItem('spendtraq_backup_hint_dismissed');
     if (dismissed) return;
@@ -81,6 +81,10 @@ export default function Home() {
         plannedPayments: state.plannedPayments,
         splitLedger: state.splitLedger,
       };
+      if (settings.syncProfilePhoto) {
+        const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
+        if (photo) payload.profilePhoto = photo;
+      }
       await gDrive.uploadSyncData(payload);
       dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
       localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
@@ -119,6 +123,10 @@ export default function Home() {
       if (data.settings) {
         const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
         dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      if (data.profilePhoto) {
+        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
       }
       dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
       dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });

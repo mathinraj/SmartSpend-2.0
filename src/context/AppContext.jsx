@@ -10,7 +10,7 @@ const AppContext = createContext(null);
 
 const initialSettings = {
   currency: null,
-  onboardStep: 0, // 0=welcome, 1=currency, 2=done
+  onboardStep: 0, // 0=welcome, 1=name, 2=currency, 3=done
 };
 
 function loadInitialState() {
@@ -35,10 +35,16 @@ function appReducer(state, action) {
         settings: { ...state.settings, onboardStep: state.settings.onboardStep + 1 },
       };
 
+    case 'SET_PROFILE_NAME':
+      return {
+        ...state,
+        settings: { ...state.settings, profileName: action.payload, onboardStep: state.settings.onboardStep + 1 },
+      };
+
     case 'SET_CURRENCY':
       return {
         ...state,
-        settings: { ...state.settings, currency: action.payload, onboardStep: 2 },
+        settings: { ...state.settings, currency: action.payload, onboardStep: 3 },
       };
 
     case 'UPDATE_SETTINGS':

@@ -10,6 +10,7 @@ import BottomNav from '../components/BottomNav';
 import Sidebar from '../components/Sidebar';
 import LockScreen from '../components/LockScreen';
 import Welcome from '../views/Welcome';
+import NameSetup from '../views/NameSetup';
 import CurrencySetup from '../views/CurrencySetup';
 
 function InstallBanner() {
@@ -148,7 +149,7 @@ function AppShell({ children }) {
   }, [state.settings.appLockEnabled, state.settings.appLockTimeout, hasLock]);
 
   useEffect(() => {
-    if (state.settings.onboardStep < 2) return;
+    if (state.settings.onboardStep < 3) return;
     const BACKUP_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
     const STORAGE_KEY = 'spendtraq_last_backup_reminder';
 
@@ -180,7 +181,7 @@ function AppShell({ children }) {
   }, [state.settings.onboardStep]);
 
   useEffect(() => {
-    if (state.settings.onboardStep < 2) return;
+    if (state.settings.onboardStep < 3) return;
     if (!state.settings.plannedEnabled || !state.plannedPayments?.length) return;
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
@@ -246,6 +247,10 @@ function AppShell({ children }) {
   }
 
   if (state.settings.onboardStep === 1) {
+    return <NameSetup />;
+  }
+
+  if (state.settings.onboardStep === 2) {
     return <CurrencySetup />;
   }
 
