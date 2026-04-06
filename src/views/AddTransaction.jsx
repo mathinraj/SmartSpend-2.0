@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/currencies';
@@ -65,6 +65,20 @@ export default function AddTransaction() {
   const [subForm, setSubForm] = useState({ name: '' });
   const [editingSub, setEditingSub] = useState(null);
   const [parentCatId, setParentCatId] = useState(null);
+
+  // Category drag-to-reorder state
+  const catDragIdx = useRef(null);
+  const [catDragOverIdx, setCatDragOverIdx] = useState(null);
+  const [catTouchDragging, setCatTouchDragging] = useState(null);
+  const catLongPressTimer = useRef(null);
+  const catGridRef = useRef(null);
+
+  // Subcategory drag-to-reorder state
+  const subDragIdx = useRef(null);
+  const [subDragOverIdx, setSubDragOverIdx] = useState(null);
+  const [subTouchDragging, setSubTouchDragging] = useState(null);
+  const subLongPressTimer = useRef(null);
+  const subListRef = useRef(null);
 
   const paymentApps = settings.paymentApps || ['GPay', 'PhonePe', 'Paytm', 'CRED', 'Amazon Pay', 'Cash', 'Card Swipe', 'Net Banking'];
 
@@ -167,6 +181,143 @@ export default function AddTransaction() {
     dispatch({ type: 'DELETE_SUBCATEGORY', payload: { categoryId: catId, subcategoryId: subId } });
     if (subcategoryId === subId) setSubcategoryId('');
   }
+
+  // Category drag-to-reorder handlers
+  function moveCat(fromIdx, toIdx) {
+    const actionType = tab === 'expense' ? 'REORDER_EXPENSE_CATEGORIES' : 'REORDER_INCOME_CATEGORIES';
+    dispatch({ type: actionType, payload: { fromIndex: fromIdx, toIndex: toIdx } });
+  }
+
+  function handleCatDragStart(idx, e) {
+    catDragIdx.current = idx;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  }
+  function handleCatDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (idx !== undefined) setCatDragOverIdx(idx);
+  }
+  function handleCatDrop(idx) {
+    if (catDragIdx.current !== null && catDragIdx.current !== idx) {
+      moveCat(catDragIdx.current, idx);
+    }
+    catDragIdx.current = null;
+    setCatDragOverIdx(null);
+  }
+  function handleCatDragEnd() {
+    catDragIdx.current = null;
+    setCatDragOverIdx(null);
+  }
+
+  const handleCatTouchStart = useCallback((idx, e) => {
+    catLongPressTimer.current = setTimeout(() => {
+      setCatTouchDragging(idx);
+      catDragIdx.current = idx;
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 300);
+  }, []);
+
+  const handleCatTouchMove = useCallback((e) => {
+    if (catTouchDragging === null) {
+      if (catLongPressTimer.current) { clearTimeout(catLongPressTimer.current); catLongPressTimer.current = null; }
+      return;
+    }
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!catGridRef.current) return;
+    const items = catGridRef.current.querySelectorAll('.category-item');
+    for (let i = 0; i < items.length; i++) {
+      const rect = items[i].getBoundingClientRect();
+      if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+          touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+        setCatDragOverIdx(i);
+        break;
+      }
+    }
+  }, [catTouchDragging]);
+
+  const handleCatTouchEnd = useCallback(() => {
+    if (catLongPressTimer.current) { clearTimeout(catLongPressTimer.current); catLongPressTimer.current = null; }
+    if (catTouchDragging !== null && catDragOverIdx !== null && catTouchDragging !== catDragOverIdx) {
+      moveCat(catTouchDragging, catDragOverIdx);
+    }
+    setCatTouchDragging(null);
+    catDragIdx.current = null;
+    setCatDragOverIdx(null);
+  }, [catTouchDragging, catDragOverIdx, tab]);
+
+  useEffect(() => {
+    return () => {
+      if (catLongPressTimer.current) clearTimeout(catLongPressTimer.current);
+      if (subLongPressTimer.current) clearTimeout(subLongPressTimer.current);
+    };
+  }, []);
+
+  // Subcategory drag-to-reorder handlers
+  function moveSubcat(fromIdx, toIdx) {
+    if (!categoryId) return;
+    dispatch({ type: 'REORDER_SUBCATEGORIES', payload: { categoryId, fromIndex: fromIdx, toIndex: toIdx } });
+  }
+
+  function handleSubDragStart(idx, e) {
+    subDragIdx.current = idx;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  }
+  function handleSubDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (idx !== undefined) setSubDragOverIdx(idx);
+  }
+  function handleSubDrop(idx) {
+    if (subDragIdx.current !== null && subDragIdx.current !== idx) {
+      moveSubcat(subDragIdx.current, idx);
+    }
+    subDragIdx.current = null;
+    setSubDragOverIdx(null);
+  }
+  function handleSubDragEnd() {
+    subDragIdx.current = null;
+    setSubDragOverIdx(null);
+  }
+
+  const handleSubTouchStart = useCallback((idx, e) => {
+    subLongPressTimer.current = setTimeout(() => {
+      setSubTouchDragging(idx);
+      subDragIdx.current = idx;
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 300);
+  }, []);
+
+  const handleSubTouchMove = useCallback((e) => {
+    if (subTouchDragging === null) {
+      if (subLongPressTimer.current) { clearTimeout(subLongPressTimer.current); subLongPressTimer.current = null; }
+      return;
+    }
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!subListRef.current) return;
+    const chips = subListRef.current.querySelectorAll('.subcategory-chip:not(.subcategory-add-chip)');
+    for (let i = 0; i < chips.length; i++) {
+      const rect = chips[i].getBoundingClientRect();
+      if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+          touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+        setSubDragOverIdx(i);
+        break;
+      }
+    }
+  }, [subTouchDragging]);
+
+  const handleSubTouchEnd = useCallback(() => {
+    if (subLongPressTimer.current) { clearTimeout(subLongPressTimer.current); subLongPressTimer.current = null; }
+    if (subTouchDragging !== null && subDragOverIdx !== null && subTouchDragging !== subDragOverIdx) {
+      moveSubcat(subTouchDragging, subDragOverIdx);
+    }
+    setSubTouchDragging(null);
+    subDragIdx.current = null;
+    setSubDragOverIdx(null);
+  }, [subTouchDragging, subDragOverIdx, categoryId]);
 
   function addPaymentApp() {
     if (!newAppName.trim()) return;
@@ -351,13 +502,21 @@ export default function AddTransaction() {
                   </button>
                 </div>
               </div>
-              <div className="category-grid">
-                {expenseCategories.map((cat) => (
+              <div className="category-grid" ref={catGridRef}>
+                {expenseCategories.map((cat, idx) => (
                   <button
                     key={cat.id}
                     type="button"
-                    className={`category-item ${categoryId === cat.id ? 'selected' : ''} ${editingCats ? 'editing' : ''}`}
+                    className={`category-item ${categoryId === cat.id ? 'selected' : ''} ${editingCats ? 'editing' : ''} ${catDragOverIdx === idx && editingCats ? 'drag-over' : ''} ${catTouchDragging === idx ? 'touch-dragging' : ''}`}
                     onClick={() => { if (!editingCats) { setCategoryId(cat.id); setSubcategoryId(''); } }}
+                    draggable={editingCats}
+                    onDragStart={editingCats ? (e) => handleCatDragStart(idx, e) : undefined}
+                    onDragOver={editingCats ? (e) => handleCatDragOver(e, idx) : undefined}
+                    onDrop={editingCats ? () => handleCatDrop(idx) : undefined}
+                    onDragEnd={editingCats ? handleCatDragEnd : undefined}
+                    onTouchStart={editingCats ? (e) => handleCatTouchStart(idx, e) : undefined}
+                    onTouchMove={editingCats ? handleCatTouchMove : undefined}
+                    onTouchEnd={editingCats ? handleCatTouchEnd : undefined}
                   >
                     {editingCats && (
                       <div className="category-edit-overlay">
@@ -374,13 +533,21 @@ export default function AddTransaction() {
             {selectedCategory && (selectedCategory.subcategories.length > 0 || editingCats) && (
               <div className="form-group">
                 <label className="form-label"><i className="fa-solid fa-tags" style={{ marginRight: 6 }} />Subcategory</label>
-                <div className="subcategory-list">
-                  {selectedCategory.subcategories.map((sub) => (
+                <div className="subcategory-list" ref={subListRef}>
+                  {selectedCategory.subcategories.map((sub, idx) => (
                     <button
                       key={sub.id}
                       type="button"
-                      className={`subcategory-chip ${subcategoryId === sub.id ? 'selected' : ''} ${editingCats ? 'editing' : ''}`}
+                      className={`subcategory-chip ${subcategoryId === sub.id ? 'selected' : ''} ${editingCats ? 'editing' : ''} ${subDragOverIdx === idx && editingCats ? 'drag-over' : ''} ${subTouchDragging === idx ? 'touch-dragging' : ''}`}
                       onClick={() => editingCats ? openEditSubcategory(categoryId, sub) : setSubcategoryId(sub.id)}
+                      draggable={editingCats}
+                      onDragStart={editingCats ? (e) => handleSubDragStart(idx, e) : undefined}
+                      onDragOver={editingCats ? (e) => handleSubDragOver(e, idx) : undefined}
+                      onDrop={editingCats ? () => handleSubDrop(idx) : undefined}
+                      onDragEnd={editingCats ? handleSubDragEnd : undefined}
+                      onTouchStart={editingCats ? (e) => handleSubTouchStart(idx, e) : undefined}
+                      onTouchMove={editingCats ? handleSubTouchMove : undefined}
+                      onTouchEnd={editingCats ? handleSubTouchEnd : undefined}
                     >
                       {sub.name}
                       {editingCats && (
@@ -414,13 +581,21 @@ export default function AddTransaction() {
                 </button>
               </div>
             </div>
-            <div className="category-grid">
-              {incomeCategories.map((cat) => (
+            <div className="category-grid" ref={catGridRef}>
+              {incomeCategories.map((cat, idx) => (
                 <button
                   key={cat.id}
                   type="button"
-                  className={`category-item ${categoryId === cat.id ? 'selected' : ''} ${editingCats ? 'editing' : ''}`}
+                  className={`category-item ${categoryId === cat.id ? 'selected' : ''} ${editingCats ? 'editing' : ''} ${catDragOverIdx === idx && editingCats ? 'drag-over' : ''} ${catTouchDragging === idx ? 'touch-dragging' : ''}`}
                   onClick={() => { if (!editingCats) setCategoryId(cat.id); }}
+                  draggable={editingCats}
+                  onDragStart={editingCats ? (e) => handleCatDragStart(idx, e) : undefined}
+                  onDragOver={editingCats ? (e) => handleCatDragOver(e, idx) : undefined}
+                  onDrop={editingCats ? () => handleCatDrop(idx) : undefined}
+                  onDragEnd={editingCats ? handleCatDragEnd : undefined}
+                  onTouchStart={editingCats ? (e) => handleCatTouchStart(idx, e) : undefined}
+                  onTouchMove={editingCats ? handleCatTouchMove : undefined}
+                  onTouchEnd={editingCats ? handleCatTouchEnd : undefined}
                 >
                   {editingCats && (
                     <div className="category-edit-overlay">

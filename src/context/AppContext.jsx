@@ -247,6 +247,23 @@ function appReducer(state, action) {
       };
     }
 
+    case 'REORDER_SUBCATEGORIES': {
+      const { categoryId, fromIndex, toIndex } = action.payload;
+      return {
+        ...state,
+        categories: {
+          ...state.categories,
+          expense: state.categories.expense.map((c) => {
+            if (c.id !== categoryId) return c;
+            const subs = [...c.subcategories];
+            const [moved] = subs.splice(fromIndex, 1);
+            subs.splice(toIndex, 0, moved);
+            return { ...c, subcategories: subs };
+          }),
+        },
+      };
+    }
+
     // Income category CRUD
     case 'ADD_INCOME_CATEGORY':
       return {

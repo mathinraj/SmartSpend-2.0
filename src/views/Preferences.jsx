@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
-import { hasSampleData } from '../utils/sampleData';
+import { hasSampleData, SAMPLE_ACCOUNT_IDS } from '../utils/sampleData';
 import { generateId } from '../utils/helpers';
 import { formatCurrencyPlain } from '../utils/currencies';
 import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
@@ -30,6 +30,12 @@ export default function Preferences() {
   const { state, dispatch } = useApp();
   const { settings, accounts, transactions } = state;
   const sampleLoaded = hasSampleData(accounts);
+  const sampleIdSet = new Set(SAMPLE_ACCOUNT_IDS);
+  const hasUserData = accounts.some((a) => !sampleIdSet.has(a.id)) ||
+    transactions.some((t) => {
+      const refs = [t.accountId, t.fromAccountId, t.toAccountId].filter(Boolean);
+      return refs.length > 0 && refs.every((id) => !sampleIdSet.has(id));
+    });
   const toast = useToast();
   const isDesktop = useIsDesktop();
   const [notifStatus, setNotifStatus] = useState(
@@ -398,7 +404,7 @@ export default function Preferences() {
 
   function buildSyncPayload() {
     const payload = {
-      settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined },
+      settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined, balancePeekUntil: undefined },
       accounts,
       transactions,
       categories: state.categories,
@@ -1039,7 +1045,7 @@ export default function Preferences() {
             <span className="pref-badge">Local</span>
           </div>
 
-          {!sampleLoaded && (
+          {!hasUserData && !sampleLoaded && (
             <>
               <div className="pref-divider" />
               <div className="pref-row">
@@ -1054,7 +1060,7 @@ export default function Preferences() {
             </>
           )}
 
-          {sampleLoaded && (
+          {!hasUserData && sampleLoaded && (
             <>
               <div className="pref-divider" />
               <div className="pref-row">

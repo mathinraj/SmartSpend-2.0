@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/Modal';
 import './Categories.css';
@@ -33,8 +33,14 @@ export default function Categories() {
 
   const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6C5CE7' });
   const [subForm, setSubForm] = useState({ name: '' });
-  const [reorderMode, setReorderMode] = useState(false);
+
+  // Drag-and-drop state (desktop + mobile touch)
   const dragIndex = useRef(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [touchDragging, setTouchDragging] = useState(null); // index of touched item
+  const touchStartY = useRef(null);
+  const listRef = useRef(null);
+  const longPressTimer = useRef(null);
 
   const currentCategories = activeTab === 'expense' ? categories.expense : categories.income;
 
@@ -44,14 +50,70 @@ export default function Categories() {
     dispatch({ type: actionType, payload: { fromIndex: fromIdx, toIndex: toIdx } });
   }
 
-  function handleDragStart(idx) { dragIndex.current = idx; }
-  function handleDragOver(e) { e.preventDefault(); }
+  // Desktop HTML5 drag-and-drop
+  function handleDragStart(idx, e) {
+    dragIndex.current = idx;
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function handleDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (idx !== undefined) setDragOverIndex(idx);
+  }
   function handleDrop(idx) {
     if (dragIndex.current !== null && dragIndex.current !== idx) {
       moveCategory(dragIndex.current, idx);
     }
     dragIndex.current = null;
+    setDragOverIndex(null);
   }
+  function handleDragEnd() {
+    dragIndex.current = null;
+    setDragOverIndex(null);
+  }
+
+  // Touch drag: long-press on handle to begin, slide to reorder
+  const handleTouchStart = useCallback((idx, e) => {
+    touchStartY.current = e.touches[0].clientY;
+    longPressTimer.current = setTimeout(() => {
+      setTouchDragging(idx);
+      dragIndex.current = idx;
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 300);
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchDragging === null) {
+      // Cancel long-press if finger moved before activation
+      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+      return;
+    }
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!listRef.current) return;
+    const cards = listRef.current.querySelectorAll('.cat-card');
+    for (let i = 0; i < cards.length; i++) {
+      const rect = cards[i].getBoundingClientRect();
+      if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+        setDragOverIndex(i);
+        break;
+      }
+    }
+  }, [touchDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (touchDragging !== null && dragOverIndex !== null && touchDragging !== dragOverIndex) {
+      moveCategory(touchDragging, dragOverIndex);
+    }
+    setTouchDragging(null);
+    dragIndex.current = null;
+    setDragOverIndex(null);
+  }, [touchDragging, dragOverIndex, currentCategories, activeTab]);
+
+  useEffect(() => {
+    return () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); };
+  }, []);
 
   function openAddCategory() {
     setEditingCat(null);
@@ -131,19 +193,9 @@ export default function Categories() {
       <div className="section-header">
         <h1 className="page-title" style={{ marginBottom: 0 }}>Categories</h1>
         <div className="section-header-actions">
-          {currentCategories.length > 1 && (
-            <button
-              className={`btn btn-sm ${reorderMode ? 'btn-outline' : 'btn-ghost'}`}
-              onClick={() => { setReorderMode(!reorderMode); setExpandedCat(null); }}
-            >
-              <i className="fa-solid fa-arrows-up-down" /> {reorderMode ? 'Done' : 'Reorder'}
-            </button>
-          )}
-          {!reorderMode && (
-            <button className="btn btn-primary btn-sm" onClick={openAddCategory}>
-              <i className="fa-solid fa-plus" /> New
-            </button>
-          )}
+          <button className="btn btn-primary btn-sm" onClick={openAddCategory}>
+            <i className="fa-solid fa-plus" /> New
+          </button>
         </div>
       </div>
 
@@ -162,78 +214,68 @@ export default function Categories() {
           <p>No categories yet. Create one!</p>
         </div>
       ) : (
-        <div className="cat-manage-list">
+        <div className="cat-manage-list" ref={listRef}>
           {currentCategories.map((cat, idx) => {
-            const isExpanded = !reorderMode && expandedCat === cat.id;
+            const isExpanded = expandedCat === cat.id;
             const subcatCount = activeTab === 'expense' && cat.subcategories ? cat.subcategories.length : 0;
+            const isDragging = touchDragging === idx;
             return (
               <div
                 key={cat.id}
-                className={`cat-card ${isExpanded ? 'expanded' : ''} ${reorderMode ? 'reorder-active' : ''}`}
-                draggable={reorderMode}
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={handleDragOver}
+                className={`cat-card ${isExpanded ? 'expanded' : ''} ${dragOverIndex === idx ? 'drag-over' : ''} ${isDragging ? 'touch-dragging' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(idx, e)}
+                onDragOver={(e) => handleDragOver(e, idx)}
                 onDrop={() => handleDrop(idx)}
+                onDragEnd={handleDragEnd}
               >
                 <div
                   className="cat-card-header"
-                  onClick={() => !reorderMode && activeTab === 'expense' && setExpandedCat(isExpanded ? null : cat.id)}
+                  onClick={() => touchDragging === null && activeTab === 'expense' && setExpandedCat(isExpanded ? null : cat.id)}
                 >
-                  {reorderMode && (
-                    <div className="reorder-controls-row">
-                      <button
-                        className="reorder-btn"
-                        disabled={idx === 0}
-                        onClick={(e) => { e.stopPropagation(); moveCategory(idx, idx - 1); }}
-                      >
-                        <i className="fa-solid fa-chevron-up" />
-                      </button>
-                      <span className="reorder-handle"><i className="fa-solid fa-grip-vertical" /></span>
-                      <button
-                        className="reorder-btn"
-                        disabled={idx === currentCategories.length - 1}
-                        onClick={(e) => { e.stopPropagation(); moveCategory(idx, idx + 1); }}
-                      >
-                        <i className="fa-solid fa-chevron-down" />
-                      </button>
-                    </div>
-                  )}
+                  <span
+                    className="cat-drag-handle"
+                    title="Drag to reorder"
+                    onTouchStart={(e) => handleTouchStart(idx, e)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    <i className="fa-solid fa-grip-vertical" />
+                  </span>
                   <div className="cat-card-left">
                     <span className="cat-card-icon" style={{ background: cat.color + '18', color: cat.color }}>
                       {cat.icon}
                     </span>
                     <div className="cat-card-info">
                       <p className="cat-card-name">{cat.name}</p>
-                      {activeTab === 'expense' && !reorderMode && (
+                      {activeTab === 'expense' && (
                         <p className="cat-card-meta">
                           {subcatCount} {subcatCount === 1 ? 'subcategory' : 'subcategories'}
                         </p>
                       )}
                     </div>
                   </div>
-                  {!reorderMode && (
-                    <div className="cat-card-actions">
-                      <button
-                        className="cat-icon-btn edit"
-                        title="Edit"
-                        onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
-                      >
-                        <i className="fa-solid fa-pen" />
-                      </button>
-                      <button
-                        className="cat-icon-btn delete"
-                        title="Delete"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
-                      >
-                        <i className="fa-solid fa-trash-can" />
-                      </button>
-                      {activeTab === 'expense' && (
-                        <span className={`cat-card-chevron ${isExpanded ? 'open' : ''}`}>
-                          <i className="fa-solid fa-chevron-down" />
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="cat-card-actions">
+                    <button
+                      className="cat-icon-btn edit"
+                      title="Edit"
+                      onClick={(e) => { e.stopPropagation(); openEditCategory(cat); }}
+                    >
+                      <i className="fa-solid fa-pen" />
+                    </button>
+                    <button
+                      className="cat-icon-btn delete"
+                      title="Delete"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
+                    >
+                      <i className="fa-solid fa-trash-can" />
+                    </button>
+                    {activeTab === 'expense' && (
+                      <span className={`cat-card-chevron ${isExpanded ? 'open' : ''}`}>
+                        <i className="fa-solid fa-chevron-down" />
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {activeTab === 'expense' && isExpanded && (

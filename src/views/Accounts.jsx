@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
@@ -64,9 +64,32 @@ export default function Accounts() {
   const [didReorder, setDidReorder] = useState(false);
   const dragIndex = useRef(null);
 
-  const [peekBalances, setPeekBalances] = useState(false);
-  const hideBalances = settings.hideBalances === true && !peekBalances;
+  const [, forceUpdate] = useState(0);
+  const peekActive = settings.balancePeekUntil && Date.now() < settings.balancePeekUntil;
+  const hideBalances = settings.hideBalances === true && !peekActive;
   const maskAmount = (val) => hideBalances ? 'xxxxx' : val;
+
+  function togglePeek() {
+    if (peekActive) {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+    } else {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: Date.now() + 60000 } });
+    }
+  }
+
+  useEffect(() => {
+    if (!settings.balancePeekUntil) return;
+    const remaining = settings.balancePeekUntil - Date.now();
+    if (remaining <= 0) {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+      return;
+    }
+    const timer = setTimeout(() => {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { balancePeekUntil: null } });
+      forceUpdate((n) => n + 1);
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [settings.balancePeekUntil, dispatch]);
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const bankAccounts = accounts.filter((a) => a.type === 'bank');
@@ -344,8 +367,8 @@ export default function Accounts() {
         <div className="accounts-total-top">
           <p className="accounts-total-label">Total Balance</p>
           {settings.hideBalances && (
-            <button className="balance-peek-btn" onClick={() => setPeekBalances((p) => !p)}>
-              <i className={`fa-solid ${peekBalances ? 'fa-eye-slash' : 'fa-eye'}`} />
+            <button className="balance-peek-btn" onClick={() => togglePeek()}>
+              <i className={`fa-solid ${peekActive ? 'fa-eye-slash' : 'fa-eye'}`} />
             </button>
           )}
         </div>
