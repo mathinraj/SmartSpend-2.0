@@ -50,7 +50,8 @@ export function formatCurrency(amount, currencyCode) {
     maximumFractionDigits: 2,
   });
 
-  return `${currency.symbol}${formatted}`;
+  const sign = amount < 0 ? '-' : '';
+  return `${sign}${currency.symbol}${formatted}`;
 }
 
 export function formatCurrencyPlain(amount, currencyCode) {

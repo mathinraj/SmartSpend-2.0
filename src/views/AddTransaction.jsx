@@ -43,6 +43,7 @@ export default function AddTransaction() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(toDateInputValue(new Date()));
+  const [time, setTime] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [fromAccountId, setFromAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
@@ -88,6 +89,7 @@ export default function AddTransaction() {
       setAmount(String(editing.amount));
       setNote(editing.note || '');
       setDate(editing.date);
+      setTime(editing.time || '');
       setAccountId(editing.accountId || accounts[0]?.id || '');
       setFromAccountId(editing.fromAccountId || '');
       setToAccountId(editing.toAccountId || '');
@@ -356,8 +358,10 @@ export default function AddTransaction() {
       ? { isSplit: true, splitAmount: computedSplitAmount, ...(splitDetails.length > 0 ? { splitDetails } : {}) }
       : { isSplit: false, splitAmount: 0 };
 
+    const timeField = time || undefined;
+
     if (editing) {
-      const payload = { id: editing.id, type: tab, amount: amountVal, note: note.trim(), date, paymentApp: appField, ...splitFields };
+      const payload = { id: editing.id, type: tab, amount: amountVal, note: note.trim(), date, time: timeField, paymentApp: appField, ...splitFields };
       if (tab === 'transfer') {
         if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) return;
         payload.fromAccountId = fromAccountId;
@@ -372,13 +376,13 @@ export default function AddTransaction() {
     } else {
       if (tab === 'expense') {
         if (!accountId || !categoryId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'expense', amount: amountVal, accountId, categoryId, subcategoryId: subcategoryId || null, note: note.trim(), date, paymentApp: appField, ...splitFields } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'expense', amount: amountVal, accountId, categoryId, subcategoryId: subcategoryId || null, note: note.trim(), date, time: timeField, paymentApp: appField, ...splitFields } });
       } else if (tab === 'income') {
         if (!accountId || !categoryId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'income', amount: amountVal, accountId, categoryId, note: note.trim(), date, paymentApp: appField } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'income', amount: amountVal, accountId, categoryId, note: note.trim(), date, time: timeField, paymentApp: appField } });
       } else {
         if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) return;
-        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'transfer', amount: amountVal, fromAccountId, toAccountId, note: note.trim(), date, paymentApp: appField } });
+        dispatch({ type: 'ADD_TRANSACTION', payload: { type: 'transfer', amount: amountVal, fromAccountId, toAccountId, note: note.trim(), date, time: timeField, paymentApp: appField } });
       }
     }
     if (splitFields.isSplit && splitDetails.length > 0 && !editing) {
@@ -456,14 +460,23 @@ export default function AddTransaction() {
         </div>
 
         <div className="form-group">
-          <label className="form-label"><i className="fa-regular fa-calendar" style={{ marginRight: 6 }} />Date</label>
-          <div className="date-picker-card" onClick={() => dateRef.current?.showPicker?.() || dateRef.current?.click()}>
-            <div className="date-picker-display">
-              <i className="fa-solid fa-calendar-day date-picker-icon" />
-              <span className="date-picker-text">{dateDisplay}</span>
-              <i className="fa-solid fa-chevron-down date-picker-arrow" />
+          <label className="form-label"><i className="fa-regular fa-calendar" style={{ marginRight: 6 }} />Date & Time</label>
+          <div className="date-time-row">
+            <div className="date-picker-card" style={{ flex: 1 }} onClick={() => dateRef.current?.showPicker?.() || dateRef.current?.click()}>
+              <div className="date-picker-display">
+                <i className="fa-solid fa-calendar-day date-picker-icon" />
+                <span className="date-picker-text">{dateDisplay}</span>
+                <i className="fa-solid fa-chevron-down date-picker-arrow" />
+              </div>
+              <input ref={dateRef} type="date" className="date-picker-native" value={date} onChange={(e) => setDate(e.target.value)} required />
             </div>
-            <input ref={dateRef} type="date" className="date-picker-native" value={date} onChange={(e) => setDate(e.target.value)} required />
+            <input
+              type="time"
+              className="time-input"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              placeholder="Time"
+            />
           </div>
         </div>
 

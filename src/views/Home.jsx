@@ -64,10 +64,7 @@ export default function Home() {
     }
     setSyncing(true);
     try {
-      let token = gDrive.getAccessToken();
-      if (!token) {
-        try { token = await gDrive.requestAccessToken({ prompt: 'none' }); } catch {}
-      }
+      const token = await gDrive.ensureTokenSilently();
       if (!token) {
         toast('Google Drive session expired. Please reconnect in Preferences.', 'warning');
         setSyncing(false);
@@ -105,10 +102,7 @@ export default function Home() {
     setShowSyncMenu(false);
     setSyncing(true);
     try {
-      let token = gDrive.getAccessToken();
-      if (!token) {
-        try { token = await gDrive.requestAccessToken({ prompt: 'none' }); } catch {}
-      }
+      const token = await gDrive.ensureTokenSilently();
       if (!token) {
         toast('Google Drive session expired. Please reconnect in Preferences.', 'warning');
         setSyncing(false);

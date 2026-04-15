@@ -485,3 +485,23 @@
     grid-template-columns: 1fr 1fr 1fr;
   }
 }
+
+/* Coffee link in footer */
+.landing-footer-sep {
+  opacity: 0.4;
+}
+
+.landing-coffee-link {
+  background: none;
+  border: none;
+  color: var(--landing-purple-light);
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0;
+}
+
+.landing-coffee-link:hover {
+  text-decoration: underline;
+}
+

@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { AppProvider, useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useReminder } from '../hooks/useReminder';
+import { useToast } from '../components/Toast';
 import { getCurrencySymbol } from '../utils/currencies';
 import { ToastProvider } from '../components/Toast';
+import * as gDrive from '../utils/googleDrive';
 import BottomNav from '../components/BottomNav';
 import Sidebar from '../components/Sidebar';
 import LockScreen from '../components/LockScreen';
@@ -234,6 +236,65 @@ function AppShell({ children }) {
 
   const handleUnlock = useCallback(() => setLocked(false), []);
 
+  const toast = useToast();
+  const { dispatch } = useApp();
+  const [syncBanner, setSyncBanner] = useState(null);
+  const [pulling, setPulling] = useState(false);
+
+  useEffect(() => {
+    if (!mounted || state.settings.onboardStep < 3) return;
+    if (!state.settings.gdriveEmail || !gDrive.isConfigured()) return;
+    const CHECK_KEY = 'spendtraq_sync_check';
+    const lastCheck = parseInt(sessionStorage.getItem(CHECK_KEY) || '0', 10);
+    if (Date.now() - lastCheck < 5 * 60 * 1000) return;
+
+    async function checkCloudBackup() {
+      sessionStorage.setItem(CHECK_KEY, Date.now().toString());
+      try {
+        const token = await gDrive.ensureTokenSilently();
+        if (!token) return;
+        const fileInfo = await gDrive.getSyncFileInfo();
+        if (!fileInfo?.modifiedTime) return;
+        const cloudTime = new Date(fileInfo.modifiedTime).getTime();
+        const localTime = state.settings.gdriveLastSync ? new Date(state.settings.gdriveLastSync).getTime() : 0;
+        if (cloudTime > localTime + 30000) {
+          const ago = Math.round((Date.now() - cloudTime) / 60000);
+          const label = ago < 1 ? 'just now' : ago < 60 ? `${ago}m ago` : `${Math.round(ago / 60)}h ago`;
+          setSyncBanner({ label });
+        }
+      } catch { /* silent */ }
+    }
+
+    const timer = setTimeout(checkCloudBackup, 3000);
+    return () => clearTimeout(timer);
+  }, [mounted, state.settings.gdriveEmail, state.settings.gdriveLastSync, state.settings.onboardStep]);
+
+  async function handleBannerPull() {
+    setPulling(true);
+    try {
+      const token = await gDrive.ensureTokenSilently();
+      if (!token) { toast('Session expired. Reconnect in Preferences.', 'warning'); setPulling(false); setSyncBanner(null); return; }
+      const data = await gDrive.downloadSyncData();
+      if (!data) { toast('No backup found', 'info'); setPulling(false); setSyncBanner(null); return; }
+      if (data.settings) {
+        const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
+        dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
+      }
+      if (data.profilePhoto) {
+        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
+      }
+      dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
+      toast('Data synced from Google Drive!', 'success');
+    } catch (err) {
+      if (err.message === 'AUTH_EXPIRED') toast('Session expired. Reconnect in Preferences.', 'warning');
+      else toast('Sync failed', 'error');
+    }
+    setPulling(false);
+    setSyncBanner(null);
+  }
+
   if (!mounted) {
     return null;
   }
@@ -259,6 +320,22 @@ function AppShell({ children }) {
       {isDesktop && <Sidebar />}
       <main className={`app-main ${isDesktop ? 'with-sidebar' : ''}`}>
         <InstallBanner />
+        {syncBanner && (
+          <div className="sync-banner">
+            <div className="sync-banner-content">
+              <i className="fa-solid fa-cloud-arrow-down" />
+              <span>Newer backup found ({syncBanner.label})</span>
+            </div>
+            <div className="sync-banner-actions">
+              <button className="sync-banner-btn primary" onClick={handleBannerPull} disabled={pulling}>
+                {pulling ? <i className="fa-solid fa-spinner fa-spin" /> : 'Pull'}
+              </button>
+              <button className="sync-banner-btn dismiss" onClick={() => setSyncBanner(null)}>
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+          </div>
+        )}
         {children}
       </main>
       {!isDesktop && <BottomNav />}

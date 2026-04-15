@@ -135,6 +135,26 @@
   color: var(--text);
 }
 
+.sidebar-coffee-btn {
+  margin-top: 8px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: #FFDD00;
+  color: #000;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sidebar-coffee-btn:hover {
+  opacity: 0.85;
+}
+
 .sidebar-badge {
   min-width: 18px;
   height: 18px;

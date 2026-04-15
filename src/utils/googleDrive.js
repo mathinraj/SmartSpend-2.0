@@ -1,10 +1,36 @@
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 const SYNC_FILENAME = 'spendtrak-sync.json';
+const TOKEN_KEY = 'spendtraq_gdrive_token';
+const TOKEN_EXPIRY_KEY = 'spendtraq_gdrive_token_expiry';
 
 let tokenClient = null;
-let accessToken = null;
+let accessToken = restoreToken();
 let resolveTokenPromise = null;
+
+function restoreToken() {
+  if (typeof window === 'undefined') return null;
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  const expiry = parseInt(sessionStorage.getItem(TOKEN_EXPIRY_KEY) || '0', 10);
+  if (token && expiry > Date.now()) return token;
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_EXPIRY_KEY);
+  return null;
+}
+
+function persistToken(token, expiresIn) {
+  accessToken = token;
+  if (token && expiresIn) {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(TOKEN_EXPIRY_KEY, String(Date.now() + (expiresIn - 60) * 1000));
+  }
+}
+
+function clearPersistedToken() {
+  accessToken = null;
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_EXPIRY_KEY);
+}
 
 export function isConfigured() {
   return !!CLIENT_ID;
@@ -44,8 +70,8 @@ export async function initTokenClient() {
           if (resolveTokenPromise) resolveTokenPromise(null);
           return;
         }
-        accessToken = response.access_token;
-        if (resolveTokenPromise) resolveTokenPromise(accessToken);
+        persistToken(response.access_token, response.expires_in || 3600);
+        if (resolveTokenPromise) resolveTokenPromise(response.access_token);
       },
     });
     resolve(tokenClient);
@@ -64,11 +90,30 @@ export async function requestAccessToken({ prompt = 'consent' } = {}) {
   });
 }
 
+export async function ensureTokenSilently() {
+  if (accessToken) {
+    try {
+      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) return accessToken;
+    } catch { /* token invalid, continue */ }
+    clearPersistedToken();
+  }
+
+  try {
+    const token = await requestAccessToken({ prompt: 'none' });
+    if (token) return token;
+  } catch { /* silent refresh failed */ }
+
+  return null;
+}
+
 export function revokeToken() {
   if (accessToken) {
     window.google?.accounts?.oauth2?.revoke?.(accessToken);
   }
-  accessToken = null;
+  clearPersistedToken();
   tokenClient = null;
 }
 
@@ -88,7 +133,7 @@ async function driveRequest(url, options = {}) {
   });
 
   if (res.status === 401) {
-    accessToken = null;
+    clearPersistedToken();
     throw new Error('AUTH_EXPIRED');
   }
 
