@@ -37,22 +37,38 @@ export default function Transactions() {
     return () => { document.removeEventListener('mousedown', handleTap); document.removeEventListener('touchstart', handleTap); };
   }, [openMenuId]);
 
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [searchField, setSearchField] = useState('all');
+  const FILTER_KEY = 'spendtraq_txn_filters';
+  function loadSavedFilters() {
+    try {
+      const saved = sessionStorage.getItem(FILTER_KEY);
+      if (saved) { sessionStorage.removeItem(FILTER_KEY); return JSON.parse(saved); }
+    } catch { /* ignore */ }
+    return null;
+  }
+  const savedFilters = useRef(loadSavedFilters());
+
+  const [typeFilter, setTypeFilter] = useState(savedFilters.current?.typeFilter || 'all');
+  const [search, setSearch] = useState(savedFilters.current?.search || '');
+  const [searchField, setSearchField] = useState(savedFilters.current?.searchField || 'all');
   const [showFilters, setShowFilters] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(savedFilters.current?.selectedDate || null);
   const [showRunningBalance, setShowRunningBalance] = useState(false);
 
   // Advanced filters
-  const [filterCategoryIds, setFilterCategoryIds] = useState([]);
-  const [filterAccountIds, setFilterAccountIds] = useState([]);
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
-  const [filterAmountMin, setFilterAmountMin] = useState('');
-  const [filterAmountMax, setFilterAmountMax] = useState('');
+  const [filterCategoryIds, setFilterCategoryIds] = useState(savedFilters.current?.filterCategoryIds || []);
+  const [filterAccountIds, setFilterAccountIds] = useState(savedFilters.current?.filterAccountIds || []);
+  const [filterDateFrom, setFilterDateFrom] = useState(savedFilters.current?.filterDateFrom || '');
+  const [filterDateTo, setFilterDateTo] = useState(savedFilters.current?.filterDateTo || '');
+  const [filterAmountMin, setFilterAmountMin] = useState(savedFilters.current?.filterAmountMin || '');
+  const [filterAmountMax, setFilterAmountMax] = useState(savedFilters.current?.filterAmountMax || '');
+
+  function saveFiltersAndNavigate(path) {
+    const filters = { typeFilter, search, searchField, selectedDate, filterCategoryIds, filterAccountIds, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax };
+    sessionStorage.setItem(FILTER_KEY, JSON.stringify(filters));
+    router.push(path);
+  }
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
@@ -167,7 +183,7 @@ export default function Transactions() {
   }
 
   function handleEdit(txn) {
-    router.push(`/add?edit=${txn.id}`);
+    saveFiltersAndNavigate(`/add?edit=${txn.id}`);
   }
 
   function clearFilters() {

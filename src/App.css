@@ -184,3 +184,67 @@
   margin: 32px 40px 0;
   max-width: 900px;
 }
+
+/* Sync Banner */
+.sync-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 12px 16px 0;
+  background: linear-gradient(135deg, #0984E3, #74B9FF);
+  border-radius: 12px;
+  color: white;
+  animation: bannerSlideIn 0.3s ease;
+}
+
+.sync-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sync-banner-content i {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.sync-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sync-banner-btn.primary {
+  padding: 6px 16px;
+  background: white;
+  color: #0984E3;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: center;
+}
+
+.sync-banner-btn.dismiss {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-layout.desktop .sync-banner {
+  margin: 16px 40px 0;
+  max-width: 900px;
+}
