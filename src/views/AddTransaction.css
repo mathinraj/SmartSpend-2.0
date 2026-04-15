@@ -148,6 +148,31 @@
   font-size: 1.1rem;
 }
 
+/* Date & Time row */
+.date-time-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.time-input {
+  width: 100px;
+  padding: 12px 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.time-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
 /* Date Picker */
 .date-picker-card {
   position: relative;

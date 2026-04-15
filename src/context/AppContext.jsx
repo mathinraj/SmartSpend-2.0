@@ -526,13 +526,32 @@ function appReducer(state, action) {
       const newAccounts = (imp.accounts || []).filter((a) => !existingAccIds.has(a.id));
       const impAccMap = {};
       (imp.accounts || []).forEach((a) => { impAccMap[a.id] = a; });
-      const updatedAccounts = state.accounts.map((a) => {
+      let mergedAccounts = state.accounts.map((a) => {
         const remote = impAccMap[a.id];
         if (!remote) return a;
-        return { ...a, balance: remote.balance, name: remote.name, type: remote.type, subType: remote.subType || a.subType, billingDate: remote.billingDate ?? a.billingDate, dueDate: remote.dueDate ?? a.dueDate, creditLimit: remote.creditLimit ?? a.creditLimit };
+        return { ...a, name: remote.name, type: remote.type, subType: remote.subType || a.subType, billingDate: remote.billingDate ?? a.billingDate, dueDate: remote.dueDate ?? a.dueDate, creditLimit: remote.creditLimit ?? a.creditLimit };
       });
+      mergedAccounts = [...mergedAccounts, ...newAccounts];
 
       const newTxns = (imp.transactions || []).filter((t) => !existingTxnIds.has(t.id));
+
+      newTxns.forEach((txn) => {
+        mergedAccounts = mergedAccounts.map((a) => {
+          if (txn.type === 'income' && a.id === txn.accountId) {
+            return { ...a, balance: a.balance + txn.amount };
+          }
+          if (txn.type === 'expense' && a.id === txn.accountId) {
+            const deductAmount = (txn.isSplit && txn.splitAmount > 0) ? (txn.amount - txn.splitAmount) : txn.amount;
+            return { ...a, balance: a.balance - deductAmount };
+          }
+          if (txn.type === 'transfer') {
+            if (a.id === txn.fromAccountId) return { ...a, balance: a.balance - txn.amount };
+            if (a.id === txn.toAccountId) return { ...a, balance: a.balance + txn.amount };
+          }
+          return a;
+        });
+      });
+
       const newPp = (imp.plannedPayments || []).filter((p) => !existingPpIds.has(p.id));
       const newSplits = (imp.splitLedger || []).filter((e) => !existingSplitIds.has(e.id));
 
@@ -563,7 +582,7 @@ function appReducer(state, action) {
 
       return {
         ...state,
-        accounts: [...updatedAccounts, ...newAccounts],
+        accounts: mergedAccounts,
         transactions: [...newTxns, ...state.transactions],
         plannedPayments: [...state.plannedPayments, ...newPp],
         splitLedger: [...newSplits, ...state.splitLedger],

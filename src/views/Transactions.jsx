@@ -149,6 +149,14 @@ export default function Transactions() {
       if (!groups[t.date]) groups[t.date] = [];
       groups[t.date].push(t);
     });
+    Object.values(groups).forEach((txns) => {
+      txns.sort((a, b) => {
+        if (a.time && b.time) return b.time.localeCompare(a.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
+    });
     return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
 
@@ -178,6 +186,9 @@ export default function Transactions() {
     const sorted = [...transactions].sort((a, b) => {
       const dateCmp = b.date.localeCompare(a.date);
       if (dateCmp !== 0) return dateCmp;
+      if (a.time && b.time) return b.time.localeCompare(a.time);
+      if (a.time) return -1;
+      if (b.time) return 1;
       return (b.createdAt || '').localeCompare(a.createdAt || '');
     });
     const result = {};
@@ -434,6 +445,7 @@ export default function Transactions() {
                         {getCategoryName(txn)}
                         {subName && ` · ${subName}`}
                         {txn.type !== 'transfer' && ` · ${getAccountName(txn.accountId)}`}
+                        {txn.time && ` · ${txn.time}`}
                         {txn.isSplit && <span className="txn-split-badge">{txn.splitSettled ? '✓ Split' : '⏳ Split'}</span>}
                       </p>
                     </div>
