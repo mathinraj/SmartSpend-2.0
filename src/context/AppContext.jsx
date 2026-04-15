@@ -524,16 +524,50 @@ function appReducer(state, action) {
       const existingSplitIds = new Set(state.splitLedger.map((e) => e.id));
 
       const newAccounts = (imp.accounts || []).filter((a) => !existingAccIds.has(a.id));
+      const impAccMap = {};
+      (imp.accounts || []).forEach((a) => { impAccMap[a.id] = a; });
+      const updatedAccounts = state.accounts.map((a) => {
+        const remote = impAccMap[a.id];
+        if (!remote) return a;
+        return { ...a, balance: remote.balance, name: remote.name, type: remote.type, subType: remote.subType || a.subType, billingDate: remote.billingDate ?? a.billingDate, dueDate: remote.dueDate ?? a.dueDate, creditLimit: remote.creditLimit ?? a.creditLimit };
+      });
+
       const newTxns = (imp.transactions || []).filter((t) => !existingTxnIds.has(t.id));
       const newPp = (imp.plannedPayments || []).filter((p) => !existingPpIds.has(p.id));
       const newSplits = (imp.splitLedger || []).filter((e) => !existingSplitIds.has(e.id));
 
+      let mergedCategories = state.categories;
+      if (imp.categories) {
+        const localExpIds = new Set((state.categories.expense || []).map((c) => c.id));
+        const localIncIds = new Set((state.categories.income || []).map((c) => c.id));
+        const newExpCats = (imp.categories.expense || []).filter((c) => !localExpIds.has(c.id));
+        const newIncCats = (imp.categories.income || []).filter((c) => !localIncIds.has(c.id));
+
+        const mergedExpense = [...state.categories.expense];
+        (imp.categories.expense || []).forEach((remoteCat) => {
+          const localIdx = mergedExpense.findIndex((c) => c.id === remoteCat.id);
+          if (localIdx >= 0 && remoteCat.subcategories) {
+            const localSubIds = new Set((mergedExpense[localIdx].subcategories || []).map((s) => s.id));
+            const newSubs = remoteCat.subcategories.filter((s) => !localSubIds.has(s.id));
+            if (newSubs.length > 0) {
+              mergedExpense[localIdx] = { ...mergedExpense[localIdx], subcategories: [...(mergedExpense[localIdx].subcategories || []), ...newSubs] };
+            }
+          }
+        });
+
+        mergedCategories = {
+          expense: [...mergedExpense, ...newExpCats],
+          income: [...(state.categories.income || []), ...newIncCats],
+        };
+      }
+
       return {
         ...state,
-        accounts: [...state.accounts, ...newAccounts],
+        accounts: [...updatedAccounts, ...newAccounts],
         transactions: [...newTxns, ...state.transactions],
         plannedPayments: [...state.plannedPayments, ...newPp],
         splitLedger: [...newSplits, ...state.splitLedger],
+        categories: mergedCategories,
       };
     }
 

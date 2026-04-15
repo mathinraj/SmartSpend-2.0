@@ -419,13 +419,8 @@ export default function Preferences() {
   }
 
   async function ensureToken() {
-    if (gDrive.getAccessToken()) return true;
-    try {
-      const token = await gDrive.requestAccessToken({ prompt: 'none' });
-      return !!token;
-    } catch {
-      return false;
-    }
+    const token = await gDrive.ensureTokenSilently();
+    return !!token;
   }
 
   async function handleGdrivePush() {
