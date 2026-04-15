@@ -865,3 +865,18 @@
   font-weight: 600;
   color: var(--primary);
 }
+
+/* Support card */
+.pref-support-card {
+  margin-top: 8px;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pref-bmc-avatar {
+  background: #FFDD00 !important;
+  padding: 6px;
+}
+

@@ -146,6 +146,7 @@ export default function Preferences() {
   const [importMode, setImportMode] = useState(null);
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [showImportOptions, setShowImportOptions] = useState(false);
+  const [showCoindrop, setShowCoindrop] = useState(false);
 
   function buildExportData() {
     return {
@@ -1490,7 +1491,36 @@ export default function Preferences() {
             </svg>
           </span>
         </a>
+
+        <button className="pref-developer-card pref-support-card" onClick={() => setShowCoindrop(true)}>
+          <div className="pref-dev-avatar pref-bmc-avatar">
+            <img src={`https://cdn.brandfetch.io/buymeacoffee.com/w/128/h/128/theme/light/fallback/lettermark/type/icon?c=${process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || ''}`} alt="" className="bmc-logo" />
+          </div>
+          <div className="pref-dev-info">
+            <p className="pref-dev-name">Buy me a coffee</p>
+            <p className="pref-dev-role">Support SpendTrak's development</p>
+          </div>
+          <i className="fa-solid fa-heart" style={{ color: '#E17055', fontSize: '0.85rem' }} />
+        </button>
       </div>
+
+      {showCoindrop && (
+        <div className="coindrop-overlay" onClick={() => setShowCoindrop(false)}>
+          <div className="coindrop-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="coindrop-header">
+              <h3 className="coindrop-title"><img src={`https://cdn.brandfetch.io/buymeacoffee.com/w/64/h/64/theme/light/fallback/lettermark/type/icon?c=${process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || ''}`} alt="" className="bmc-logo-sm" /> Support SpendTrak</h3>
+              <button className="coindrop-close" onClick={() => setShowCoindrop(false)}>
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <iframe
+              src="https://coindrop.to/mathinraj"
+              className="coindrop-iframe"
+              title="Support Mathinraj on Coindrop"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

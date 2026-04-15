@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import './Welcome.css';
 
@@ -99,6 +99,7 @@ function Reveal({ children, delay = 0, className = '' }) {
 export default function Welcome() {
   const { dispatch } = useApp();
   const landingRef = useRef(null);
+  const [showCoindrop, setShowCoindrop] = useState(false);
 
   const handleGetStarted = useCallback(() => {
     dispatch({ type: 'NEXT_ONBOARD_STEP' });
@@ -236,9 +237,29 @@ export default function Welcome() {
           <p>SpendTrak — Your money, your rules.</p>
           <p className="landing-footer-sub">
             Made with 💚 by <a href="https://www.linkedin.com/in/mathinraj" target="_blank" rel="noopener noreferrer">Mathinraj</a>
+            <span className="landing-footer-sep"> · </span>
+            <button className="landing-coffee-link" onClick={() => setShowCoindrop(true)}><img src={`https://cdn.brandfetch.io/buymeacoffee.com/w/64/h/64/theme/light/fallback/lettermark/type/icon?c=${process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || ''}`} alt="" className="bmc-logo-inline" /> Buy me a coffee</button>
           </p>
         </Reveal>
       </footer>
+
+      {showCoindrop && (
+        <div className="coindrop-overlay" onClick={() => setShowCoindrop(false)}>
+          <div className="coindrop-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="coindrop-header">
+              <h3 className="coindrop-title"><img src={`https://cdn.brandfetch.io/buymeacoffee.com/w/64/h/64/theme/light/fallback/lettermark/type/icon?c=${process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || ''}`} alt="" className="bmc-logo-sm" /> Support SpendTrak</h3>
+              <button className="coindrop-close" onClick={() => setShowCoindrop(false)}>
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <iframe
+              src="https://coindrop.to/mathinraj"
+              className="coindrop-iframe"
+              title="Support Mathinraj on Coindrop"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
