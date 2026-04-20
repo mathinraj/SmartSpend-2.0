@@ -1,4 +1,4 @@
-import SplitTracker from '../../views/SplitTracker';
+import SplitTracker from '../../../views/SplitTracker';
 
 export const metadata = {
   title: 'Split Tracker',

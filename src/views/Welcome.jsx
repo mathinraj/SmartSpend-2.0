@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
+import MarketingNav from '../components/MarketingNav';
+import MarketingFooter from '../components/MarketingFooter';
 import './Welcome.css';
 
 const heroHighlights = [
@@ -107,6 +109,8 @@ export default function Welcome() {
 
   return (
     <div className="landing" ref={landingRef}>
+      <MarketingNav onGetStarted={handleGetStarted} />
+
       {/* ── Hero (viewport height) ── */}
       <section className="landing-hero">
         <div className="landing-bg-shapes">
@@ -122,7 +126,7 @@ export default function Welcome() {
           <h1 className="landing-title">SpendTrak</h1>
           <p className="landing-tagline">Your money, your rules.</p>
           <p className="landing-desc">
-            The smartest way to track expenses, manage accounts, and take full control of your finances — completely free.
+            Everything you need, nothing you don't. Powerful enough for serious budgeting. Simple enough for everyday use.
           </p>
 
           <div className="landing-highlights">
@@ -232,16 +236,13 @@ export default function Welcome() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="landing-footer">
-        <Reveal>
-          <p>SpendTrak — Your money, your rules.</p>
-          <p className="landing-footer-sub">
-            Made with 💚 by <a href="https://www.linkedin.com/in/mathinraj" target="_blank" rel="noopener noreferrer">Mathinraj</a>
-            <span className="landing-footer-sep"> · </span>
-            <button className="landing-coffee-link" onClick={() => setShowCoindrop(true)}><img src={`https://cdn.brandfetch.io/buymeacoffee.com/w/64/h/64/theme/light/fallback/lettermark/type/icon?c=${process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || ''}`} alt="" className="bmc-logo-inline" /> Buy me a coffee</button>
-          </p>
-        </Reveal>
-      </footer>
+      <MarketingFooter
+        showCoindropButton={
+          <button className="landing-coffee-link" onClick={() => setShowCoindrop(true)}>
+            <img src={`https://cdn.brandfetch.io/buymeacoffee.com/w/64/h/64/theme/light/fallback/lettermark/type/icon?c=${process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || ''}`} alt="" className="bmc-logo-inline" /> Buy me a coffee
+          </button>
+        }
+      />
 
       {showCoindrop && (
         <div className="coindrop-overlay" onClick={() => setShowCoindrop(false)}>

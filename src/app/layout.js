@@ -1,5 +1,5 @@
 import Script from 'next/script';
-import ClientApp from './ClientApp';
+import { Analytics } from '@vercel/analytics/react';
 import '../index.css';
 import '../App.css';
 
@@ -208,7 +208,8 @@ export default function RootLayout({ children }) {
         ))}
       </head>
       <body>
-        <ClientApp>{children}</ClientApp>
+        {children}
+        <Analytics />
       </body>
     </html>
   );

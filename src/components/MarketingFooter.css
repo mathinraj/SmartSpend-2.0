@@ -1,0 +1,97 @@
+.mkt-footer {
+  background: #110b2e;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 48px 24px 28px;
+}
+
+.mkt-footer-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.mkt-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mkt-footer-logo {
+  font-size: 1.5rem;
+}
+
+.mkt-footer-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.mkt-footer-tagline {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 2px;
+}
+
+.mkt-footer-links {
+  display: flex;
+  gap: 48px;
+}
+
+.mkt-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mkt-footer-col-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 4px;
+}
+
+.mkt-footer-col a {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.mkt-footer-col a:hover {
+  color: #A29BFE;
+}
+
+.mkt-footer-bottom {
+  max-width: 800px;
+  margin: 28px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.mkt-footer-bottom a {
+  color: #A29BFE;
+  text-decoration: none;
+}
+
+.mkt-footer-bottom a:hover {
+  text-decoration: underline;
+}
+
+.mkt-footer-sep {
+  opacity: 0.4;
+}
+
+@media (min-width: 768px) {
+  .mkt-footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}

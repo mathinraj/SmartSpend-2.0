@@ -1,4 +1,4 @@
-import Home from '../views/Home';
+import Home from '../../views/Home';
 
 export const metadata = {
   title: 'SpendTrak — Free Expense Tracker | Budget & Finance Manager',
