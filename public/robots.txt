@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://spendtraq.vercel.app/sitemap.xml
+Sitemap: https://spendtrak.vercel.app/sitemap.xml
