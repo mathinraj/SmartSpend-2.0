@@ -3,7 +3,7 @@ import ClientApp from './ClientApp';
 import '../index.css';
 import '../App.css';
 
-const SITE_URL = 'https://spendtraq.vercel.app';
+const SITE_URL = 'https://spendtrak.vercel.app';
 const SITE_NAME = 'SpendTrak';
 const SITE_DESCRIPTION = 'Free expense tracker that works offline. Track spending, manage accounts, split bills, plan payments, and analyze your finances — all private, no sign-up needed.';
 

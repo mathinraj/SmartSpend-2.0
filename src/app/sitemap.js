@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = 'https://spendtraq.vercel.app';
+  const baseUrl = 'https://spendtrak.vercel.app';
 
   const routes = [
     { path: '/', priority: 1.0, changeFrequency: 'daily' },
