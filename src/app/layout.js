@@ -192,10 +192,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href="https://kit.fontawesome.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://ka-f.fontawesome.com" crossOrigin="anonymous" />
         <Script
           src="https://kit.fontawesome.com/5432a717c1.js"
           crossOrigin="anonymous"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
         {jsonLd.map((schema, i) => (
           <script

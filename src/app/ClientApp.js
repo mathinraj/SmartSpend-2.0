@@ -305,15 +305,15 @@ function AppShell({ children }) {
   }
 
   if (state.settings.onboardStep === 0) {
-    return <Welcome />;
+    return <main><Welcome /></main>;
   }
 
   if (state.settings.onboardStep === 1) {
-    return <NameSetup />;
+    return <main><NameSetup /></main>;
   }
 
   if (state.settings.onboardStep === 2) {
-    return <CurrencySetup />;
+    return <main><CurrencySetup /></main>;
   }
 
   return (
