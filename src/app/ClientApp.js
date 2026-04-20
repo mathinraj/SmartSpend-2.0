@@ -11,6 +11,7 @@ import * as gDrive from '../utils/googleDrive';
 import BottomNav from '../components/BottomNav';
 import Sidebar from '../components/Sidebar';
 import LockScreen from '../components/LockScreen';
+import MigrationBanner from '../components/MigrationBanner';
 import Welcome from '../views/Welcome';
 import NameSetup from '../views/NameSetup';
 import CurrencySetup from '../views/CurrencySetup';
@@ -319,6 +320,7 @@ function AppShell({ children }) {
     <div className={`app-layout ${isDesktop ? 'desktop' : 'mobile'}`}>
       {isDesktop && <Sidebar />}
       <main className={`app-main ${isDesktop ? 'with-sidebar' : ''}`}>
+        <MigrationBanner />
         <InstallBanner />
         {syncBanner && (
           <div className="sync-banner">

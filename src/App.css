@@ -185,6 +185,279 @@
   max-width: 900px;
 }
 
+/* Migration Banner */
+.migration-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 16px 16px 0;
+  background: linear-gradient(135deg, #e17055, #d63031);
+  border-radius: 12px;
+  color: white;
+  animation: bannerSlideIn 0.3s ease;
+}
+
+.migration-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.migration-banner-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.migration-banner-text {
+  min-width: 0;
+}
+
+.migration-banner-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.migration-banner-desc {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  margin-top: 1px;
+}
+
+.migration-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.migration-banner-btn.primary {
+  padding: 7px 14px;
+  background: white;
+  color: #d63031;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s;
+}
+
+.migration-banner-btn.primary:hover {
+  transform: scale(1.05);
+}
+
+.migration-banner-btn.dismiss {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.migration-banner-btn.dismiss:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.app-layout.desktop .migration-banner {
+  margin: 32px 40px 0;
+  max-width: 900px;
+}
+
+/* Migrate Page */
+.migrate-page {
+  padding: 20px 16px 80px;
+  min-height: 100vh;
+}
+
+.migrate-container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.migrate-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.migrate-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6C5CE7, #A29BFE);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.migrate-header h1 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.migrate-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  line-height: 1.5;
+}
+
+.migrate-step {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e5ea);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+  transition: opacity 0.2s;
+}
+
+.migrate-step.disabled {
+  opacity: 0.55;
+}
+
+.migrate-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.migrate-step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #6C5CE7;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.migrate-step-header h2 {
+  font-size: 1.05rem;
+}
+
+.migrate-step-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  margin-bottom: 14px;
+  margin-left: 36px;
+}
+
+.migrate-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.migrate-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-color, #e5e5ea);
+  border-radius: 12px;
+  background: var(--bg-secondary, #f8f8fa);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.migrate-option.done {
+  border-color: #00b894;
+  background: rgba(0, 184, 148, 0.06);
+}
+
+.migrate-option-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.migrate-option-info > i {
+  font-size: 1.1rem;
+  color: #6C5CE7;
+  margin-top: 2px;
+  width: 20px;
+  text-align: center;
+}
+
+.migrate-option-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.migrate-option-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #666);
+  line-height: 1.4;
+}
+
+.migrate-option-desc code {
+  background: rgba(108, 92, 231, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.migrate-btn {
+  padding: 8px 16px;
+  background: #6C5CE7;
+  color: white;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.migrate-btn:hover:not(:disabled) {
+  transform: scale(1.03);
+}
+
+.migrate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.migrate-btn.primary.large {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95rem;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.migrate-footnote {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #888);
+  margin-top: 20px;
+}
+
 /* Sync Banner */
 .sync-banner {
   display: flex;
