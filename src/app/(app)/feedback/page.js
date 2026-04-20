@@ -1,4 +1,4 @@
-import Feedback from '../../views/Feedback';
+import Feedback from '../../../views/Feedback';
 
 export const metadata = {
   title: 'Feedback',

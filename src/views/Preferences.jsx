@@ -151,7 +151,7 @@ export default function Preferences() {
   function buildExportData() {
     return {
       _app: 'SpendTrak',
-      _version: '2.0.2',
+      _version: '2.1.0',
       _exportedAt: new Date().toISOString(),
       settings: { ...settings, onboardStep: undefined },
       accounts,
@@ -1456,15 +1456,13 @@ export default function Preferences() {
           <i className="fa-solid fa-circle-info" /> About
         </h3>
 
-        <div className="pref-card">
-          <div className="pref-row">
-            <div className="pref-row-info">
-              <p className="pref-row-label">SpendTrak</p>
-              <p className="pref-row-desc">Version 2.0.2 · Your money, your rules.</p>
-            </div>
-            <span className="pref-badge">v2.0.2</span>
+        <a href="/about" className="pref-developer-card">
+          <div className="pref-row-info">
+            <p className="pref-dev-name">SpendTrak</p>
+            <p className="pref-dev-role">Version 2.1.0 · Your money, your rules.</p>
           </div>
-        </div>
+          <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
+        </a>
 
         {!isDesktop && (
           <a href="/feedback" className="pref-developer-card" style={{ marginBottom: 8 }}>

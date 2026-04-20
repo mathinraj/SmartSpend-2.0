@@ -1,4 +1,4 @@
-import Accounts from '../../views/Accounts';
+import Accounts from '../../../views/Accounts';
 
 export const metadata = {
   title: 'Accounts',

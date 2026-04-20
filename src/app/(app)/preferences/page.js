@@ -1,4 +1,4 @@
-import Preferences from '../../views/Preferences';
+import Preferences from '../../../views/Preferences';
 
 export const metadata = {
   title: 'Preferences',

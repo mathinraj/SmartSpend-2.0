@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import AddTransaction from '../../views/AddTransaction';
+import AddTransaction from '../../../views/AddTransaction';
 
 export const metadata = {
   title: 'Add Transaction',

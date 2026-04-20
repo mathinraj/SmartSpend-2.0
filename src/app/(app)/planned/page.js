@@ -1,4 +1,4 @@
-import PlannedPayments from '../../views/PlannedPayments';
+import PlannedPayments from '../../../views/PlannedPayments';
 
 export const metadata = {
   title: 'Planned Payments',

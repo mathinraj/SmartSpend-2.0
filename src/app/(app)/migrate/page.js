@@ -1,4 +1,4 @@
-import Migrate from '../../views/Migrate';
+import Migrate from '../../../views/Migrate';
 
 export const metadata = {
   title: 'Migrate your data',

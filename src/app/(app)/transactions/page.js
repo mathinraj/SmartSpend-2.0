@@ -1,4 +1,4 @@
-import Transactions from '../../views/Transactions';
+import Transactions from '../../../views/Transactions';
 
 export const metadata = {
   title: 'Transaction History',
