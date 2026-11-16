@@ -5,6 +5,7 @@ import type { Settings } from '@/types/models';
 const DEFAULT_SETTINGS: Settings = {
   profileName: null,
   currency: 'INR',
+  onboarded: false,
 };
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {

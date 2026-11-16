@@ -14,11 +14,13 @@ export interface ListRowProps {
   /** Trailing content; defaults to a chevron when `onPress` is set. */
   trailing?: ReactNode;
   onPress?: () => void;
+  /** Set false for pick-one lists, where rows select rather than navigate. */
+  showChevron?: boolean;
   /** Draw a hairline above the row; set for every row except the first in a group. */
   divider?: boolean;
 }
 
-export function ListRow({ title, subtitle, leading, trailing, onPress, divider }: ListRowProps) {
+export function ListRow({ title, subtitle, leading, trailing, onPress, showChevron = true, divider }: ListRowProps) {
   const colors = useTheme();
   const content = (
     <View style={[styles.row, divider && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}>
@@ -33,7 +35,7 @@ export function ListRow({ title, subtitle, leading, trailing, onPress, divider }
           </Text>
         ) : null}
       </View>
-      {trailing ?? (onPress ? <Icon name="chevronRight" size={20} color={colors.textMuted} /> : null)}
+      {trailing ?? (onPress && showChevron ? <Icon name="chevronRight" size={20} color={colors.textMuted} /> : null)}
     </View>
   );
 

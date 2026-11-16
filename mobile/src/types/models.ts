@@ -76,4 +76,6 @@ export interface Category {
 export interface Settings {
   profileName: string | null;
   currency: string;
+  /** False until the first-run name and currency setup is finished. */
+  onboarded: boolean;
 }

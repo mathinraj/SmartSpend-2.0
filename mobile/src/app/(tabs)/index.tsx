@@ -36,6 +36,7 @@ export default function HomeScreen() {
   const currency = settings?.currency ?? 'INR';
   const totalBalance = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
   const isEmpty = accounts?.length === 0 && recent?.length === 0;
+  const addTransaction = () => router.push(accounts?.length === 0 ? '/account/new' : '/transaction/new');
 
   return (
     <View style={styles.root} collapsable={false}>
@@ -66,10 +67,10 @@ export default function HomeScreen() {
           <EmptyState
             emoji="🪙"
             title="Start tracking"
-            message="Add your first transaction, or load sample data to explore the app."
+            message="Add the bank account, card, cash, or wallet you spend from. Or load sample data to explore."
             actions={
               <>
-                <Button label="Add transaction" icon="add" onPress={() => router.push('/add-transaction')} />
+                <Button label="Add account" icon="add" onPress={() => router.push('/account/new')} />
                 <Button
                   label="Load sample data"
                   icon="sparkles"
@@ -94,7 +95,7 @@ export default function HomeScreen() {
           </>
         )}
       </Screen>
-      <Fab accessibilityLabel="Add transaction" onPress={() => router.push('/add-transaction')} />
+      <Fab accessibilityLabel="Add transaction" onPress={addTransaction} />
     </View>
   );
 }

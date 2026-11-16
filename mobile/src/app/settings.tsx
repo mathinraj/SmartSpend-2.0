@@ -34,6 +34,13 @@ export default function SettingsScreen() {
       <SectionHeader title="Preferences" />
       <Card flush>
         <ListRow
+          leading={<Icon name="person" color={colors.primary} />}
+          title="Name"
+          subtitle={settings?.profileName ?? 'Not set'}
+          onPress={() => router.push('/profile')}
+        />
+        <ListRow
+          divider
           leading={<Icon name="currency" color={colors.primary} />}
           title="Currency"
           subtitle={currency ? `${currency.flag}  ${currency.name} (${currency.symbol})` : undefined}

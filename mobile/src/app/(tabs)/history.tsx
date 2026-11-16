@@ -71,7 +71,7 @@ export default function HistoryScreen() {
               emoji="🧾"
               title="No transactions"
               message="Everything you spend, earn, or transfer will show up here."
-              actions={<Button label="Add transaction" icon="add" onPress={() => router.push('/add-transaction')} />}
+              actions={<Button label="Add transaction" icon="add" onPress={() => router.push('/transaction/new')} />}
             />
           ) : undefined
         }
@@ -97,7 +97,7 @@ export default function HistoryScreen() {
           </View>
         )}
       />
-      <Fab accessibilityLabel="Add transaction" onPress={() => router.push('/add-transaction')} />
+      <Fab accessibilityLabel="Add transaction" onPress={() => router.push('/transaction/new')} />
     </View>
   );
 }

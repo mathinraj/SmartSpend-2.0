@@ -8,7 +8,8 @@ import { useTheme } from '@/hooks/use-theme';
 export interface ButtonProps {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  /** `destructive` is the low-emphasis delete style; `danger` is the filled one. */
+  variant?: 'primary' | 'secondary' | 'danger' | 'destructive';
   icon?: IconName;
   disabled?: boolean;
 }
@@ -19,8 +20,14 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled }: 
     primary: colors.primary,
     secondary: colors.cardMuted,
     danger: colors.danger,
+    destructive: colors.cardMuted,
   }[variant];
-  const foreground = variant === 'secondary' ? colors.primary : colors.onPrimary;
+  const foreground = {
+    primary: colors.onPrimary,
+    secondary: colors.primary,
+    danger: colors.onPrimary,
+    destructive: colors.danger,
+  }[variant];
 
   return (
     <View style={[styles.clip, disabled && styles.disabled]}>

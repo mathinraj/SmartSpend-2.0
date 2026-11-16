@@ -1,0 +1,341 @@
+import { router } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useState } from 'react';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Chip, ChipGroup } from '@/components/ui/chip';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FormScreen } from '@/components/ui/form-screen';
+import { Icon, type IconName } from '@/components/ui/icon';
+import { Screen } from '@/components/ui/screen';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import { Text } from '@/components/ui/text';
+import { Field, TextField } from '@/components/ui/text-field';
+import { getCurrency } from '@/constants/currencies';
+import { Radius, Spacing } from '@/constants/theme';
+import { listAccounts } from '@/db/accounts';
+import { listCategories } from '@/db/categories';
+import { addTransaction, updateTransaction, type NewTransaction } from '@/db/transactions';
+import { useDbQuery } from '@/hooks/use-db-query';
+import { useSettings } from '@/hooks/use-settings';
+import { useTheme } from '@/hooks/use-theme';
+import { accountEmoji } from '@/lib/accounts';
+import {
+  formatDayLabel,
+  formatTime,
+  fromDateTimeKeys,
+  parseAmount,
+  sanitizeAmountInput,
+  toDateKey,
+  toTimeKey,
+} from '@/lib/format';
+import { pickDate, pickTime } from '@/lib/pickers';
+import type { TransactionListItem, TransactionType } from '@/types/models';
+
+const TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
+  { value: 'expense', label: 'Expense' },
+  { value: 'income', label: 'Income' },
+  { value: 'transfer', label: 'Transfer' },
+];
+
+export interface TransactionFormProps {
+  /** The transaction being edited; omit to create a new one. */
+  initial?: TransactionListItem;
+  defaultType?: TransactionType;
+}
+
+export function TransactionForm({ initial, defaultType = 'expense' }: TransactionFormProps) {
+  const db = useSQLiteContext();
+  const colors = useTheme();
+  const settings = useSettings();
+  const accounts = useDbQuery(listAccounts, ['accounts']);
+  const expenseCategories = useDbQuery(listCategories, ['categories', 'subcategories'], 'expense');
+  const incomeCategories = useDbQuery(listCategories, ['categories', 'subcategories'], 'income');
+
+  const [type, setType] = useState<TransactionType>(initial?.type ?? defaultType);
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
+  const [accountId, setAccountId] = useState(initial?.accountId ?? null);
+  const [fromAccountId, setFromAccountId] = useState(initial?.fromAccountId ?? null);
+  const [toAccountId, setToAccountId] = useState(initial?.toAccountId ?? null);
+  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? null);
+  const [subcategoryId, setSubcategoryId] = useState(initial?.subcategoryId ?? null);
+  const [date, setDate] = useState(initial?.date ?? toDateKey(new Date()));
+  const [time, setTime] = useState(initial ? initial.time : toTimeKey(new Date()));
+  const [note, setNote] = useState(initial?.note ?? '');
+  const [saving, setSaving] = useState(false);
+
+  if (!accounts || !expenseCategories || !incomeCategories) return null;
+
+  if (accounts.length === 0) {
+    return (
+      <Screen variant="stack">
+        <EmptyState
+          emoji="🏦"
+          title="Add an account first"
+          message="Transactions are recorded against a bank account, card, cash, or wallet."
+          actions={<Button label="Add account" icon="add" onPress={() => router.replace('/account/new')} />}
+        />
+      </Screen>
+    );
+  }
+
+  // Fall back to sensible defaults until the user picks something explicitly.
+  const resolvedAccountId = accountId ?? accounts[0].id;
+  const resolvedFromId = fromAccountId ?? accounts[0].id;
+  const resolvedToId = toAccountId ?? accounts.find((a) => a.id !== resolvedFromId)?.id ?? null;
+
+  const categories = type === 'income' ? incomeCategories : expenseCategories;
+  const category = categories.find((c) => c.id === categoryId);
+  const value = parseAmount(amount);
+  const currencySymbol = getCurrency(settings?.currency ?? 'INR')?.symbol ?? '';
+
+  function validationProblem(): string | null {
+    if (value <= 0) return 'Enter an amount';
+    if (type === 'transfer') {
+      if (!accounts?.some((a) => a.id === resolvedFromId) || !accounts?.some((a) => a.id === resolvedToId)) {
+        return 'Choose both accounts';
+      }
+      if (resolvedFromId === resolvedToId) return 'Choose two different accounts';
+      return null;
+    }
+    if (!accounts?.some((a) => a.id === resolvedAccountId)) return 'Choose an account';
+    if (!category) return 'Choose a category';
+    return null;
+  }
+  const problem = validationProblem();
+
+  function changeType(next: TransactionType) {
+    if (next === type) return;
+    setType(next);
+    setCategoryId(null);
+    setSubcategoryId(null);
+  }
+
+  function selectCategory(id: string) {
+    setCategoryId(id);
+    setSubcategoryId(null);
+  }
+
+  async function save() {
+    if (problem || saving) return;
+    setSaving(true);
+    const isTransfer = type === 'transfer';
+    const input: NewTransaction = {
+      type,
+      amount: value,
+      accountId: isTransfer ? null : resolvedAccountId,
+      fromAccountId: isTransfer ? resolvedFromId : null,
+      toAccountId: isTransfer ? resolvedToId : null,
+      categoryId: isTransfer ? null : categoryId,
+      subcategoryId: type === 'expense' ? subcategoryId : null,
+      note: note.trim() || null,
+      date,
+      time,
+      isSplit: initial?.isSplit ?? false,
+      splitAmount: initial?.splitAmount ?? null,
+      source: initial?.source ?? 'manual',
+      sourceRef: initial?.sourceRef ?? null,
+    };
+    try {
+      if (initial) await updateTransaction(db, initial.id, input);
+      else await addTransaction(db, input);
+      router.back();
+    } catch (error) {
+      setSaving(false);
+      Alert.alert('Could not save', error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  const amountColor = type === 'income' ? colors.success : type === 'transfer' ? colors.info : colors.text;
+
+  return (
+    <FormScreen
+      footer={
+        <Button
+          label={problem ?? (initial ? 'Save changes' : 'Save')}
+          icon={problem ? undefined : 'check'}
+          disabled={!!problem || saving}
+          onPress={save}
+        />
+      }>
+      <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={changeType} />
+
+      <Card style={styles.amountCard}>
+        <Text variant="label" tone="secondary">
+          Amount
+        </Text>
+        <View style={styles.amountRow}>
+          <Text style={[styles.amountText, { color: amountColor }]}>{currencySymbol}</Text>
+          <TextInput
+            value={amount}
+            onChangeText={(text) => setAmount(sanitizeAmountInput(text))}
+            placeholder="0"
+            placeholderTextColor={colors.textMuted}
+            cursorColor={colors.primary}
+            keyboardType="decimal-pad"
+            autoFocus={!initial}
+            style={[styles.amountText, styles.amountInput, { color: amountColor }]}
+            accessibilityLabel="Amount"
+          />
+        </View>
+      </Card>
+
+      {type === 'transfer' ? (
+        <>
+          <Field label="From">
+            <ChipGroup>
+              {accounts.map((a) => (
+                <Chip
+                  key={a.id}
+                  label={a.name}
+                  emoji={accountEmoji(a, settings?.currency ?? 'INR')}
+                  selected={a.id === resolvedFromId}
+                  onPress={() => setFromAccountId(a.id)}
+                />
+              ))}
+            </ChipGroup>
+          </Field>
+          <Field label="To">
+            <ChipGroup>
+              {accounts.map((a) => (
+                <Chip
+                  key={a.id}
+                  label={a.name}
+                  emoji={accountEmoji(a, settings?.currency ?? 'INR')}
+                  selected={a.id === resolvedToId}
+                  onPress={() => setToAccountId(a.id)}
+                />
+              ))}
+            </ChipGroup>
+          </Field>
+        </>
+      ) : (
+        <>
+          <Field label="Account">
+            <ChipGroup>
+              {accounts.map((a) => (
+                <Chip
+                  key={a.id}
+                  label={a.name}
+                  emoji={accountEmoji(a, settings?.currency ?? 'INR')}
+                  selected={a.id === resolvedAccountId}
+                  onPress={() => setAccountId(a.id)}
+                />
+              ))}
+            </ChipGroup>
+          </Field>
+          <Field label="Category">
+            <ChipGroup>
+              {categories.map((c) => (
+                <Chip
+                  key={c.id}
+                  label={c.name}
+                  emoji={c.icon}
+                  selected={c.id === categoryId}
+                  onPress={() => selectCategory(c.id)}
+                />
+              ))}
+            </ChipGroup>
+          </Field>
+          {type === 'expense' && category && category.subcategories.length > 0 ? (
+            <Field label="Subcategory" hint="Optional">
+              <ChipGroup>
+                {category.subcategories.map((s) => (
+                  <Chip
+                    key={s.id}
+                    label={s.name}
+                    selected={s.id === subcategoryId}
+                    onPress={() => setSubcategoryId(s.id === subcategoryId ? null : s.id)}
+                  />
+                ))}
+              </ChipGroup>
+            </Field>
+          ) : null}
+        </>
+      )}
+
+      <Field label="Date & time">
+        <View style={styles.dateRow}>
+          <PickerButton
+            icon="calendar"
+            label={formatDayLabel(date)}
+            onPress={() => pickDate(fromDateTimeKeys(date, time), (d) => setDate(toDateKey(d)))}
+          />
+          <PickerButton
+            icon="clock"
+            label={time ? formatTime(time) : 'Add time'}
+            onPress={() => pickTime(fromDateTimeKeys(date, time), (d) => setTime(toTimeKey(d)))}
+          />
+        </View>
+      </Field>
+
+      <TextField
+        label="Note"
+        hint="Optional"
+        value={note}
+        onChangeText={setNote}
+        placeholder="What was this for?"
+        returnKeyType="done"
+        maxLength={120}
+      />
+    </FormScreen>
+  );
+}
+
+function PickerButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  const colors = useTheme();
+  return (
+    <View style={[styles.pickerClip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        android_ripple={{ color: colors.border }}
+        style={styles.picker}>
+        <Icon name={icon} size={20} color={colors.primary} />
+        <Text variant="bodyStrong" numberOfLines={1}>
+          {label}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  amountCard: {
+    gap: Spacing.xs,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  amountText: {
+    fontSize: 40,
+    lineHeight: 48,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  amountInput: {
+    flex: 1,
+    padding: 0,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  pickerClip: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderRadius: Radius.md,
+    overflow: 'hidden',
+  },
+  picker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    minHeight: 50,
+    paddingHorizontal: Spacing.lg,
+  },
+});

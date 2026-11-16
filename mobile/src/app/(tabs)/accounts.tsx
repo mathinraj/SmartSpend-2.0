@@ -1,9 +1,11 @@
+import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Fab } from '@/components/ui/fab';
 import { Avatar, ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -13,7 +15,7 @@ import { listAccounts } from '@/db/accounts';
 import { loadSampleData } from '@/db/sample-data';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
-import { ACCOUNT_TYPE_LABELS, accountColor, accountEmoji, isCreditCard } from '@/lib/accounts';
+import { ACCOUNT_TYPE_LABELS, accountColor, accountEmoji, isCreditCard, subTypeLabel } from '@/lib/accounts';
 import { formatCurrency } from '@/lib/format';
 import type { Account, AccountType } from '@/types/models';
 
@@ -23,8 +25,7 @@ function describe(account: Account, currency: string): string | null {
   if (isCreditCard(account) && account.creditLimit) {
     return `Limit ${formatCurrency(account.creditLimit, currency)}`;
   }
-  if (account.subType) return account.subType.charAt(0).toUpperCase() + account.subType.slice(1);
-  return null;
+  return subTypeLabel(account);
 }
 
 export default function AccountsScreen() {
@@ -41,63 +42,78 @@ export default function AccountsScreen() {
   })).filter((g) => g.accounts.length > 0);
 
   return (
-    <Screen title="Accounts">
-      <Card style={styles.summary}>
-        <View style={styles.summaryItem}>
-          <Text variant="label" tone="secondary">
-            Assets
-          </Text>
-          <Text variant="heading" tone="success" numeric numberOfLines={1} adjustsFontSizeToFit>
-            {formatCurrency(assets, currency)}
-          </Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text variant="label" tone="secondary">
-            Liabilities
-          </Text>
-          <Text variant="heading" tone="danger" numeric numberOfLines={1} adjustsFontSizeToFit>
-            {formatCurrency(Math.abs(liabilities), currency)}
-          </Text>
-        </View>
-      </Card>
+    <View style={styles.root} collapsable={false}>
+      <Screen title="Accounts" hasFab>
+        <Card style={styles.summary}>
+          <View style={styles.summaryItem}>
+            <Text variant="label" tone="secondary">
+              Assets
+            </Text>
+            <Text variant="heading" tone="success" numeric numberOfLines={1} adjustsFontSizeToFit>
+              {formatCurrency(assets, currency)}
+            </Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text variant="label" tone="secondary">
+              Liabilities
+            </Text>
+            <Text variant="heading" tone="danger" numeric numberOfLines={1} adjustsFontSizeToFit>
+              {formatCurrency(Math.abs(liabilities), currency)}
+            </Text>
+          </View>
+        </Card>
 
-      {accounts?.length === 0 ? (
-        <EmptyState
-          emoji="🏦"
-          title="No accounts yet"
-          message="Bank accounts, cards, cash, and wallets you track will appear here."
-          actions={
-            <Button label="Load sample data" icon="sparkles" variant="secondary" onPress={() => loadSampleData(db)} />
-          }
-        />
-      ) : null}
+        {accounts?.length === 0 ? (
+          <EmptyState
+            emoji="🏦"
+            title="No accounts yet"
+            message="Add the bank accounts, cards, cash, and wallets you want to track."
+            actions={
+              <>
+                <Button label="Add account" icon="add" onPress={() => router.push('/account/new')} />
+                <Button
+                  label="Load sample data"
+                  icon="sparkles"
+                  variant="secondary"
+                  onPress={() => loadSampleData(db)}
+                />
+              </>
+            }
+          />
+        ) : null}
 
-      {groups.map((group) => (
-        <View key={group.type} style={styles.group}>
-          <SectionHeader title={ACCOUNT_TYPE_LABELS[group.type]} />
-          <Card flush>
-            {group.accounts.map((account, i) => (
-              <ListRow
-                key={account.id}
-                divider={i > 0}
-                leading={<Avatar emoji={accountEmoji(account, currency)} color={accountColor(account)} />}
-                title={account.name}
-                subtitle={describe(account, currency)}
-                trailing={
-                  <Text variant="bodyStrong" tone={account.balance < 0 ? 'danger' : 'default'} numeric>
-                    {formatCurrency(account.balance, currency)}
-                  </Text>
-                }
-              />
-            ))}
-          </Card>
-        </View>
-      ))}
-    </Screen>
+        {groups.map((group) => (
+          <View key={group.type} style={styles.group}>
+            <SectionHeader title={ACCOUNT_TYPE_LABELS[group.type]} />
+            <Card flush>
+              {group.accounts.map((account, i) => (
+                <ListRow
+                  key={account.id}
+                  divider={i > 0}
+                  onPress={() => router.push(`/account/${account.id}`)}
+                  leading={<Avatar emoji={accountEmoji(account, currency)} color={accountColor(account)} />}
+                  title={account.name}
+                  subtitle={describe(account, currency)}
+                  trailing={
+                    <Text variant="bodyStrong" tone={account.balance < 0 ? 'danger' : 'default'} numeric>
+                      {formatCurrency(account.balance, currency)}
+                    </Text>
+                  }
+                />
+              ))}
+            </Card>
+          </View>
+        ))}
+      </Screen>
+      <Fab accessibilityLabel="Add account" onPress={() => router.push('/account/new')} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   summary: {
     flexDirection: 'row',
     gap: Spacing.lg,

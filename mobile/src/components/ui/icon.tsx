@@ -19,6 +19,10 @@ const ICONS = {
   sparkles: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
   delete: { ios: 'trash', android: 'delete', web: 'delete' },
   info: { ios: 'info.circle', android: 'info', web: 'info' },
+  calendar: { ios: 'calendar', android: 'calendar_today', web: 'calendar_today' },
+  clock: { ios: 'clock', android: 'schedule', web: 'schedule' },
+  edit: { ios: 'pencil', android: 'edit', web: 'edit' },
+  person: { ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

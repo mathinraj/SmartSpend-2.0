@@ -40,7 +40,13 @@ export async function listAccounts(db: SQLiteDatabase): Promise<Account[]> {
   return rows.map(toAccount);
 }
 
-export type NewAccount = Omit<Account, 'id' | 'sortOrder' | 'createdAt'> & { id?: string };
+export async function getAccount(db: SQLiteDatabase, id: string): Promise<Account | null> {
+  const row = await db.getFirstAsync<AccountRow>('SELECT * FROM accounts WHERE id = ?', id);
+  return row ? toAccount(row) : null;
+}
+
+export type AccountInput = Omit<Account, 'id' | 'sortOrder' | 'createdAt'>;
+export type NewAccount = AccountInput & { id?: string };
 
 export async function createAccount(db: SQLiteDatabase, input: NewAccount): Promise<string> {
   const id = input.id ?? generateId();
@@ -61,4 +67,32 @@ export async function createAccount(db: SQLiteDatabase, input: NewAccount): Prom
     new Date().toISOString()
   );
   return id;
+}
+
+/**
+ * Overwrites account details. Setting `balance` here is a manual correction; balance changes caused by
+ * transactions must go through the transaction functions instead.
+ */
+export async function updateAccount(db: SQLiteDatabase, id: string, input: AccountInput) {
+  await db.runAsync(
+    `UPDATE accounts
+        SET name = ?, type = ?, sub_type = ?, balance = ?, icon = ?, color = ?,
+            credit_limit = ?, billing_day = ?, due_day = ?
+      WHERE id = ?`,
+    input.name,
+    input.type,
+    input.subType,
+    input.balance,
+    input.icon,
+    input.color,
+    input.creditLimit,
+    input.billingDay,
+    input.dueDay,
+    id
+  );
+}
+
+/** Transactions that reference the account are kept so history and totals stay intact. */
+export async function deleteAccount(db: SQLiteDatabase, id: string) {
+  await db.runAsync('DELETE FROM accounts WHERE id = ?', id);
 }

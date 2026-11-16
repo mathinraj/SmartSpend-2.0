@@ -24,6 +24,53 @@ export function parseDateKey(key: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** `HH:mm` in local time. */
+export function toTimeKey(date: Date): string {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Combines a `YYYY-MM-DD` key and optional `HH:mm` into a local `Date`. */
+export function fromDateTimeKeys(dateKey: string, timeKey: string | null): Date {
+  const date = parseDateKey(dateKey);
+  if (timeKey) {
+    const [h, m] = timeKey.split(':').map(Number);
+    date.setHours(h, m);
+  }
+  return date;
+}
+
+export function formatTime(timeKey: string): string {
+  return fromDateTimeKeys(toDateKey(new Date()), timeKey).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+export function formatLongDate(key: string): string {
+  return parseDateKey(key).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Keeps only a valid amount as the user types: digits, one decimal separator, at most two decimals.
+ * Accepts `,` as the separator because some Android keyboards emit it.
+ */
+export function sanitizeAmountInput(text: string): string {
+  const normalized = text.replace(',', '.').replace(/[^0-9.]/g, '');
+  const [whole, ...rest] = normalized.split('.');
+  if (rest.length === 0) return whole;
+  return `${whole}.${rest.join('').slice(0, 2)}`;
+}
+
+export function parseAmount(text: string): number {
+  const value = Number.parseFloat(text);
+  return Number.isFinite(value) ? value : 0;
+}
+
 export function addDays(date: Date, days: number): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + days);

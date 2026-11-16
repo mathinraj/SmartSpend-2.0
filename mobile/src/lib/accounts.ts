@@ -29,6 +29,35 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   custom: 'Other',
 };
 
+/** Options in the account form, in display order. */
+export const ACCOUNT_TYPE_OPTIONS: { type: AccountType; label: string }[] = [
+  { type: 'bank', label: 'Bank' },
+  { type: 'card', label: 'Card' },
+  { type: 'cash', label: 'Cash' },
+  { type: 'wallet', label: 'Wallet / UPI' },
+  { type: 'custom', label: 'Other' },
+];
+
+/** Sub-type IDs match the web app. */
+export const ACCOUNT_SUBTYPES: Partial<Record<AccountType, { id: string; label: string }[]>> = {
+  bank: [
+    { id: 'savings', label: 'Savings' },
+    { id: 'current', label: 'Current' },
+    { id: 'salary', label: 'Salary' },
+    { id: 'fixed_deposit', label: 'Fixed Deposit' },
+    { id: 'recurring_deposit', label: 'Recurring Deposit' },
+  ],
+  card: [
+    { id: 'credit', label: 'Credit card' },
+    { id: 'debit', label: 'Debit card' },
+  ],
+};
+
+export function subTypeLabel(account: Pick<Account, 'type' | 'subType'>): string | null {
+  if (!account.subType) return null;
+  return ACCOUNT_SUBTYPES[account.type]?.find((s) => s.id === account.subType)?.label ?? null;
+}
+
 export function accountEmoji(account: Pick<Account, 'type' | 'icon'>, currencyCode: string): string {
   if (account.icon) return account.icon;
   if (account.type === 'cash') return CASH_EMOJI[currencyCode] ?? TYPE_EMOJI.cash;

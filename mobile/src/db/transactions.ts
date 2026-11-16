@@ -74,25 +74,28 @@ export interface TransactionFilter {
   limit?: number;
 }
 
+const SELECT_LIST_ITEM = `
+  SELECT t.*,
+         c.name  AS category_name,
+         c.icon  AS category_icon,
+         c.color AS category_color,
+         s.name  AS subcategory_name,
+         a.name  AS account_name,
+         fa.name AS from_account_name,
+         ta.name AS to_account_name
+    FROM transactions t
+    LEFT JOIN categories c ON c.id = t.category_id
+    LEFT JOIN subcategories s ON s.id = t.subcategory_id
+    LEFT JOIN accounts a ON a.id = t.account_id
+    LEFT JOIN accounts fa ON fa.id = t.from_account_id
+    LEFT JOIN accounts ta ON ta.id = t.to_account_id`;
+
 export async function listTransactions(
   db: SQLiteDatabase,
   { from, to, limit }: TransactionFilter = {}
 ): Promise<TransactionListItem[]> {
   const rows = await db.getAllAsync<TransactionListRow>(
-    `SELECT t.*,
-            c.name  AS category_name,
-            c.icon  AS category_icon,
-            c.color AS category_color,
-            s.name  AS subcategory_name,
-            a.name  AS account_name,
-            fa.name AS from_account_name,
-            ta.name AS to_account_name
-       FROM transactions t
-       LEFT JOIN categories c ON c.id = t.category_id
-       LEFT JOIN subcategories s ON s.id = t.subcategory_id
-       LEFT JOIN accounts a ON a.id = t.account_id
-       LEFT JOIN accounts fa ON fa.id = t.from_account_id
-       LEFT JOIN accounts ta ON ta.id = t.to_account_id
+    `${SELECT_LIST_ITEM}
       WHERE ($from IS NULL OR t.date >= $from)
         AND ($to IS NULL OR t.date < $to)
       ORDER BY t.date DESC, t.time DESC, t.created_at DESC
@@ -100,6 +103,19 @@ export async function listTransactions(
     { $from: from ?? null, $to: to ?? null, $limit: limit ?? -1 }
   );
   return rows.map(toListItem);
+}
+
+export async function getTransaction(db: SQLiteDatabase, id: string): Promise<TransactionListItem | null> {
+  const row = await db.getFirstAsync<TransactionListRow>(`${SELECT_LIST_ITEM} WHERE t.id = ?`, id);
+  return row ? toListItem(row) : null;
+}
+
+export async function countTransactionsForAccount(db: SQLiteDatabase, accountId: string): Promise<number> {
+  const row = await db.getFirstAsync<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM transactions WHERE ? IN (account_id, from_account_id, to_account_id)',
+    accountId
+  );
+  return row?.n ?? 0;
 }
 
 export interface PeriodSummary {
@@ -215,6 +231,36 @@ export async function addTransaction(db: SQLiteDatabase, input: NewTransaction):
     await applyBalance(db, input, 1);
   });
   return id;
+}
+
+/** Rewrites a transaction, reversing its old balance effect and applying the new one atomically. */
+export async function updateTransaction(db: SQLiteDatabase, id: string, input: NewTransaction) {
+  await db.withTransactionAsync(async () => {
+    const old = await db.getFirstAsync<TransactionRow>('SELECT * FROM transactions WHERE id = ?', id);
+    if (!old) throw new Error(`Transaction ${id} not found`);
+    await applyBalance(db, toTransaction(old), -1);
+    await db.runAsync(
+      `UPDATE transactions
+          SET type = ?, amount = ?, account_id = ?, from_account_id = ?, to_account_id = ?,
+              category_id = ?, subcategory_id = ?, note = ?, date = ?, time = ?,
+              is_split = ?, split_amount = ?
+        WHERE id = ?`,
+      input.type,
+      input.amount,
+      input.accountId,
+      input.fromAccountId,
+      input.toAccountId,
+      input.categoryId,
+      input.subcategoryId,
+      input.note,
+      input.date,
+      input.time,
+      input.isSplit ? 1 : 0,
+      input.splitAmount,
+      id
+    );
+    await applyBalance(db, input, 1);
+  });
 }
 
 /** Deletes a transaction and reverses its effect on account balances atomically. */

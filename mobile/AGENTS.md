@@ -51,14 +51,16 @@ Android-first native port of the SpendTrak web app (the Next.js app in the repo 
 ```
 src/
   app/                 Routes only
-    _layout.tsx        Root stack + SQLiteProvider + navigation theme
+    _layout.tsx        Providers + root stack; `Stack.Protected` shows onboarding until `settings.onboarded`
+    onboarding.tsx     First run: welcome → name → currency
     (tabs)/            Native bottom tabs: index (Home), history, accounts, analytics
+    transaction/       new (modal), [id] (detail), edit/[id] (modal)
+    account/           new (modal), [id] (edit modal)
     settings.tsx       Pushed screen
-    currency.tsx       Modal
-    add-transaction.tsx Modal
+    profile.tsx, currency.tsx  Modals
   components/
-    ui/                Design-system primitives (Text, Card, Screen, Button, Fab, ListRow, Icon, ...)
-    *.tsx              Feature components (e.g. transaction-row)
+    ui/                Design-system primitives (Text, Card, Screen, FormScreen, Button, Chip, Field, ...)
+    *.tsx              Feature components (transaction-form, account-form, transaction-row, currency-list)
   constants/           theme tokens, default categories, currencies
   db/                  The only place that runs SQL: migrations + one module per table
   hooks/               use-db-query, use-settings, use-theme
@@ -81,11 +83,14 @@ src/
 - Use `Text` (variants + tones) instead of raw `react-native` `Text`. Amounts use `numeric` and `formatCurrency`.
 - Icons go through `Icon` and its `ICONS` map (Material Symbols on Android). Category and account icons are emojis, as in the web app.
 - Tab screens use `<Screen>` (or a list with the same insets) and keep the ScrollView/list as the first child; wrap with `<View collapsable={false}>` when adding a `Fab`.
+- Forms use `<FormScreen footer={<Button .../>}>`: it keeps the focused input and the footer above the keyboard (react-native-keyboard-controller). Disable the primary button and use its label to say what's missing (e.g. "Choose a category") instead of showing error alerts.
+- Date/time selection goes through `pickDate` / `pickTime` in `src/lib/pickers.ts` (Android system dialogs).
+- Forms initialize state from props once, so route screens load the record first and render the form only when it exists.
 - Verify UI changes on the Android emulator, light and dark mode.
 
 ## Roadmap
 
 1. Phase 1 (done): scaffold, navigation, theme, SQLite schema, read-only screens, sample data, currency setting.
-2. Phase 2: add/edit/delete transaction form, account CRUD, first-run onboarding (name + currency), transaction detail.
+2. Phase 2 (done, v1.1.0): add/edit/delete transactions, transaction detail, account add/edit/delete, first-run onboarding, profile name. Not yet: category management, split expenses.
 3. Phase 3: charts (trends, category donut), planned payments, split tracker, app lock (`expo-local-authentication`), reminders (`expo-notifications`), export/import (JSON compatible with the web app).
 4. Phase 4: SMS auto-capture of bank transactions. Needs a custom native module (Expo Modules API) for `READ_SMS`/`RECEIVE_SMS`, so the app must move from Expo Go to a development build. Google Play restricts SMS permissions and requires a permissions declaration; confirm current policy before building. Store parsed messages with `source = 'sms'` and a message fingerprint in `source_ref` (unique index already exists) to avoid duplicates, and always let the user confirm before saving.
