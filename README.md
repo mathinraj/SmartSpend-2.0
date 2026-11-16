@@ -2,6 +2,13 @@
 
 A personal finance tracker built with Next.js and React. Track expenses, income, and transfers across multiple accounts — all stored locally in your browser. Free, offline, and private.
 
+## Repository layout
+
+| Path | What |
+|------|------|
+| `/` (`src/`, `public/`) | Web app (Next.js), deployed to Vercel |
+| `mobile/` | Native Android app (Expo / React Native) — see [`mobile/README.md`](mobile/README.md) |
+
 ## Features
 
 ### Core
