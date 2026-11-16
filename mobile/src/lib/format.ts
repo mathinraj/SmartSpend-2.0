@@ -77,6 +77,16 @@ export function addDays(date: Date, days: number): Date {
   return d;
 }
 
+/** `YYYY-MM` for the month containing `date`. */
+export function toMonthKey(date: Date): string {
+  return toDateKey(date).slice(0, 7);
+}
+
+/** First day of the month `months` away from the month containing `date`. */
+export function shiftMonth(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
 /** Inclusive start and exclusive end date keys for the month containing `date`. */
 export function monthRange(date: Date): { from: string; to: string } {
   return {

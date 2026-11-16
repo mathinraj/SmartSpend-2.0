@@ -184,7 +184,8 @@ function balanceDeltas(t: BalanceInput): [accountId: string, delta: number][] {
   }
 }
 
-async function applyBalance(db: SQLiteDatabase, t: BalanceInput, sign: 1 | -1) {
+/** Applies (1) or reverses (-1) a transaction's balance effect. The caller owns the SQL transaction. */
+export async function applyBalance(db: SQLiteDatabase, t: BalanceInput, sign: 1 | -1) {
   for (const [accountId, delta] of balanceDeltas(t)) {
     await db.runAsync('UPDATE accounts SET balance = balance + ? WHERE id = ?', sign * delta, accountId);
   }
@@ -223,12 +224,18 @@ export async function insertTransaction(db: SQLiteDatabase, input: NewTransactio
   return id;
 }
 
+/** Inserts a transaction and updates account balances. The caller owns the surrounding SQL transaction. */
+export async function recordTransaction(db: SQLiteDatabase, input: NewTransaction): Promise<string> {
+  const id = await insertTransaction(db, input);
+  await applyBalance(db, input, 1);
+  return id;
+}
+
 /** Inserts a transaction and updates the affected account balances atomically. */
 export async function addTransaction(db: SQLiteDatabase, input: NewTransaction): Promise<string> {
   let id = '';
   await db.withTransactionAsync(async () => {
-    id = await insertTransaction(db, input);
-    await applyBalance(db, input, 1);
+    id = await recordTransaction(db, input);
   });
   return id;
 }
@@ -263,12 +270,51 @@ export async function updateTransaction(db: SQLiteDatabase, id: string, input: N
   });
 }
 
-/** Deletes a transaction and reverses its effect on account balances atomically. */
+/**
+ * Deletes a transaction, reverses its effect on account balances, and removes split shares created
+ * from it, atomically.
+ */
 export async function deleteTransaction(db: SQLiteDatabase, id: string) {
   await db.withTransactionAsync(async () => {
     const row = await db.getFirstAsync<TransactionRow>('SELECT * FROM transactions WHERE id = ?', id);
     if (!row) return;
     await applyBalance(db, toTransaction(row), -1);
+    await db.runAsync('DELETE FROM split_entries WHERE transaction_id = ?', id);
     await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
   });
+}
+
+export interface MonthTotal {
+  /** `YYYY-MM`. */
+  month: string;
+  income: number;
+  expense: number;
+}
+
+/** Income and expense per month for `[fromMonth, toMonth]`, oldest first, including empty months. */
+export async function getMonthlyTotals(db: SQLiteDatabase, fromMonth: string, toMonth: string): Promise<MonthTotal[]> {
+  const rows = await db.getAllAsync<MonthTotal>(
+    `SELECT substr(date, 1, 7) AS month,
+            COALESCE(SUM(CASE WHEN type = 'income' THEN amount END), 0)  AS income,
+            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount END), 0) AS expense
+       FROM transactions
+      WHERE substr(date, 1, 7) BETWEEN ? AND ?
+      GROUP BY month`,
+    fromMonth,
+    toMonth
+  );
+  const byMonth = new Map(rows.map((r) => [r.month, r]));
+  const result: MonthTotal[] = [];
+  let [y, m] = fromMonth.split('-').map(Number);
+  for (;;) {
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    result.push(byMonth.get(key) ?? { month: key, income: 0, expense: 0 });
+    if (key >= toMonth) break;
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return result;
 }

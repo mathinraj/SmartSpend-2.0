@@ -56,11 +56,15 @@ src/
     (tabs)/            Native bottom tabs: index (Home), history, accounts, analytics
     transaction/       new (modal), [id] (detail), edit/[id] (modal)
     account/           new (modal), [id] (edit modal)
-    settings.tsx       Pushed screen
-    profile.tsx, currency.tsx  Modals
+    planned/           index (list), new, [id] (modals)
+    splits/            index (people), person/[name], add-person, entry, settle (modals)
+    settings.tsx       Pushed screen; security, reminders likewise
+    profile.tsx, currency.tsx, pin-setup.tsx  Modals
   components/
-    ui/                Design-system primitives (Text, Card, Screen, FormScreen, Button, Chip, Field, ...)
-    *.tsx              Feature components (transaction-form, account-form, transaction-row, currency-list)
+    ui/                Design-system primitives (Text, Card, Screen, FormScreen, Button, Chip, Field, SwitchRow, ...)
+    charts/            DonutChart (react-native-svg), MonthBars (plain Views)
+    lock-gate.tsx      PIN overlay shown at launch and after the lock timeout
+    *.tsx              Feature components (transaction-form, account-form, planned-form, pin-pad, rows)
   constants/           theme tokens, default categories, currencies
   db/                  The only place that runs SQL: migrations + one module per table
   hooks/               use-db-query, use-settings, use-theme
@@ -76,6 +80,15 @@ src/
 - `withTransactionAsync` cannot be nested. Functions meant to be composed inside another transaction (like `insertTransaction`) must not open their own.
 - Dates are local `YYYY-MM-DD` strings; use `toDateKey` / `parseDateKey` from `src/lib/format.ts`, never `new Date('YYYY-MM-DD')` (parses as UTC).
 - Category IDs match the web app so web JSON backups can be imported later.
+- `src/db/backup.ts` reads and writes the web app's JSON backup format (web field names like `billingDate`, `splitLedger`). When adding a table or column, add it to both `buildBackup` and `importBackup` so backups stay round-trippable between the two apps.
+- Split balances: positive = they owe you. `split_paid` and `settlement`/`paid` raise it; `split_owed` and `settlement`/`received` lower it (same as the web app). Shares created from an expense carry its `transaction_id` and are deleted with it.
+
+## Device features
+
+- Anything that opens system UI the app goes to the background for (share sheet, file picker, biometric prompt) must run inside `withLockSuppressed` from `src/lib/lock.ts`, or the app lock will trigger on return.
+- The PIN is stored only as a salted SHA-256 hash in `expo-secure-store`, never in SQLite or backups.
+- Notifications are scheduled only by `syncReminders` in `src/lib/notifications.ts`, which `useReminderSync` re-runs whenever settings or planned payments change. Don't schedule notifications elsewhere; extend `syncReminders`.
+- Local notifications work in Expo Go; push notifications don't (and aren't used).
 
 ## UI rules
 
@@ -92,5 +105,5 @@ src/
 
 1. Phase 1 (done): scaffold, navigation, theme, SQLite schema, read-only screens, sample data, currency setting.
 2. Phase 2 (done, v1.1.0): add/edit/delete transactions, transaction detail, account add/edit/delete, first-run onboarding, profile name. Not yet: category management, split expenses.
-3. Phase 3: charts (trends, category donut), planned payments, split tracker, app lock (`expo-local-authentication`), reminders (`expo-notifications`), export/import (JSON compatible with the web app).
+3. Phase 3 (done, v1.2.0): analytics charts with month switching, planned payments (mark paid logs an expense), split tracker (people, entries, settle up, split from the expense form), app lock (PIN + biometrics), daily and due-date reminders, JSON backup export/import compatible with the web app, CSV export. Not yet: category management, uneven splits, PDF/Excel export, Google Drive sync.
 4. Phase 4: SMS auto-capture of bank transactions. Needs a custom native module (Expo Modules API) for `READ_SMS`/`RECEIVE_SMS`, so the app must move from Expo Go to a development build. Google Play restricts SMS permissions and requires a permissions declaration; confirm current policy before building. Store parsed messages with `source = 'sms'` and a message fingerprint in `source_ref` (unique index already exists) to avoid duplicates, and always let the user confirm before saving.

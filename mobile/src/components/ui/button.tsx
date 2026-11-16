@@ -12,9 +12,12 @@ export interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'danger' | 'destructive';
   icon?: IconName;
   disabled?: boolean;
+  /** `small` is for inline actions inside list rows. */
+  size?: 'regular' | 'small';
 }
 
-export function Button({ label, onPress, variant = 'primary', icon, disabled }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', icon, disabled, size = 'regular' }: ButtonProps) {
+  const small = size === 'small';
   const colors = useTheme();
   const background = {
     primary: colors.primary,
@@ -38,11 +41,12 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled }: 
         android_ripple={{ color: 'rgba(255, 255, 255, 0.25)' }}
         style={({ pressed }) => [
           styles.button,
+          small && styles.small,
           { backgroundColor: background },
           pressed && process.env.EXPO_OS === 'ios' && styles.pressed,
         ]}>
-        {icon ? <Icon name={icon} size={20} color={foreground} /> : null}
-        <Text variant="bodyStrong" style={{ color: foreground }}>
+        {icon ? <Icon name={icon} size={small ? 16 : 20} color={foreground} /> : null}
+        <Text variant={small ? 'caption' : 'bodyStrong'} style={[{ color: foreground }, small && styles.smallLabel]}>
           {label}
         </Text>
       </Pressable>
@@ -84,6 +88,14 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     minHeight: 48,
     paddingHorizontal: Spacing.xl,
+  },
+  small: {
+    minHeight: 34,
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.xs,
+  },
+  smallLabel: {
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.8,

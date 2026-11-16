@@ -14,6 +14,7 @@ import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-dat
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { exportBackup, exportCsv, importBackupWithPrompt } from '@/lib/backup-actions';
 
 export default function SettingsScreen() {
   const db = useSQLiteContext();
@@ -48,7 +49,69 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      <SectionHeader title="Data" />
+      <SectionHeader title="Tools" />
+      <Card flush>
+        <ListRow
+          leading={<Icon name="repeat" color={colors.primary} />}
+          title="Planned payments"
+          subtitle="Subscriptions, EMIs, and bills"
+          onPress={() => router.push('/planned')}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="people" color={colors.primary} />}
+          title="Split money"
+          subtitle="Who owes whom"
+          onPress={() => router.push('/splits')}
+        />
+      </Card>
+
+      <SectionHeader title="Security & reminders" />
+      <Card flush>
+        <ListRow
+          leading={<Icon name="lock" color={colors.primary} />}
+          title="App lock"
+          subtitle={settings?.lockEnabled ? 'On' : 'Off'}
+          onPress={() => router.push('/security')}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="bell" color={colors.primary} />}
+          title="Reminders"
+          subtitle={
+            [settings?.dailyReminder ? 'Daily' : null, settings?.dueReminders ? 'Payment due' : null]
+              .filter(Boolean)
+              .join(' · ') || 'Off'
+          }
+          onPress={() => router.push('/reminders')}
+        />
+      </Card>
+
+      <SectionHeader title="Backup" />
+      <Card flush>
+        <ListRow
+          leading={<Icon name="upload" color={colors.primary} />}
+          title="Export backup"
+          subtitle="JSON file that also restores in the web app"
+          onPress={() => exportBackup(db)}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="download" color={colors.primary} />}
+          title="Import backup"
+          subtitle="From this app or the SpendTrak web app"
+          onPress={() => importBackupWithPrompt(db)}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="table" color={colors.primary} />}
+          title="Export transactions (CSV)"
+          subtitle="For Excel or Google Sheets"
+          onPress={() => exportCsv(db)}
+        />
+      </Card>
+
+      <SectionHeader title="Sample data" />
       <Card flush>
         {sampleLoaded ? (
           <ListRow

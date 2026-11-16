@@ -3,10 +3,13 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
+import { LockGate } from '@/components/lock-gate';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import type { Settings } from '@/types/models';
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -43,23 +46,41 @@ export default function RootLayout() {
 function RootNavigator() {
   const settings = useSettings();
   if (!settings) return null;
+  return <AppStack settings={settings} />;
+}
+
+function AppStack({ settings }: { settings: Settings }) {
+  useReminderSync(settings);
 
   return (
-    <Stack screenOptions={{ headerShadowVisible: false }}>
-      <Stack.Protected guard={settings.onboarded}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/new" options={{ title: 'Add transaction', presentation: 'modal' }} />
-        <Stack.Screen name="transaction/[id]" options={{ title: 'Transaction' }} />
-        <Stack.Screen name="transaction/edit/[id]" options={{ title: 'Edit transaction', presentation: 'modal' }} />
-        <Stack.Screen name="account/new" options={{ title: 'Add account', presentation: 'modal' }} />
-        <Stack.Screen name="account/[id]" options={{ title: 'Edit account', presentation: 'modal' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-        <Stack.Screen name="profile" options={{ title: 'Profile', presentation: 'modal' }} />
-        <Stack.Screen name="currency" options={{ title: 'Currency', presentation: 'modal' }} />
-      </Stack.Protected>
-      <Stack.Protected guard={!settings.onboarded}>
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      </Stack.Protected>
-    </Stack>
+    <LockGate settings={settings}>
+      <Stack screenOptions={{ headerShadowVisible: false }}>
+        <Stack.Protected guard={settings.onboarded}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="transaction/new" options={{ title: 'Add transaction', presentation: 'modal' }} />
+          <Stack.Screen name="transaction/[id]" options={{ title: 'Transaction' }} />
+          <Stack.Screen name="transaction/edit/[id]" options={{ title: 'Edit transaction', presentation: 'modal' }} />
+          <Stack.Screen name="account/new" options={{ title: 'Add account', presentation: 'modal' }} />
+          <Stack.Screen name="account/[id]" options={{ title: 'Edit account', presentation: 'modal' }} />
+          <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+          <Stack.Screen name="profile" options={{ title: 'Profile', presentation: 'modal' }} />
+          <Stack.Screen name="currency" options={{ title: 'Currency', presentation: 'modal' }} />
+          <Stack.Screen name="planned/index" options={{ title: 'Planned payments' }} />
+          <Stack.Screen name="planned/new" options={{ title: 'Add planned payment', presentation: 'modal' }} />
+          <Stack.Screen name="planned/[id]" options={{ title: 'Edit planned payment', presentation: 'modal' }} />
+          <Stack.Screen name="splits/index" options={{ title: 'Split money' }} />
+          <Stack.Screen name="splits/person/[name]" options={{ title: '' }} />
+          <Stack.Screen name="splits/add-person" options={{ title: 'Add person', presentation: 'modal' }} />
+          <Stack.Screen name="splits/entry" options={{ title: 'Add entry', presentation: 'modal' }} />
+          <Stack.Screen name="splits/settle" options={{ title: 'Settle up', presentation: 'modal' }} />
+          <Stack.Screen name="security" options={{ title: 'App lock' }} />
+          <Stack.Screen name="pin-setup" options={{ title: 'Set PIN', presentation: 'modal' }} />
+          <Stack.Screen name="reminders" options={{ title: 'Reminders' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!settings.onboarded}>
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        </Stack.Protected>
+      </Stack>
+    </LockGate>
   );
 }

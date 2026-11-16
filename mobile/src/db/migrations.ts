@@ -75,6 +75,42 @@ const MIGRATIONS: ((db: SQLiteDatabase) => Promise<void>)[] = [
     await seedCategories(db, 'expense', DEFAULT_EXPENSE_CATEGORIES);
     await seedCategories(db, 'income', DEFAULT_INCOME_CATEGORIES);
   },
+
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE planned_payments (
+        id             TEXT PRIMARY KEY NOT NULL,
+        name           TEXT NOT NULL,
+        amount         REAL NOT NULL CHECK (amount > 0),
+        account_id     TEXT,
+        category_id    TEXT,
+        frequency      TEXT NOT NULL
+                         CHECK (frequency IN ('once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly')),
+        next_date      TEXT NOT NULL,
+        note           TEXT,
+        enabled        INTEGER NOT NULL DEFAULT 1,
+        last_paid_date TEXT,
+        created_at     TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_planned_next ON planned_payments (enabled, next_date);
+
+      CREATE TABLE split_entries (
+        id             TEXT PRIMARY KEY NOT NULL,
+        type           TEXT NOT NULL CHECK (type IN ('split_paid', 'split_owed', 'settlement')),
+        person         TEXT NOT NULL,
+        amount         REAL NOT NULL CHECK (amount > 0),
+        direction      TEXT CHECK (direction IN ('received', 'paid')),
+        note           TEXT,
+        date           TEXT NOT NULL,
+        transaction_id TEXT,
+        created_at     TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_split_person ON split_entries (person, date DESC);
+      CREATE INDEX idx_split_transaction ON split_entries (transaction_id);
+    `);
+  },
 ];
 
 async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', seeds: CategorySeed[]) {

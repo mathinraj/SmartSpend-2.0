@@ -6,6 +6,13 @@ const DEFAULT_SETTINGS: Settings = {
   profileName: null,
   currency: 'INR',
   onboarded: false,
+  splitPeople: [],
+  lockEnabled: false,
+  lockBiometric: false,
+  lockTimeout: 0,
+  dailyReminder: false,
+  dailyReminderTime: '21:00',
+  dueReminders: true,
 };
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
@@ -14,14 +21,17 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
   return { ...DEFAULT_SETTINGS, ...stored };
 }
 
+/** Writes settings without opening a SQL transaction, for use inside one. */
+export async function writeSettings(db: SQLiteDatabase, patch: Partial<Settings>) {
+  for (const [key, value] of Object.entries(patch)) {
+    await db.runAsync(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+      key,
+      JSON.stringify(value)
+    );
+  }
+}
+
 export async function updateSettings(db: SQLiteDatabase, patch: Partial<Settings>) {
-  await db.withTransactionAsync(async () => {
-    for (const [key, value] of Object.entries(patch)) {
-      await db.runAsync(
-        'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
-        key,
-        JSON.stringify(value)
-      );
-    }
-  });
+  await db.withTransactionAsync(() => writeSettings(db, patch));
 }

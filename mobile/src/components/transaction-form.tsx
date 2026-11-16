@@ -17,12 +17,14 @@ import { getCurrency } from '@/constants/currencies';
 import { Radius, Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
+import { addSplitExpense, equalShare } from '@/db/splits';
 import { addTransaction, updateTransaction, type NewTransaction } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { accountEmoji } from '@/lib/accounts';
 import {
+  formatCurrency,
   formatDayLabel,
   formatTime,
   fromDateTimeKeys,
@@ -64,6 +66,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   const [date, setDate] = useState(initial?.date ?? toDateKey(new Date()));
   const [time, setTime] = useState(initial ? initial.time : toTimeKey(new Date()));
   const [note, setNote] = useState(initial?.note ?? '');
+  const [splitWith, setSplitWith] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   if (!accounts || !expenseCategories || !incomeCategories) return null;
@@ -89,7 +92,16 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   const categories = type === 'income' ? incomeCategories : expenseCategories;
   const category = categories.find((c) => c.id === categoryId);
   const value = parseAmount(amount);
-  const currencySymbol = getCurrency(settings?.currency ?? 'INR')?.symbol ?? '';
+  const currency = settings?.currency ?? 'INR';
+  const currencySymbol = getCurrency(currency)?.symbol ?? '';
+  const people = settings?.splitPeople ?? [];
+  // Splits are created with the expense; editing one later doesn't rewrite the shares.
+  const canSplit = type === 'expense' && !initial;
+  const splitPeople = canSplit ? splitWith.filter((p) => people.includes(p)) : [];
+
+  function toggleSplitPerson(person: string) {
+    setSplitWith((current) => (current.includes(person) ? current.filter((p) => p !== person) : [...current, person]));
+  }
 
   function validationProblem(): string | null {
     if (value <= 0) return 'Enter an amount';
@@ -140,6 +152,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
     };
     try {
       if (initial) await updateTransaction(db, initial.id, input);
+      else if (splitPeople.length > 0) await addSplitExpense(db, input, splitPeople);
       else await addTransaction(db, input);
       router.back();
     } catch (error) {
@@ -190,7 +203,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
                 <Chip
                   key={a.id}
                   label={a.name}
-                  emoji={accountEmoji(a, settings?.currency ?? 'INR')}
+                  emoji={accountEmoji(a, currency)}
                   selected={a.id === resolvedFromId}
                   onPress={() => setFromAccountId(a.id)}
                 />
@@ -203,7 +216,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
                 <Chip
                   key={a.id}
                   label={a.name}
-                  emoji={accountEmoji(a, settings?.currency ?? 'INR')}
+                  emoji={accountEmoji(a, currency)}
                   selected={a.id === resolvedToId}
                   onPress={() => setToAccountId(a.id)}
                 />
@@ -219,7 +232,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
                 <Chip
                   key={a.id}
                   label={a.name}
-                  emoji={accountEmoji(a, settings?.currency ?? 'INR')}
+                  emoji={accountEmoji(a, currency)}
                   selected={a.id === resolvedAccountId}
                   onPress={() => setAccountId(a.id)}
                 />
@@ -250,6 +263,22 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
                     onPress={() => setSubcategoryId(s.id === subcategoryId ? null : s.id)}
                   />
                 ))}
+              </ChipGroup>
+            </Field>
+          ) : null}
+          {canSplit ? (
+            <Field
+              label="Split with"
+              hint={
+                splitPeople.length > 0 && value > 0
+                  ? `Split ${splitPeople.length + 1} ways: each owes you ${formatCurrency(equalShare(value, splitPeople.length), currency)}. The full amount leaves your account.`
+                  : 'Optional. Track who owes you their share.'
+              }>
+              <ChipGroup>
+                {people.map((p) => (
+                  <Chip key={p} label={p} emoji="👤" selected={splitPeople.includes(p)} onPress={() => toggleSplitPerson(p)} />
+                ))}
+                <Chip label="Add person" emoji="➕" onPress={() => router.push('/splits/add-person')} />
               </ChipGroup>
             </Field>
           ) : null}

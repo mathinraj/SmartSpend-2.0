@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { PlannedRow } from '@/components/planned-row';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button, IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,12 +14,15 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
 import { Radius, Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
+import { listPlanned } from '@/db/planned';
 import { loadSampleData } from '@/db/sample-data';
+import { getPersonBalances } from '@/db/splits';
 import { getPeriodSummary, listTransactions } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { formatCurrency, formatMonth, greeting, monthRange } from '@/lib/format';
+import { daysUntil } from '@/lib/planned';
 
 export default function HomeScreen() {
   const db = useSQLiteContext();
@@ -33,8 +37,28 @@ export default function HomeScreen() {
     { limit: 5 }
   );
 
+  const planned = useDbQuery(listPlanned, ['planned_payments', 'accounts', 'categories']);
+  const balances = useDbQuery(getPersonBalances, ['split_entries'], settings?.splitPeople ?? []);
+
   const currency = settings?.currency ?? 'INR';
   const totalBalance = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
+  const activePlanned = planned?.filter((p) => p.enabled) ?? [];
+  const duePlanned = activePlanned.filter((p) => daysUntil(p.nextDate) <= 3);
+  const overdueCount = activePlanned.filter((p) => daysUntil(p.nextDate) < 0).length;
+  const owedToYou = balances?.filter((b) => b.balance > 0).reduce((sum, b) => sum + b.balance, 0) ?? 0;
+  const youOwe = balances?.filter((b) => b.balance < 0).reduce((sum, b) => sum - b.balance, 0) ?? 0;
+  const splitSubtitle =
+    owedToYou > 0
+      ? `${formatCurrency(owedToYou, currency)} owed to you`
+      : youOwe > 0
+        ? `You owe ${formatCurrency(youOwe, currency)}`
+        : 'All settled';
+  const plannedSubtitle =
+    overdueCount > 0
+      ? `${overdueCount} overdue`
+      : duePlanned.length > 0
+        ? `${duePlanned.length} due soon`
+        : `${activePlanned.length} active`;
   const isEmpty = accounts?.length === 0 && recent?.length === 0;
   const addTransaction = () => router.push(accounts?.length === 0 ? '/account/new' : '/transaction/new');
 
@@ -62,6 +86,28 @@ export default function HomeScreen() {
             <Stat label="Expenses" icon="expense" value={formatCurrency(month?.expense ?? 0, currency)} />
           </View>
         </View>
+
+        <View style={styles.tiles}>
+          <Tile
+            emoji="🗓️"
+            title="Planned"
+            subtitle={plannedSubtitle}
+            alert={overdueCount > 0}
+            onPress={() => router.push('/planned')}
+          />
+          <Tile emoji="🤝" title="Split money" subtitle={splitSubtitle} onPress={() => router.push('/splits')} />
+        </View>
+
+        {duePlanned.length > 0 ? (
+          <>
+            <SectionHeader title="Payments due" actionLabel="See all" onAction={() => router.push('/planned')} />
+            <Card flush>
+              {duePlanned.slice(0, 3).map((p, i) => (
+                <PlannedRow key={p.id} payment={p} currency={currency} db={db} divider={i > 0} />
+              ))}
+            </Card>
+          </>
+        ) : null}
 
         {isEmpty ? (
           <EmptyState
@@ -97,6 +143,33 @@ export default function HomeScreen() {
       </Screen>
       <Fab accessibilityLabel="Add transaction" onPress={addTransaction} />
     </View>
+  );
+}
+
+interface TileProps {
+  emoji: string;
+  title: string;
+  subtitle: string;
+  alert?: boolean;
+  onPress: () => void;
+}
+
+function Tile({ emoji, title, subtitle, alert, onPress }: TileProps) {
+  const colors = useTheme();
+  return (
+    <Card flush style={styles.tile}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        android_ripple={{ color: colors.border }}
+        style={styles.tileInner}>
+        <Text style={styles.tileEmoji}>{emoji}</Text>
+        <Text variant="bodyStrong">{title}</Text>
+        <Text variant="caption" tone={alert ? 'danger' : 'secondary'} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </Pressable>
+    </Card>
   );
 }
 
@@ -157,6 +230,22 @@ const styles = StyleSheet.create({
   },
   statText: {
     flex: 1,
+  },
+  tiles: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  tile: {
+    flex: 1,
+  },
+  tileInner: {
+    padding: Spacing.lg,
+    gap: 2,
+  },
+  tileEmoji: {
+    fontSize: 24,
+    lineHeight: 30,
+    marginBottom: Spacing.xs,
   },
   emptyList: {
     padding: Spacing.lg,

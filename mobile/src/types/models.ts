@@ -73,9 +73,69 @@ export interface Category {
   subcategories: Subcategory[];
 }
 
+export type PlannedFrequency = 'once' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface PlannedPayment {
+  id: string;
+  name: string;
+  amount: number;
+  accountId: string | null;
+  categoryId: string | null;
+  frequency: PlannedFrequency;
+  /** `YYYY-MM-DD` of the next due date. */
+  nextDate: string;
+  note: string | null;
+  enabled: boolean;
+  lastPaidDate: string | null;
+  createdAt: string;
+}
+
+export interface PlannedPaymentListItem extends PlannedPayment {
+  categoryIcon: string | null;
+  categoryColor: string | null;
+  accountName: string | null;
+}
+
+/**
+ * - `split_paid`: you paid, they owe you their share.
+ * - `split_owed`: they paid, you owe them your share.
+ * - `settlement`: money changed hands; `direction` says which way.
+ */
+export type SplitEntryType = 'split_paid' | 'split_owed' | 'settlement';
+
+export interface SplitEntry {
+  id: string;
+  type: SplitEntryType;
+  person: string;
+  amount: number;
+  /** Settlements only: `received` = they paid you, `paid` = you paid them. */
+  direction: 'received' | 'paid' | null;
+  note: string | null;
+  date: string;
+  /** The expense this share came from, when created from the transaction form. */
+  transactionId: string | null;
+  createdAt: string;
+}
+
+/** Positive = they owe you, negative = you owe them. */
+export interface PersonBalance {
+  person: string;
+  balance: number;
+}
+
 export interface Settings {
   profileName: string | null;
   currency: string;
   /** False until the first-run name and currency setup is finished. */
   onboarded: boolean;
+  /** People available for splitting; the ledger may also mention people removed from this list. */
+  splitPeople: string[];
+  lockEnabled: boolean;
+  lockBiometric: boolean;
+  /** Seconds in the background before the app locks again. */
+  lockTimeout: number;
+  dailyReminder: boolean;
+  /** `HH:mm`. */
+  dailyReminderTime: string;
+  dueReminders: boolean;
 }
