@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { updateSettings } from '@/db/settings';
 import { getPersonBalance, listSplitEntries } from '@/db/splits';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
+import { showDialog } from '@/lib/dialog';
 import { formatCurrency, formatDayLabel } from '@/lib/format';
 import { balanceSummary, entryDisplay } from '@/lib/splits';
 
@@ -29,7 +30,7 @@ export default function PersonScreen() {
   const inList = settings.splitPeople.includes(name);
 
   function confirmRemove() {
-    Alert.alert(`Remove ${name}?`, 'Their history is kept, but they will no longer be offered when splitting.', [
+    showDialog(`Remove ${name}?`, 'Their history is kept, but they will no longer be offered when splitting.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',

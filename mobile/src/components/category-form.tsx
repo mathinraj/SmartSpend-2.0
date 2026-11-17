@@ -1,14 +1,14 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FormScreen } from '@/components/ui/form-screen';
 import { Icon } from '@/components/ui/icon';
 import { Avatar } from '@/components/ui/list-row';
-import { MoveButtons } from '@/components/ui/move-buttons';
+import { DraggableList } from '@/components/ui/draggable-list';
 import { Text } from '@/components/ui/text';
 import { Field, Input, TextField } from '@/components/ui/text-field';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/constants/categories';
@@ -23,6 +23,7 @@ import {
 } from '@/db/categories';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useTheme } from '@/hooks/use-theme';
+import { showDialog } from '@/lib/dialog';
 import { generateId } from '@/lib/id';
 import type { Category, CategoryKind } from '@/types/models';
 
@@ -57,6 +58,7 @@ export function CategoryForm({ kind, initial }: CategoryFormProps) {
     () => initial?.subcategories.map((s) => ({ key: s.id, id: s.id, name: s.name })) ?? []
   );
   const [focusKey, setFocusKey] = useState<string | null>(null);
+  const [customEmoji, setCustomEmoji] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   if (!siblings) return null;
@@ -77,12 +79,23 @@ export function CategoryForm({ kind, initial }: CategoryFormProps) {
     setSubs((list) => list.map((s) => (s.key === key ? { ...s, ...patch } : s)));
   }
 
-  function moveSub(index: number, delta: -1 | 1) {
+  function moveSub(from: number, to: number) {
     setSubs((list) => {
       const next = [...list];
-      [next[index], next[index + delta]] = [next[index + delta], next[index]];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
       return next;
     });
+  }
+
+  const typedEmoji = customEmoji?.trim() ?? '';
+  // Accept anything from the emoji keyboard (including flags and joined sequences) but not plain text.
+  const emojiValid = typedEmoji !== '' && typedEmoji.length <= 16 && !/[A-Za-z0-9\s]/.test(typedEmoji);
+
+  function useCustomEmoji() {
+    if (!emojiValid) return;
+    setIcon(typedEmoji);
+    setCustomEmoji(null);
   }
 
   function addSub() {
@@ -106,14 +119,14 @@ export function CategoryForm({ kind, initial }: CategoryFormProps) {
       router.back();
     } catch (error) {
       setSaving(false);
-      Alert.alert('Could not save', error instanceof Error ? error.message : String(error));
+      showDialog('Could not save', error instanceof Error ? error.message : String(error));
     }
   }
 
   async function confirmDelete() {
     if (!initial) return;
     if (siblings!.length <= 1) {
-      Alert.alert(`Can't delete ${initial.name}`, `Keep at least one ${kind} category.`);
+      showDialog(`Can't delete ${initial.name}`, `Keep at least one ${kind} category.`);
       return;
     }
     const usage = await getCategoryUsage(db, initial.id);
@@ -125,7 +138,7 @@ export function CategoryForm({ kind, initial }: CategoryFormProps) {
       used.length > 0
         ? `${used.join(' and ')} use it. They are kept and will show as uncategorized.`
         : 'Nothing uses this category yet.';
-    Alert.alert(`Delete ${initial.name}?`, message, [
+    showDialog(`Delete ${initial.name}?`, message, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -191,7 +204,37 @@ export function CategoryForm({ kind, initial }: CategoryFormProps) {
               </Pressable>
             );
           })}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Use another emoji"
+            onPress={() => setCustomEmoji(customEmoji === null ? '' : null)}
+            style={[
+              styles.iconCell,
+              {
+                backgroundColor: customEmoji !== null ? `${colors.primary}1F` : colors.card,
+                borderColor: customEmoji !== null ? colors.primary : colors.border,
+                borderStyle: 'dashed',
+              },
+            ]}>
+            <Icon name="add" size={22} color={colors.primary} />
+          </Pressable>
         </View>
+        {customEmoji !== null ? (
+          <View style={styles.subRow}>
+            <Input
+              style={styles.flex}
+              value={customEmoji}
+              onChangeText={setCustomEmoji}
+              placeholder="Type or paste an emoji"
+              autoFocus
+              maxLength={16}
+              returnKeyType="done"
+              onSubmitEditing={useCustomEmoji}
+              accessibilityLabel="Custom emoji"
+            />
+            <Button label="Use" icon="check" size="small" disabled={!emojiValid} onPress={useCustomEmoji} />
+          </View>
+        ) : null}
       </Field>
 
       <Field label="Color">
@@ -221,33 +264,34 @@ export function CategoryForm({ kind, initial }: CategoryFormProps) {
               ? `Optional. Removing one keeps its transactions under ${initial.name}.`
               : 'Optional, e.g. Food › Groceries.'
           }>
-          {subs.map((s, i) => (
-            <View key={s.key} style={styles.subRow}>
-              <Input
-                style={styles.flex}
-                value={s.name}
-                onChangeText={(text) => updateSub(s.key, { name: text })}
-                placeholder="Subcategory name"
-                autoFocus={s.key === focusKey}
-                maxLength={30}
-                accessibilityLabel={`Subcategory ${i + 1}`}
-              />
-              <MoveButtons
-                label={s.name.trim() || `subcategory ${i + 1}`}
-                canMoveUp={i > 0}
-                canMoveDown={i < subs.length - 1}
-                onMove={(delta) => moveSub(i, delta)}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Remove ${s.name.trim() || `subcategory ${i + 1}`}`}
-                onPress={() => setSubs((list) => list.filter((x) => x.key !== s.key))}
-                hitSlop={6}
-                style={styles.remove}>
-                <Icon name="close" size={20} color={colors.danger} />
-              </Pressable>
-            </View>
-          ))}
+          <DraggableList
+            items={subs}
+            keyOf={(s) => s.key}
+            labelOf={(s, i) => s.name.trim() || `subcategory ${i + 1}`}
+            onReorder={moveSub}
+            renderItem={(s, i, handle) => (
+              <View style={styles.subRow}>
+                {handle}
+                <Input
+                  style={styles.flex}
+                  value={s.name}
+                  onChangeText={(text) => updateSub(s.key, { name: text })}
+                  placeholder="Subcategory name"
+                  autoFocus={s.key === focusKey}
+                  maxLength={30}
+                  accessibilityLabel={`Subcategory ${i + 1}`}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${s.name.trim() || `subcategory ${i + 1}`}`}
+                  onPress={() => setSubs((list) => list.filter((x) => x.key !== s.key))}
+                  hitSlop={6}
+                  style={styles.remove}>
+                  <Icon name="close" size={20} color={colors.danger} />
+                </Pressable>
+              </View>
+            )}
+          />
           <View style={styles.inlineAction}>
             <Button label="Add subcategory" icon="add" size="small" variant="secondary" onPress={addSub} />
           </View>

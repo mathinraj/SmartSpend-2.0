@@ -1,7 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import { addSplitEntry, addSplitOwed, deleteSplitEntry, getSplitEntry, updateSpl
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { accountEmoji } from '@/lib/accounts';
+import { showDialog } from '@/lib/dialog';
 import { formatDayLabel, parseAmount, parseDateKey, sanitizeAmountInput, toDateKey } from '@/lib/format';
 import { pickDate } from '@/lib/pickers';
 import { entryDisplay } from '@/lib/splits';
@@ -86,13 +87,13 @@ function SplitEntryForm({ person, initial, accounts }: SplitEntryFormProps) {
       router.back();
     } catch (error) {
       setSaving(false);
-      Alert.alert('Could not save', error instanceof Error ? error.message : String(error));
+      showDialog('Could not save', error instanceof Error ? error.message : String(error));
     }
   }
 
   function confirmDelete() {
     if (!initial) return;
-    Alert.alert('Delete this entry?', initial.transactionId ? 'The linked transaction is not changed.' : undefined, [
+    showDialog('Delete this entry?', initial.transactionId ? 'The linked transaction is not changed.' : undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

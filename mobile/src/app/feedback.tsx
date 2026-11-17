@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
@@ -8,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { FormScreen } from '@/components/ui/form-screen';
 import { Screen } from '@/components/ui/screen';
 import { Field, TextField } from '@/components/ui/text-field';
+import { showDialog } from '@/lib/dialog';
 import { FEEDBACK_TYPES, feedbackAvailable, sendFeedback, type FeedbackType } from '@/lib/feedback';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -37,11 +37,11 @@ export default function FeedbackScreen() {
     setSending(true);
     try {
       await sendFeedback(type, message.trim(), email.trim());
-      Alert.alert('Thank you!', 'Your feedback has been sent.');
+      showDialog('Thank you!', 'Your feedback has been sent.');
       router.back();
     } catch (error) {
       setSending(false);
-      Alert.alert('Could not send', error instanceof Error ? error.message : String(error));
+      showDialog('Could not send', error instanceof Error ? error.message : String(error));
     }
   }
 

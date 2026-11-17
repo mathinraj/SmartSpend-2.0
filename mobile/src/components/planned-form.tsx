@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
@@ -17,6 +17,7 @@ import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { accountEmoji } from '@/lib/accounts';
+import { showDialog } from '@/lib/dialog';
 import { formatLongDate, parseAmount, parseDateKey, sanitizeAmountInput, toDateKey } from '@/lib/format';
 import { ensureNotificationPermission } from '@/lib/notifications';
 import { pickDate } from '@/lib/pickers';
@@ -73,13 +74,13 @@ export function PlannedForm({ initial }: PlannedFormProps) {
       if (!initial && settings?.dueReminders) ensureNotificationPermission();
     } catch (error) {
       setSaving(false);
-      Alert.alert('Could not save', error instanceof Error ? error.message : String(error));
+      showDialog('Could not save', error instanceof Error ? error.message : String(error));
     }
   }
 
   function confirmDelete() {
     if (!initial) return;
-    Alert.alert(`Delete ${initial.name}?`, 'Transactions already logged from it are kept.', [
+    showDialog(`Delete ${initial.name}?`, 'Transactions already logged from it are kept.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

@@ -1,7 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
@@ -11,6 +11,7 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Field, TextField } from '@/components/ui/text-field';
 import { DEFAULT_REMINDER, updateSettings } from '@/db/settings';
 import { useSettings } from '@/hooks/use-settings';
+import { showDialog } from '@/lib/dialog';
 import { formatTime, fromDateTimeKeys, toDateKey, toTimeKey } from '@/lib/format';
 import { generateId } from '@/lib/id';
 import { confirmNotifications } from '@/lib/notifications';
@@ -67,7 +68,7 @@ function ReminderForm({ settings, initial }: { settings: Settings; initial?: Cus
 
   function confirmDelete() {
     if (!initial) return;
-    Alert.alert(`Delete "${initial.label || 'Reminder'}"?`, undefined, [
+    showDialog(`Delete "${initial.label || 'Reminder'}"?`, undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

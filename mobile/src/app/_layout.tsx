@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { Appearance } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
+import { DialogHost } from '@/components/dialog-host';
 import { LockGate } from '@/components/lock-gate';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -39,6 +40,7 @@ export default function RootLayout() {
           options={{ enableChangeListener: true }}>
           <RootNavigator />
         </SQLiteProvider>
+        <DialogHost />
       </KeyboardProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
@@ -73,6 +75,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />
           <Stack.Screen name="customize" options={{ title: 'Customize' }} />
           <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
+          <Stack.Screen name="export" options={{ title: 'Export', presentation: 'modal' }} />
           <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
           <Stack.Screen name="categories/new" options={{ title: 'Add category', presentation: 'modal' }} />
           <Stack.Screen name="categories/[id]" options={{ title: 'Edit category', presentation: 'modal' }} />
@@ -88,6 +91,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="splits/settle" options={{ title: 'Settle up', presentation: 'modal' }} />
           <Stack.Screen name="security" options={{ title: 'App lock' }} />
           <Stack.Screen name="pin-setup" options={{ title: 'App lock', presentation: 'modal' }} />
+          <Stack.Screen name="lock-verify" options={{ title: 'Turn off app lock', presentation: 'modal' }} />
           <Stack.Screen name="reminders" options={{ title: 'Reminders' }} />
           <Stack.Screen name="reminder" options={{ title: 'Reminder', presentation: 'modal' }} />
         </Stack.Protected>

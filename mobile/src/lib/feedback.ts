@@ -35,9 +35,15 @@ export async function sendFeedback(type: FeedbackType, message: string, email: s
   });
   if (res.ok) return;
   const detail = (await res.text()).trim();
-  if (res.status === 403 && /non-browser/i.test(detail)) {
+  if (/non-browser/i.test(detail)) {
     throw new FeedbackError(
       'EmailJS blocks requests from apps by default. Turn on "Allow EmailJS API for non-browser applications" in the EmailJS dashboard (Account → Security).'
+    );
+  }
+  // A private key can't safely ship inside an app (anyone could extract it), so strict mode must be off.
+  if (/strict mode|private key/i.test(detail)) {
+    throw new FeedbackError(
+      'The EmailJS account requires a private key. In the EmailJS dashboard (Account → Security), turn off "Use Private Key (recommended)" and keep "Allow EmailJS API for non-browser applications" on, then try again.'
     );
   }
   throw new FeedbackError(detail || `EmailJS returned ${res.status}.`);

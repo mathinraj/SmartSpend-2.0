@@ -170,6 +170,8 @@ export type HomeView = 'balance' | 'expenses';
 
 export interface Settings {
   profileName: string | null;
+  /** `file://` URI of the resized profile photo in the app's documents folder; never included in backups. */
+  profilePhotoUri: string | null;
   currency: string;
   /** False until the first-run name and currency setup is finished. */
   onboarded: boolean;
@@ -213,4 +215,6 @@ export interface Settings {
   lastBackupAt: string | null;
   /** `YYYY-MM-DD` the backup reminder started counting from, used until the first backup. */
   backupClockStart: string | null;
+  /** Android folder (content URI) that "Save to Files" exports go to; chosen once, device-only. */
+  backupFolderUri: string | null;
 }

@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
 import { Card } from '@/components/ui/card';
 import { Chip, ChipGroup } from '@/components/ui/chip';
@@ -13,7 +12,8 @@ import { Field } from '@/components/ui/text-field';
 import { updateSettings } from '@/db/settings';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
-import { authenticateWithBiometrics, biometricsAvailable, clearPin } from '@/lib/lock';
+import { showDialog } from '@/lib/dialog';
+import { authenticateWithBiometrics, biometricsAvailable } from '@/lib/lock';
 
 const TIMEOUTS = [
   { seconds: 0, label: 'Immediately' },
@@ -42,24 +42,26 @@ export default function SecurityScreen() {
 
   function toggleLock(enabled: boolean) {
     if (enabled) {
-      Alert.alert('Lock SpendTrak with', 'A PIN is quicker to enter; a password can be longer.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Password', onPress: () => setUp('password') },
-        { text: '4-digit PIN', onPress: () => setUp('pin') },
-      ]);
+      showDialog(
+        'Lock SpendTrak with',
+        'A PIN is quicker to enter; a password can be longer.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Password', onPress: () => setUp('password') },
+          { text: '4-digit PIN', onPress: () => setUp('pin') },
+        ],
+        { icon: 'lock' }
+      );
       return;
     }
-    Alert.alert('Turn off app lock?', 'Anyone with your phone will be able to open SpendTrak.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Turn off',
-        style: 'destructive',
-        onPress: async () => {
-          await clearPin();
-          await updateSettings(db, { lockEnabled: false, lockBiometric: false });
-        },
-      },
-    ]);
+    showDialog(
+      'Turn off app lock?',
+      `Anyone with your phone will be able to open SpendTrak. You'll need to enter your ${isPassword ? 'password' : 'PIN'} first.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Turn off', style: 'destructive', onPress: () => router.push('/lock-verify') },
+      ]
+    );
   }
 
   async function toggleBiometric(enabled: boolean) {

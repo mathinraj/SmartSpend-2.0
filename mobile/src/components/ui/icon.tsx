@@ -47,6 +47,12 @@ const ICONS = {
   palette: { ios: 'paintpalette', android: 'palette', web: 'palette' },
   feedback: { ios: 'bubble.left.and.exclamationmark.bubble.right', android: 'feedback', web: 'feedback' },
   key: { ios: 'key', android: 'key', web: 'key' },
+  warning: { ios: 'exclamationmark.triangle', android: 'warning', web: 'warning' },
+  dragHandle: { ios: 'line.3.horizontal', android: 'drag_handle', web: 'drag_handle' },
+  folder: { ios: 'folder', android: 'folder', web: 'folder' },
+  share: { ios: 'square.and.arrow.up', android: 'share', web: 'share' },
+  photo: { ios: 'photo', android: 'photo_library', web: 'photo_library' },
+  json: { ios: 'doc.text', android: 'data_object', web: 'data_object' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

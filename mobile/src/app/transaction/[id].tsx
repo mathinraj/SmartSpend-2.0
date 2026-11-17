@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { deleteTransaction, getTransaction } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { showDialog } from '@/lib/dialog';
 import { formatCurrency, formatLongDate, formatTime } from '@/lib/format';
 
 const TYPE_LABELS = { expense: 'Expense', income: 'Income', transfer: 'Transfer' } as const;
@@ -41,7 +42,7 @@ export default function TransactionDetailScreen() {
   const category = t.subcategoryName ? `${t.categoryName} › ${t.subcategoryName}` : t.categoryName;
 
   function confirmDelete() {
-    Alert.alert('Delete transaction?', 'The account balance will be adjusted back.', [
+    showDialog('Delete transaction?', 'The account balance will be adjusted back.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

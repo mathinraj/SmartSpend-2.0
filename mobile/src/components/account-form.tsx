@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
@@ -16,6 +16,7 @@ import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { ACCOUNT_SUBTYPES, ACCOUNT_TYPE_OPTIONS, CUSTOM_TYPE_ICONS, accountEmoji, isCreditCard } from '@/lib/accounts';
+import { showDialog } from '@/lib/dialog';
 import { parseAmount, sanitizeAmountInput } from '@/lib/format';
 import { logosAvailable, logoUrlForDomain, searchLogos, type LogoResult } from '@/lib/logos';
 import type { Account, AccountType } from '@/types/models';
@@ -100,7 +101,7 @@ export function AccountForm({ initial }: AccountFormProps) {
 
   function confirmDeleteType() {
     if (!customType) return;
-    Alert.alert(`Delete the “${customType.label}” type?`, 'This account will move to Other.', [
+    showDialog(`Delete the “${customType.label}” type?`, 'This account will move to Other.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -138,7 +139,7 @@ export function AccountForm({ initial }: AccountFormProps) {
       router.back();
     } catch (error) {
       setSaving(false);
-      Alert.alert('Could not save', error instanceof Error ? error.message : String(error));
+      showDialog('Could not save', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -149,7 +150,7 @@ export function AccountForm({ initial }: AccountFormProps) {
       count > 0
         ? `${count} transaction${count === 1 ? '' : 's'} will stay in your history, marked as from a deleted account.`
         : 'This account has no transactions.';
-    Alert.alert(`Delete ${initial.name}?`, message, [
+    showDialog(`Delete ${initial.name}?`, message, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

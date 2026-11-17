@@ -1,7 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
 
+import { showDialog } from '@/lib/dialog';
 import { addDays, formatCurrency, fromDateTimeKeys } from '@/lib/format';
 import { inQuietHours, intervalTimes } from '@/lib/reminders';
 import type { PlannedPaymentListItem, Settings } from '@/types/models';
@@ -51,7 +52,7 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 /** Asks for notification permission before turning a reminder on; explains how to fix it if denied. */
 export async function confirmNotifications(): Promise<boolean> {
   if (await ensureNotificationPermission()) return true;
-  Alert.alert('Notifications are off', 'Allow notifications for SpendTrak in system settings to get reminders.', [
+  showDialog('Notifications are off', 'Allow notifications for SpendTrak in system settings to get reminders.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Open settings', onPress: () => Linking.openSettings() },
   ]);

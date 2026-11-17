@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Avatar, ListRow } from '@/components/ui/list-row';
 import { Text } from '@/components/ui/text';
 import { Spacing } from '@/constants/theme';
 import { markPlannedPaid } from '@/db/planned';
+import { showDialog } from '@/lib/dialog';
 import { formatCurrency } from '@/lib/format';
 import { daysUntil, dueLabel, frequencyLabel } from '@/lib/planned';
 import type { PlannedPaymentListItem } from '@/types/models';
@@ -16,7 +17,7 @@ export function confirmMarkPaid(db: SQLiteDatabase, payment: PlannedPaymentListI
   const message = payment.accountName
     ? `${amount} will be logged as an expense from ${payment.accountName}.`
     : `No account is linked, so no expense will be logged.`;
-  Alert.alert(`Mark ${payment.name} as paid?`, message, [
+  showDialog(`Mark ${payment.name} as paid?`, message, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Mark paid', onPress: () => markPlannedPaid(db, payment.id) },
   ]);

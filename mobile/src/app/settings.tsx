@@ -1,7 +1,6 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Alert } from 'react-native';
 
 import { ProfileAvatar } from '@/components/profile-avatar';
 import { Card } from '@/components/ui/card';
@@ -16,19 +15,21 @@ import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-dat
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
-import { exportBackup, exportCsv, exportExcel, exportPdf, importBackupWithPrompt } from '@/lib/backup-actions';
+import { exportWithPrompt, importBackupWithPrompt } from '@/lib/backup-actions';
+import { showDialog } from '@/lib/dialog';
 import { addDays, formatShortDate, toDateKey } from '@/lib/format';
 import { EMPTY_HISTORY_FILTERS, setHistoryFilters } from '@/lib/history-filters';
 import { clearPin } from '@/lib/lock';
+import { deleteProfilePhoto } from '@/lib/profile-photo';
 
 const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
 
 function lastBackupText(date: string | null): string {
-  if (!date) return 'Never backed up on this phone';
+  if (!date) return 'never backed up';
   const today = new Date();
-  if (date === toDateKey(today)) return 'Last backup: today';
-  if (date === toDateKey(addDays(today, -1))) return 'Last backup: yesterday';
-  return `Last backup: ${formatShortDate(date)}`;
+  if (date === toDateKey(today)) return 'last backup today';
+  if (date === toDateKey(addDays(today, -1))) return 'last backup yesterday';
+  return `last backup ${formatShortDate(date)}`;
 }
 
 export default function SettingsScreen() {
@@ -39,24 +40,24 @@ export default function SettingsScreen() {
   const currency = settings ? getCurrency(settings.currency) : undefined;
 
   function confirmRemoveSample() {
-    Alert.alert('Remove sample data?', 'Sample accounts and their transactions will be deleted.', [
+    showDialog('Remove sample data?', 'The demo accounts, transactions, planned payments, and split entries will be deleted. Your own data stays.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => removeSampleData(db) },
     ]);
   }
 
   function confirmReset() {
-    Alert.alert(
+    showDialog(
       'Reset everything?',
       'This deletes all accounts, transactions, categories, planned payments, splits, settings, and the app lock PIN on this phone. It can’t be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Export backup', onPress: () => exportBackup(db) },
+        { text: 'Export backup', onPress: () => exportWithPrompt(db, 'backup') },
         {
           text: 'Reset',
           style: 'destructive',
           onPress: () =>
-            Alert.alert('Delete everything now?', 'You’ll go back to the first-run setup.', [
+            showDialog('Delete everything now?', 'You’ll go back to the first-run setup.', [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Delete everything', style: 'destructive', onPress: resetEverything },
             ]),
@@ -69,9 +70,10 @@ export default function SettingsScreen() {
     try {
       await clearPin();
       setHistoryFilters(EMPTY_HISTORY_FILTERS);
+      deleteProfilePhoto(settings?.profilePhotoUri ?? null);
       await resetAllData(db);
     } catch (error) {
-      Alert.alert('Reset failed', error instanceof Error ? error.message : String(error));
+      showDialog('Reset failed', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -80,7 +82,7 @@ export default function SettingsScreen() {
       <SectionHeader title="Preferences" />
       <Card flush>
         <ListRow
-          leading={<ProfileAvatar size={28} />}
+          leading={<ProfileAvatar size={28} photoUri={settings?.profilePhotoUri} />}
           title="Name"
           subtitle={settings?.profileName ?? 'Not set'}
           onPress={() => router.push('/profile')}
@@ -156,37 +158,16 @@ export default function SettingsScreen() {
       <Card flush>
         <ListRow
           leading={<Icon name="upload" color={colors.primary} />}
-          title="Export backup"
-          subtitle={lastBackupText(settings?.lastBackupAt ?? null)}
-          onPress={() => exportBackup(db)}
+          title="Export"
+          subtitle={`Data backup, Excel, PDF, or CSV · ${lastBackupText(settings?.lastBackupAt ?? null)}`}
+          onPress={() => router.push('/export')}
         />
         <ListRow
           divider
           leading={<Icon name="download" color={colors.primary} />}
-          title="Import backup"
-          subtitle="From this app or the SpendTrak web app"
+          title="Import"
+          subtitle="Restore from a data backup (.json) file"
           onPress={() => importBackupWithPrompt(db)}
-        />
-        <ListRow
-          divider
-          leading={<Icon name="table" color={colors.primary} />}
-          title="Export transactions (CSV)"
-          subtitle="Plain table for any spreadsheet app"
-          onPress={() => exportCsv(db)}
-        />
-        <ListRow
-          divider
-          leading={<Icon name="table" color={colors.primary} />}
-          title="Export Excel workbook"
-          subtitle="Transactions, accounts, and monthly summary sheets"
-          onPress={() => exportExcel(db)}
-        />
-        <ListRow
-          divider
-          leading={<Icon name="receipt" color={colors.primary} />}
-          title="Export PDF report"
-          subtitle="Printable summary with your transactions"
-          onPress={() => exportPdf(db)}
         />
       </Card>
 
@@ -196,14 +177,14 @@ export default function SettingsScreen() {
           <ListRow
             leading={<Icon name="delete" color={colors.danger} />}
             title="Remove sample data"
-            subtitle="Delete demo accounts and transactions"
+            subtitle="Delete the demo accounts, transactions, planned payments, and splits"
             onPress={confirmRemoveSample}
           />
         ) : (
           <ListRow
             leading={<Icon name="sparkles" color={colors.primary} />}
             title="Load sample data"
-            subtitle="Explore the app with demo accounts and transactions"
+            subtitle="Explore with demo accounts, planned payments, and split expenses"
             onPress={() => loadSampleData(db)}
           />
         )}

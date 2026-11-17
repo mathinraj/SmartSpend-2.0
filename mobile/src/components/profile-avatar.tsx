@@ -13,13 +13,13 @@ export interface ProfileAvatarProps {
 /** The user's profile picture; a built-in default illustration until a photo is available. */
 export function ProfileAvatar({ size = 44, photoUri }: ProfileAvatarProps) {
   const colors = useTheme();
-  const [failed, setFailed] = useState(false);
+  const [failedUri, setFailedUri] = useState<string | null>(null);
 
-  if (photoUri && !failed) {
+  if (photoUri && photoUri !== failedUri) {
     return (
       <Image
         source={{ uri: photoUri }}
-        onError={() => setFailed(true)}
+        onError={() => setFailedUri(photoUri)}
         style={{ width: size, height: size, borderRadius: size / 2 }}
         accessibilityIgnoresInvertColors
       />

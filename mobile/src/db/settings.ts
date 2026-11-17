@@ -15,6 +15,7 @@ export const DEFAULT_REMINDER: CustomReminder = {
 
 const DEFAULT_SETTINGS: Settings = {
   profileName: null,
+  profilePhotoUri: null,
   currency: 'INR',
   onboarded: false,
   theme: 'system',
@@ -43,6 +44,7 @@ const DEFAULT_SETTINGS: Settings = {
   backupReminder: true,
   lastBackupAt: null,
   backupClockStart: null,
+  backupFolderUri: null,
 };
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +24,7 @@ import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { accountEmoji } from '@/lib/accounts';
+import { showDialog } from '@/lib/dialog';
 import {
   formatCurrency,
   formatDayLabel,
@@ -203,7 +204,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
       router.back();
     } catch (error) {
       setSaving(false);
-      Alert.alert('Could not save', error instanceof Error ? error.message : String(error));
+      showDialog('Could not save', error instanceof Error ? error.message : String(error));
     }
   }
 

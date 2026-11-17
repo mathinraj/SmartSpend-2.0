@@ -84,7 +84,7 @@ export default function HomeScreen() {
         hasFab
         headerLeft={
           <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={() => router.push('/profile')}>
-            <ProfileAvatar size={48} />
+            <ProfileAvatar size={48} photoUri={settings?.profilePhotoUri} />
           </Pressable>
         }
         headerRight={
