@@ -14,7 +14,7 @@ import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-dat
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
-import { exportBackup, exportCsv, importBackupWithPrompt } from '@/lib/backup-actions';
+import { exportBackup, exportCsv, exportExcel, exportPdf, importBackupWithPrompt } from '@/lib/backup-actions';
 
 const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
 
@@ -122,8 +122,22 @@ export default function SettingsScreen() {
           divider
           leading={<Icon name="table" color={colors.primary} />}
           title="Export transactions (CSV)"
-          subtitle="For Excel or Google Sheets"
+          subtitle="Plain table for any spreadsheet app"
           onPress={() => exportCsv(db)}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="table" color={colors.primary} />}
+          title="Export Excel workbook"
+          subtitle="Transactions, accounts, and monthly summary sheets"
+          onPress={() => exportExcel(db)}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="receipt" color={colors.primary} />}
+          title="Export PDF report"
+          subtitle="Printable summary with your transactions"
+          onPress={() => exportPdf(db)}
         />
       </Card>
 

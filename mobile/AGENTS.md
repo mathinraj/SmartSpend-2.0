@@ -90,6 +90,7 @@ src/
 
 ## Device features
 
+- PDF and Excel exports share one `buildReport` (`src/db/reports.ts`); `src/lib/report-files.ts` renders it as HTML for `expo-print` and as .xlsx. Request the PDF as base64 and write it yourself: in Expo Go the printed file's own URI can't be read back. Android's print engine fails on CSS `@page` margins, so pad the body instead.
 - Anything that opens system UI the app goes to the background for (share sheet, file picker, biometric prompt) must run inside `withLockSuppressed` from `src/lib/lock.ts`, or the app lock will trigger on return.
 - The PIN is stored only as a salted SHA-256 hash in `expo-secure-store`, never in SQLite or backups.
 - Notifications are scheduled only by `syncReminders` in `src/lib/notifications.ts`, which `useReminderSync` re-runs whenever settings or planned payments change. Don't schedule notifications elsewhere; extend `syncReminders`.
@@ -125,7 +126,7 @@ src/
    4. (done) History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
 7. Phase 7 (v1.5.0, data and sync):
    1. (done) Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
-   2. PDF export (`expo-print`) and Excel export (SheetJS, pure JS), shared through `withLockSuppressed`.
+   2. (done) PDF export (`expo-print`) and Excel export (own minimal .xlsx writer on `fflate`; the npm `xlsx`/SheetJS build has known CVEs), shared through `withLockSuppressed`.
    3. Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
    4. Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".
 8. Phase 8 (v1.6.0, polish): multiple custom reminders (daily / weekly / interval) with Do Not Disturb hours, profile photo (`expo-image-picker`), payment app / UPI field, bank logos (Brandfetch), feedback (email intent or EmailJS), optional password lock.

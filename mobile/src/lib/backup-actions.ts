@@ -1,17 +1,24 @@
 import Constants from 'expo-constants';
 import { File, Paths } from 'expo-file-system';
+import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { Alert } from 'react-native';
 
 import { buildBackup, buildTransactionsCsv, importBackup, InvalidBackupError, type ImportSummary } from '@/db/backup';
+import { buildReport } from '@/db/reports';
 import { toDateKey } from '@/lib/format';
 import { withLockSuppressed } from '@/lib/lock';
+import { buildXlsx, renderReportHtml } from '@/lib/report-files';
 
 async function shareText(fileName: string, contents: string, mimeType: string, dialogTitle: string) {
   const file = new File(Paths.cache, fileName);
   file.create({ overwrite: true });
   await file.write(contents);
+  await withLockSuppressed(() => Sharing.shareAsync(file.uri, { mimeType, dialogTitle }));
+}
+
+async function shareFile(file: File, mimeType: string, dialogTitle: string) {
   await withLockSuppressed(() => Sharing.shareAsync(file.uri, { mimeType, dialogTitle }));
 }
 
@@ -41,6 +48,31 @@ export async function exportCsv(db: SQLiteDatabase) {
       'text/csv',
       'Export transactions'
     );
+  } catch (error) {
+    reportError('Export failed', error);
+  }
+}
+
+export async function exportPdf(db: SQLiteDatabase) {
+  try {
+    // Expo Go prints into a folder this app can't read back, so take the bytes instead of moving the file.
+    const { base64 } = await Print.printToFileAsync({ html: renderReportHtml(await buildReport(db)), base64: true });
+    if (!base64) throw new Error('The PDF could not be created.');
+    const file = new File(Paths.cache, `spendtrak-report-${toDateKey(new Date())}.pdf`);
+    file.create({ overwrite: true });
+    await file.write(base64, { encoding: 'base64' });
+    await shareFile(file, 'application/pdf', 'Export PDF report');
+  } catch (error) {
+    reportError('Export failed', error);
+  }
+}
+
+export async function exportExcel(db: SQLiteDatabase) {
+  try {
+    const file = new File(Paths.cache, `spendtrak-report-${toDateKey(new Date())}.xlsx`);
+    file.create({ overwrite: true });
+    await file.write(buildXlsx(await buildReport(db)));
+    await shareFile(file, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Export Excel workbook');
   } catch (error) {
     reportError('Export failed', error);
   }
