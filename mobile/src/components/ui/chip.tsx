@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -49,6 +49,19 @@ export function ChipGroup({ children }: { children: ReactNode }) {
   return <View style={styles.group}>{children}</View>;
 }
 
+/** A single line of chips that scrolls sideways, bleeding to the edges of a `Screen`. */
+export function ChipRow({ children }: { children: ReactNode }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.row}
+      contentContainerStyle={styles.rowContent}>
+      {children}
+    </ScrollView>
+  );
+}
+
 const styles = StyleSheet.create({
   clip: {
     borderRadius: Radius.pill,
@@ -69,6 +82,13 @@ const styles = StyleSheet.create({
   group: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  row: {
+    marginHorizontal: -Spacing.lg,
+  },
+  rowContent: {
+    paddingHorizontal: Spacing.lg,
     gap: Spacing.sm,
   },
 });

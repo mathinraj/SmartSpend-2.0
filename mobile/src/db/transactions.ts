@@ -191,10 +191,12 @@ export async function countTransactionsForAccount(db: SQLiteDatabase, accountId:
 export interface PeriodSummary {
   income: number;
   expense: number;
+  /** Income and expense rows; transfers aren't counted. */
+  count: number;
 }
 
 /** SQL for how much of an expense row `t` counts as your spending (see `Settings.splitExpenseRecord`). */
-function spentSql(record: SplitAmountMode): string {
+export function spentSql(record: SplitAmountMode): string {
   return record === 'my_share' ? 't.amount - CASE WHEN t.is_split = 1 THEN COALESCE(t.split_amount, 0) ELSE 0 END' : 't.amount';
 }
 
@@ -202,7 +204,7 @@ function spentSql(record: SplitAmountMode): string {
  * Restricts income/expense rows to these accounts; an empty list means all accounts. Transfers never
  * count toward these totals, so only `account_id` is checked.
  */
-function accountSql(accountIds: string[]): string {
+export function accountSql(accountIds: string[]): string {
   return accountIds.length > 0 ? ` AND t.account_id IN (${accountIds.map(() => '?').join(', ')})` : '';
 }
 
@@ -215,14 +217,46 @@ export async function getPeriodSummary(
 ): Promise<PeriodSummary> {
   const row = await db.getFirstAsync<PeriodSummary>(
     `SELECT COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount END), 0)        AS income,
-            COALESCE(SUM(CASE WHEN t.type = 'expense' THEN ${spentSql(record)} END), 0) AS expense
+            COALESCE(SUM(CASE WHEN t.type = 'expense' THEN ${spentSql(record)} END), 0) AS expense,
+            COUNT(CASE WHEN t.type <> 'transfer' THEN 1 END)                         AS count
        FROM transactions t
       WHERE t.date >= ? AND t.date < ?${accountSql(accountIds)}`,
     from,
     to,
     ...accountIds
   );
-  return row ?? { income: 0, expense: 0 };
+  return row ?? { income: 0, expense: 0, count: 0 };
+}
+
+/** The largest expenses in `[from, to)`, by full amount. */
+export async function getTopExpenses(
+  db: SQLiteDatabase,
+  from: string,
+  to: string,
+  accountIds: string[] = [],
+  limit = 5
+): Promise<TransactionListItem[]> {
+  const rows = await db.getAllAsync<TransactionListRow>(
+    `${SELECT_LIST_ITEM}
+      WHERE t.type = 'expense' AND t.date >= ? AND t.date < ?${accountSql(accountIds)}
+      ORDER BY t.amount DESC, t.date DESC
+      LIMIT ?`,
+    [from, to, ...accountIds, limit]
+  );
+  return rows.map(toListItem);
+}
+
+/** Most recent transfers into any of `cardIds` (credit card bill payments). */
+export async function getCardPayments(db: SQLiteDatabase, cardIds: string[], limit = 10): Promise<TransactionListItem[]> {
+  if (cardIds.length === 0) return [];
+  const rows = await db.getAllAsync<TransactionListRow>(
+    `${SELECT_LIST_ITEM}
+      WHERE t.type = 'transfer' AND t.to_account_id IN (${placeholders(cardIds)})
+      ORDER BY t.date DESC, t.time DESC, t.created_at DESC
+      LIMIT ?`,
+    [...cardIds, limit]
+  );
+  return rows.map(toListItem);
 }
 
 export interface CategoryTotal {

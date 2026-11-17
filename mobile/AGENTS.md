@@ -63,7 +63,8 @@ src/
     profile.tsx, currency.tsx, pin-setup.tsx  Modals
   components/
     ui/                Design-system primitives (Text, Card, Screen, FormScreen, Button, Chip, Field, SwitchRow, ...)
-    charts/            DonutChart (react-native-svg), MonthBars (plain Views)
+    charts/            DonutChart (react-native-svg), MonthBars, BarChart, CategoryBreakdown (plain Views)
+    analytics/         One component per Analytics tab (overview, categories, cards, accounts, trends); each takes an `AnalyticsScope`
     lock-gate.tsx      PIN overlay shown at launch and after the lock timeout
     *.tsx              Feature components (transaction-form, account-form, planned-form, pin-pad, rows)
   constants/           theme tokens, default categories, currencies
@@ -83,7 +84,7 @@ src/
 - Category IDs match the web app so web JSON backups can be imported later.
 - `src/db/backup.ts` reads and writes the web app's JSON backup format (web field names like `billingDate`, `splitLedger`). When adding a table or column, add it to both `buildBackup` and `importBackup` so backups stay round-trippable between the two apps.
 - Split balances: positive = they owe you. `split_paid` and `settlement`/`paid` raise it; `split_owed` and `settlement`/`received` lower it (same as the web app). Shares created from an expense carry its `transaction_id` and are deleted with it.
-- Split expenses: `split_amount` is the total of the other people's shares. `deduct_my_share` (set from `splitBankDeduction` when the expense is created, never recomputed) makes `applyBalance` take only `amount - split_amount` from the account. Spending totals (`getPeriodSummary`, `getCategoryTotals`, `getMonthlyTotals`) take a `SplitAmountMode` and count only your share when it is `my_share` (the default, like the web app). They also take an optional `accountIds` list (empty = all accounts) that filters on `account_id`; transfers never count toward these totals. Analytics date ranges come from `periodRange` in `src/lib/analytics-period.ts`.
+- Split expenses: `split_amount` is the total of the other people's shares. `deduct_my_share` (set from `splitBankDeduction` when the expense is created, never recomputed) makes `applyBalance` take only `amount - split_amount` from the account. Spending totals (`getPeriodSummary`, `getCategoryTotals`, `getMonthlyTotals`) take a `SplitAmountMode` and count only your share when it is `my_share` (the default, like the web app). They also take an optional `accountIds` list (empty = all accounts) that filters on `account_id`; transfers never count toward these totals. Analytics date ranges come from `periodRange` in `src/lib/analytics-period.ts`; aggregate queries that aren't about a single table live in `src/db/analytics.ts`.
 
 ## Device features
 
@@ -117,7 +118,7 @@ src/
    4. (done) Settings: theme (system / light / dark), hide balances with a temporary peek, dashboard toggles (balance vs monthly-expenses card, income/expense stats, accounts strip, split card), exclude credit cards from total, default transaction type.
 6. Phase 6 (v1.4.0, analytics and accounts):
    1. (done) Analytics period presets (this month, last month, this year, 30 days, 90 days, custom) and a multi-account filter; data functions take an account ID list.
-   2. Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.
+   2. (done) Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.
    3. Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
    4. History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
 7. Phase 7 (v1.5.0, data and sync):

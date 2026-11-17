@@ -1,4 +1,18 @@
 import { addDays, formatMonth, formatShortDate, monthRange, parseDateKey, shiftMonth, toDateKey, toMonthKey } from '@/lib/format';
+import type { SplitAmountMode } from '@/types/models';
+
+/** What every Analytics section is showing. */
+export interface AnalyticsScope {
+  /** Inclusive `YYYY-MM-DD`. */
+  from: string;
+  /** Exclusive `YYYY-MM-DD`. */
+  to: string;
+  label: string;
+  record: SplitAmountMode;
+  /** Empty means all accounts. */
+  accountIds: string[];
+  currency: string;
+}
 
 /** The Analytics date range. Custom `from`/`to` are inclusive `YYYY-MM-DD` keys. */
 export type AnalyticsPeriod =
