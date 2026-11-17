@@ -147,3 +147,18 @@ export const DEFAULT_INCOME_CATEGORIES: CategorySeed[] = [
   { id: 'income_split_settlement', name: 'Split Settlement', icon: '🤝', color: '#55EFC4' },
   { id: 'income_other', name: 'Other', icon: '📦', color: '#B2BEC3' },
 ];
+
+/** Icon and color choices for custom categories; same sets as the web app. */
+export const CATEGORY_ICONS = [
+  '🍔', '🚗', '🛍️', '📄', '🏥', '🎬', '✈️', '📚', '👤', '📦',
+  '🏠', '🎮', '🎵', '💻', '🏋️', '🐾', '👶', '💼', '🎁', '📱',
+  '☕', '🍕', '🚌', '⛽', '💊', '🎭', '⚽', '🧹', '💇', '🔧',
+  '🪙', '🏢', '📈', '↩️', '🏦', '💶', '👛', '🎯', '🎨', '🌿',
+];
+
+export const CATEGORY_COLORS = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+  '#DDA0DD', '#74B9FF', '#A29BFE', '#FD79A8', '#B2BEC3',
+  '#00B894', '#00CEC9', '#0984E3', '#6C5CE7', '#E17055',
+  '#FDCB6E', '#81ECEC', '#55A3E8', '#FF7675', '#636E72',
+];

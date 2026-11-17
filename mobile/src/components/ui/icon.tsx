@@ -38,6 +38,10 @@ const ICONS = {
   search: { ios: 'magnifyingglass', android: 'search', web: 'search' },
   close: { ios: 'xmark', android: 'close', web: 'close' },
   filter: { ios: 'line.3.horizontal.decrease.circle', android: 'tune', web: 'tune' },
+  category: { ios: 'square.grid.2x2', android: 'category', web: 'category' },
+  arrowUp: { ios: 'arrow.up', android: 'arrow_upward', web: 'arrow_upward' },
+  arrowDown: { ios: 'arrow.down', android: 'arrow_downward', web: 'arrow_downward' },
+  reorder: { ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

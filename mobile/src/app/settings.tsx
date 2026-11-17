@@ -47,6 +47,13 @@ export default function SettingsScreen() {
           subtitle={currency ? `${currency.flag}  ${currency.name} (${currency.symbol})` : undefined}
           onPress={() => router.push('/currency')}
         />
+        <ListRow
+          divider
+          leading={<Icon name="category" color={colors.primary} />}
+          title="Categories"
+          subtitle="Add, edit, and reorder"
+          onPress={() => router.push('/categories')}
+        />
       </Card>
 
       <SectionHeader title="Tools" />

@@ -250,6 +250,11 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
                   onPress={() => selectCategory(c.id)}
                 />
               ))}
+              <Chip
+                label="Manage"
+                emoji="✏️"
+                onPress={() => router.push({ pathname: '/categories', params: { kind: type === 'income' ? 'income' : 'expense' } })}
+              />
             </ChipGroup>
           </Field>
           {type === 'expense' && category && category.subcategories.length > 0 ? (

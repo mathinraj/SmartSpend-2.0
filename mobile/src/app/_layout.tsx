@@ -64,6 +64,9 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="account/new" options={{ title: 'Add account', presentation: 'modal' }} />
           <Stack.Screen name="account/[id]" options={{ title: 'Edit account', presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+          <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
+          <Stack.Screen name="categories/new" options={{ title: 'Add category', presentation: 'modal' }} />
+          <Stack.Screen name="categories/[id]" options={{ title: 'Edit category', presentation: 'modal' }} />
           <Stack.Screen name="profile" options={{ title: 'Profile', presentation: 'modal' }} />
           <Stack.Screen name="currency" options={{ title: 'Currency', presentation: 'modal' }} />
           <Stack.Screen name="planned/index" options={{ title: 'Planned payments' }} />

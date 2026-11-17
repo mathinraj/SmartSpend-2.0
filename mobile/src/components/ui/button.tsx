@@ -46,7 +46,12 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled, si
           pressed && process.env.EXPO_OS === 'ios' && styles.pressed,
         ]}>
         {icon ? <Icon name={icon} size={small ? 16 : 20} color={foreground} /> : null}
-        <Text variant={small ? 'caption' : 'bodyStrong'} style={[{ color: foreground }, small && styles.smallLabel]}>
+        {/* Android can measure a bold label a couple of pixels short and wrap its last word out of view; shrinking to fit one line avoids it. */}
+        <Text
+          variant={small ? 'caption' : 'bodyStrong'}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={[{ color: foreground }, small && styles.smallLabel]}>
           {label}
         </Text>
       </Pressable>
