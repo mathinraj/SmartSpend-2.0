@@ -53,6 +53,9 @@ const ICONS = {
   share: { ios: 'square.and.arrow.up', android: 'share', web: 'share' },
   photo: { ios: 'photo', android: 'photo_library', web: 'photo_library' },
   json: { ios: 'doc.text', android: 'data_object', web: 'data_object' },
+  globe: { ios: 'globe', android: 'language', web: 'language' },
+  openInNew: { ios: 'arrow.up.right.square', android: 'open_in_new', web: 'open_in_new' },
+  dropdown: { ios: 'chevron.down', android: 'arrow_drop_down', web: 'arrow_drop_down' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Linking } from 'react-native';
 
 import { ProfileAvatar } from '@/components/profile-avatar';
 import { Card } from '@/components/ui/card';
@@ -23,6 +24,8 @@ import { clearPin } from '@/lib/lock';
 import { deleteProfilePhoto } from '@/lib/profile-photo';
 
 const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
+const WEB_APP_HOST = 'spendtrak.vercel.app';
+const WEB_APP_URL = `https://${WEB_APP_HOST}`;
 
 function lastBackupText(date: string | null): string {
   if (!date) return 'never backed up';
@@ -63,6 +66,22 @@ export default function SettingsScreen() {
             ]),
         },
       ]
+    );
+  }
+
+  function confirmOpenWeb() {
+    showDialog(
+      'SpendTrak on the web',
+      `Use SpendTrak in any browser at ${WEB_APP_HOST}, on your computer or phone. Data isn't synced automatically: to use the same data there, export a data backup here and import it on the web (and the other way round).`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open website',
+          onPress: () =>
+            Linking.openURL(WEB_APP_URL).catch(() => showDialog('Couldn’t open the browser', `Visit ${WEB_APP_HOST} in your browser.`)),
+        },
+      ],
+      { icon: 'globe' }
     );
   }
 
@@ -204,6 +223,14 @@ export default function SettingsScreen() {
           title="SpendTrak"
           subtitle="All data stays on this device"
           trailing={<Text tone="secondary">v{Constants.expoConfig?.version ?? '—'}</Text>}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="globe" color={colors.primary} />}
+          title="Use on the web"
+          subtitle={WEB_APP_HOST}
+          trailing={<Icon name="openInNew" size={20} color={colors.textMuted} />}
+          onPress={confirmOpenWeb}
         />
         <ListRow
           divider
