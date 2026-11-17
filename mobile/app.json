@@ -40,8 +40,28 @@
       "@react-native-community/datetimepicker",
       "expo-sharing",
       "expo-secure-store",
-      ["expo-notifications", { "color": "#6C5CE7" }],
-      ["expo-local-authentication", { "faceIDPermission": "Allow SpendTrak to use Face ID to unlock the app." }]
+      [
+        "expo-notifications",
+        {
+          "color": "#6C5CE7"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow SpendTrak to use Face ID to unlock the app."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "useLegacyPackaging": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
