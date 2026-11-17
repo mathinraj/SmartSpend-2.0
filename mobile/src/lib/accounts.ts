@@ -38,6 +38,9 @@ export const ACCOUNT_TYPE_OPTIONS: { type: AccountType; label: string }[] = [
   { type: 'custom', label: 'Other' },
 ];
 
+/** Emoji choices when creating a custom account type. */
+export const CUSTOM_TYPE_ICONS = ['🪙', '💰', '📈', '🏠', '💎', '🏧', '🎓', '🚗', '🪪', '🧾', '🐷', '🌐'];
+
 /** Sub-type IDs match the web app. */
 export const ACCOUNT_SUBTYPES: Partial<Record<AccountType, { id: string; label: string }[]>> = {
   bank: [

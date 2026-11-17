@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { StatCard, StatRow } from '@/components/analytics/stat-card';
@@ -21,17 +20,26 @@ import type { Account } from '@/types/models';
 export interface AccountSectionProps {
   scope: AnalyticsScope;
   accounts: Account[];
+  /** The account to show; falls back to the first one. */
+  accountId: string | null;
+  onSelectAccount: (id: string) => void;
   /** `YYYY-MM` highlighted in the 12-month chart, or `''`. */
   selectedMonth: string;
   onSelectMonth: (month: string) => void;
 }
 
 /** Analytics for one account; ignores the screen's multi-account filter. */
-export function AccountSection({ scope, accounts, selectedMonth, onSelectMonth }: AccountSectionProps) {
+export function AccountSection({
+  scope,
+  accounts,
+  accountId,
+  onSelectAccount,
+  selectedMonth,
+  onSelectMonth,
+}: AccountSectionProps) {
   const { from, to, record, currency } = scope;
   const colors = useTheme();
-  const [pickedId, setPickedId] = useState<string | null>(null);
-  const account = accounts.find((a) => a.id === pickedId) ?? accounts[0];
+  const account = accounts.find((a) => a.id === accountId) ?? accounts[0];
   const ids = [account.id];
   const summary = useDbQuery(getPeriodSummary, ['transactions'], from, to, record, ids);
   const activity = useDbQuery(getAccountActivity, ['transactions'], account.id, from, to);
@@ -56,7 +64,7 @@ export function AccountSection({ scope, accounts, selectedMonth, onSelectMonth }
             label={a.name}
             emoji={accountEmoji(a, currency)}
             selected={a.id === account.id}
-            onPress={() => setPickedId(a.id)}
+            onPress={() => onSelectAccount(a.id)}
           />
         ))}
       </ChipRow>

@@ -53,6 +53,7 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       excludeCCFromBalance: settings.excludeCCFromBalance,
       hideBalances: settings.hideBalances,
       defaultTxnType: settings.defaultTxnType,
+      customAccountTypes: settings.customAccountTypes,
       splitEnabled: true,
       plannedEnabled: true,
     },
@@ -66,6 +67,7 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       billingDate: a.billingDay,
       dueDate: a.dueDay,
       creditLimit: a.creditLimit,
+      customTypeId: a.customTypeId,
     })),
     transactions: transactions.map((t) => ({
       id: t.id,
@@ -250,6 +252,15 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
       }
     }
 
+    // Custom account types are needed by the accounts below, so they merge in either mode.
+    const current = await getSettings(db);
+    const customTypes = [...current.customAccountTypes];
+    for (const t of list(settingsData.customAccountTypes)) {
+      const id = text(t.id);
+      const label = text(t.label);
+      if (id && label && !customTypes.some((c) => c.id === id)) customTypes.push({ id, label, icon: text(t.icon) ?? '🪙' });
+    }
+
     // Accounts
     const localAccounts = await existing('accounts');
     const accountIds = new Set(localAccounts);
@@ -259,13 +270,15 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
       if (!id || !name || accountIds.has(id)) continue;
       const type = oneOf(a.type, ACCOUNT_TYPES) ?? 'custom';
       const isCredit = type === 'card' && a.subType === 'credit';
+      const customType = type === 'custom' ? customTypes.find((t) => t.id === a.customTypeId) : undefined;
       await createAccount(db, {
         id,
         name,
         type,
         subType: text(a.subType),
         balance: num(a.balance) ?? 0,
-        icon: text(a.icon),
+        icon: text(a.icon) ?? customType?.icon ?? null,
+        customTypeId: customType?.id ?? null,
         color: text(a.color),
         creditLimit: isCredit ? num(a.creditLimit) : null,
         billingDay: isCredit ? day(a.billingDate ?? a.billingDay) : null,
@@ -373,7 +386,6 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
     }
 
     // Settings: data and display ones; onboarding, lock, and reminders stay as they are on this phone.
-    const current = await getSettings(db);
     const importedPeople = Array.isArray(settingsData.splitPeople)
       ? settingsData.splitPeople.filter((p): p is string => typeof p === 'string' && p.trim() !== '')
       : [];
@@ -396,9 +408,10 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         excludeCCFromBalance: bool(settingsData.excludeCCFromBalance) ?? current.excludeCCFromBalance,
         hideBalances: bool(settingsData.hideBalances) ?? current.hideBalances,
         defaultTxnType: oneOf(settingsData.defaultTxnType, TXN_TYPES) ?? current.defaultTxnType,
+        customAccountTypes: customTypes,
       });
     } else {
-      await writeSettings(db, { splitPeople });
+      await writeSettings(db, { splitPeople, customAccountTypes: customTypes });
     }
   });
 

@@ -55,7 +55,7 @@ src/
     onboarding.tsx     First run: welcome → name → currency
     (tabs)/            Native bottom tabs: index (Home), history, accounts, analytics
     transaction/       new (modal), [id] (detail), edit/[id] (modal)
-    account/           new (modal), [id] (edit modal)
+    account/           new (modal), [id] (edit modal), pay-bill (credit card payment as a transfer)
     planned/           index (list), new, [id] (modals)
     splits/            index (people), person/[name], add-person, entry, settle (modals)
     settings.tsx       Pushed screen; customize (theme, Home layout, balances, default type), security, reminders likewise
@@ -82,6 +82,7 @@ src/
 - `withTransactionAsync` cannot be nested. Functions meant to be composed inside another transaction (like `insertTransaction`) must not open their own.
 - Dates are local `YYYY-MM-DD` strings; use `toDateKey` / `parseDateKey` from `src/lib/format.ts`, never `new Date('YYYY-MM-DD')` (parses as UTC).
 - Category IDs match the web app so web JSON backups can be imported later.
+- Custom account types live in `settings.customAccountTypes` (web format); accounts point at one with `custom_type_id` and copy its emoji into `icon`, so `accountEmoji` needs no type lookup. Account order is `sort_order`, shown within each type group on the Accounts tab.
 - `src/db/backup.ts` reads and writes the web app's JSON backup format (web field names like `billingDate`, `splitLedger`). When adding a table or column, add it to both `buildBackup` and `importBackup` so backups stay round-trippable between the two apps.
 - Split balances: positive = they owe you. `split_paid` and `settlement`/`paid` raise it; `split_owed` and `settlement`/`received` lower it (same as the web app). Shares created from an expense carry its `transaction_id` and are deleted with it.
 - Split expenses: `split_amount` is the total of the other people's shares. `deduct_my_share` (set from `splitBankDeduction` when the expense is created, never recomputed) makes `applyBalance` take only `amount - split_amount` from the account. Spending totals (`getPeriodSummary`, `getCategoryTotals`, `getMonthlyTotals`) take a `SplitAmountMode` and count only your share when it is `my_share` (the default, like the web app). They also take an optional `accountIds` list (empty = all accounts) that filters on `account_id`; transfers never count toward these totals. Analytics date ranges come from `periodRange` in `src/lib/analytics-period.ts`; aggregate queries that aren't about a single table live in `src/db/analytics.ts`.
@@ -119,10 +120,10 @@ src/
 6. Phase 6 (v1.4.0, analytics and accounts):
    1. (done) Analytics period presets (this month, last month, this year, 30 days, 90 days, custom) and a multi-account filter; data functions take an account ID list.
    2. (done) Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.
-   3. Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
+   3. (done) Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
    4. History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
 7. Phase 7 (v1.5.0, data and sync):
-   1. Migration adding `payment_app` to transactions, `logo_url` to accounts, and custom account types; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
+   1. Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
    2. PDF export (`expo-print`) and Excel export (SheetJS, pure JS), shared through `withLockSuppressed`.
    3. Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
    4. Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".

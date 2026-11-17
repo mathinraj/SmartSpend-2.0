@@ -6,12 +6,14 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
 import { FormScreen } from '@/components/ui/form-screen';
-import { Field, TextField } from '@/components/ui/text-field';
+import { Field, Input, TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
-import { createAccount, deleteAccount, updateAccount, type AccountInput } from '@/db/accounts';
+import { createAccount, deleteAccount, listAccounts, updateAccount, type AccountInput } from '@/db/accounts';
+import { updateSettings } from '@/db/settings';
 import { countTransactionsForAccount } from '@/db/transactions';
+import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
-import { ACCOUNT_SUBTYPES, ACCOUNT_TYPE_OPTIONS, accountEmoji } from '@/lib/accounts';
+import { ACCOUNT_SUBTYPES, ACCOUNT_TYPE_OPTIONS, CUSTOM_TYPE_ICONS, accountEmoji, isCreditCard } from '@/lib/accounts';
 import { parseAmount, sanitizeAmountInput } from '@/lib/format';
 import type { Account, AccountType } from '@/types/models';
 
@@ -23,9 +25,10 @@ function parseDay(text: string): number | null {
 function initialBalanceText(account: Account | undefined): string {
   if (!account) return '';
   // Credit card balances are stored negative but entered as the positive amount used.
-  const isCredit = account.type === 'card' && account.subType === 'credit';
-  return String(isCredit ? Math.abs(account.balance) : account.balance);
+  return String(isCreditCard(account) ? Math.abs(account.balance) : account.balance);
 }
+
+const BUILT_IN_TYPES = ACCOUNT_TYPE_OPTIONS.filter((o) => o.type !== 'custom');
 
 export interface AccountFormProps {
   /** The account being edited; omit to create a new one. */
@@ -35,42 +38,79 @@ export interface AccountFormProps {
 export function AccountForm({ initial }: AccountFormProps) {
   const db = useSQLiteContext();
   const settings = useSettings();
+  const accounts = useDbQuery(listAccounts, ['accounts']);
   const currency = settings?.currency ?? 'INR';
+  const customTypes = settings?.customAccountTypes ?? [];
 
   const [type, setType] = useState<AccountType>(initial?.type ?? 'bank');
+  const [customTypeId, setCustomTypeId] = useState(initial?.customTypeId ?? null);
   const [subType, setSubType] = useState(initial?.subType ?? null);
   const [name, setName] = useState(initial?.name ?? '');
   const [balance, setBalance] = useState(initialBalanceText(initial));
   const [creditLimit, setCreditLimit] = useState(initial?.creditLimit ? String(initial.creditLimit) : '');
   const [billingDay, setBillingDay] = useState(initial?.billingDay ? String(initial.billingDay) : '');
   const [dueDay, setDueDay] = useState(initial?.dueDay ? String(initial.dueDay) : '');
+  const [creatingType, setCreatingType] = useState(false);
+  const [newTypeLabel, setNewTypeLabel] = useState('');
+  const [newTypeIcon, setNewTypeIcon] = useState(CUSTOM_TYPE_ICONS[0]);
   const [saving, setSaving] = useState(false);
 
   const subTypes = ACCOUNT_SUBTYPES[type];
   const isCredit = type === 'card' && subType === 'credit';
+  const customType = type === 'custom' ? customTypes.find((t) => t.id === customTypeId) : undefined;
+  const customTypeInUse = !!customType && !!accounts?.some((a) => a.id !== initial?.id && a.customTypeId === customType.id);
   const dayProblem =
     (billingDay && !parseDay(billingDay)) || (dueDay && !parseDay(dueDay)) ? 'Days must be between 1 and 31' : null;
   const problem = !name.trim() ? 'Enter a name' : isCredit ? dayProblem : null;
 
-  function changeType(next: AccountType) {
+  function changeType(next: AccountType, nextCustomTypeId: string | null = null) {
     setType(next);
+    setCustomTypeId(nextCustomTypeId);
     setSubType(null);
+    setCreatingType(false);
+  }
+
+  async function addCustomType() {
+    const label = newTypeLabel.trim();
+    if (!label) return;
+    const id = `custom_${Date.now().toString(36)}`;
+    await updateSettings(db, { customAccountTypes: [...customTypes, { id, label, icon: newTypeIcon }] });
+    changeType('custom', id);
+    setNewTypeLabel('');
+  }
+
+  function confirmDeleteType() {
+    if (!customType) return;
+    Alert.alert(`Delete the “${customType.label}” type?`, 'This account will move to Other.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          changeType('custom');
+          updateSettings(db, { customAccountTypes: customTypes.filter((t) => t.id !== customType.id) });
+        },
+      },
+    ]);
   }
 
   async function save() {
     if (problem || saving) return;
     setSaving(true);
     const amount = parseAmount(balance);
+    // A custom type's emoji is copied onto the account; drop it again if the account leaves that type.
+    const hadTypeIcon = initial?.type === 'custom' && !!initial.customTypeId;
     const input: AccountInput = {
       name: name.trim(),
       type,
       subType: subTypes ? subType : null,
       balance: isCredit ? -Math.abs(amount) : amount,
-      icon: initial?.icon ?? null,
+      icon: customType ? customType.icon : hadTypeIcon ? null : (initial?.icon ?? null),
       color: initial?.color ?? null,
       creditLimit: isCredit ? parseAmount(creditLimit) || null : null,
       billingDay: isCredit ? parseDay(billingDay) : null,
       dueDay: isCredit ? parseDay(dueDay) : null,
+      customTypeId: customType?.id ?? null,
     };
     try {
       if (initial) await updateAccount(db, initial.id, input);
@@ -102,6 +142,12 @@ export function AccountForm({ initial }: AccountFormProps) {
     ]);
   }
 
+  function openAnalytics() {
+    if (!initial) return;
+    router.back();
+    router.navigate({ pathname: '/analytics', params: { account: initial.id } });
+  }
+
   return (
     <FormScreen
       footer={
@@ -112,9 +158,27 @@ export function AccountForm({ initial }: AccountFormProps) {
           onPress={save}
         />
       }>
+      {initial ? (
+        <View style={styles.actions}>
+          {isCreditCard(initial) ? (
+            <View style={styles.flex}>
+              <Button
+                label="Pay bill"
+                icon="transfer"
+                size="small"
+                onPress={() => router.push({ pathname: '/account/pay-bill', params: { id: initial.id } })}
+              />
+            </View>
+          ) : null}
+          <View style={styles.flex}>
+            <Button label="View analytics" icon="chart" size="small" variant="secondary" onPress={openAnalytics} />
+          </View>
+        </View>
+      ) : null}
+
       <Field label="Type">
         <ChipGroup>
-          {ACCOUNT_TYPE_OPTIONS.map((option) => (
+          {BUILT_IN_TYPES.map((option) => (
             <Chip
               key={option.type}
               label={option.label}
@@ -123,8 +187,50 @@ export function AccountForm({ initial }: AccountFormProps) {
               onPress={() => changeType(option.type)}
             />
           ))}
+          {customTypes.map((t) => (
+            <Chip
+              key={t.id}
+              label={t.label}
+              emoji={t.icon}
+              selected={type === 'custom' && customTypeId === t.id}
+              onPress={() => changeType('custom', t.id)}
+            />
+          ))}
+          <Chip
+            label="Other"
+            emoji={accountEmoji({ type: 'custom', icon: null }, currency)}
+            selected={type === 'custom' && !customType && !creatingType}
+            onPress={() => changeType('custom')}
+          />
+          <Chip label="New type" emoji="➕" selected={creatingType} onPress={() => setCreatingType(!creatingType)} />
         </ChipGroup>
+        {customType && !customTypeInUse ? (
+          <View style={styles.inlineAction}>
+            <Button label={`Delete “${customType.label}” type`} size="small" variant="destructive" onPress={confirmDeleteType} />
+          </View>
+        ) : null}
       </Field>
+
+      {creatingType ? (
+        <Field label="New account type" hint="e.g. Investments, Loans, Gold. It appears as its own group on the Accounts tab.">
+          <ChipGroup>
+            {CUSTOM_TYPE_ICONS.map((icon) => (
+              <Chip key={icon} label={icon} selected={icon === newTypeIcon} onPress={() => setNewTypeIcon(icon)} />
+            ))}
+          </ChipGroup>
+          <View style={styles.row}>
+            <Input
+              style={styles.flex}
+              value={newTypeLabel}
+              onChangeText={setNewTypeLabel}
+              placeholder="Type name"
+              maxLength={24}
+              accessibilityLabel="New account type name"
+            />
+            <Button label="Add" icon="add" disabled={!newTypeLabel.trim()} onPress={addCustomType} />
+          </View>
+        </Field>
+      ) : null}
 
       {subTypes ? (
         <Field label={type === 'card' ? 'Card type' : 'Account type'} hint="Optional">
@@ -206,9 +312,17 @@ export function AccountForm({ initial }: AccountFormProps) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.md,
   },
   flex: {
     flex: 1,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  inlineAction: {
+    alignSelf: 'flex-start',
   },
 });

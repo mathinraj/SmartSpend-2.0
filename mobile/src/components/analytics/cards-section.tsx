@@ -1,7 +1,9 @@
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { PeekButton } from '@/components/peek-button';
 import { TransactionRow } from '@/components/transaction-row';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
@@ -77,6 +79,17 @@ export function CardsSection({ scope, cards, hideBalances }: CardsSectionProps) 
             <Text variant="caption" tone="secondary">
               Spent on this card for {scope.label}: {formatCurrency(spent, currency)}
             </Text>
+            {owed > 0 ? (
+              <View style={styles.action}>
+                <Button
+                  label="Pay bill"
+                  icon="transfer"
+                  size="small"
+                  variant="secondary"
+                  onPress={() => router.push({ pathname: '/account/pay-bill', params: { id: card.id } })}
+                />
+              </View>
+            ) : null}
           </Card>
         );
       })}
@@ -89,7 +102,7 @@ export function CardsSection({ scope, cards, hideBalances }: CardsSectionProps) 
           ))}
         </Card>
       ) : (
-        <Text tone="secondary">No bill payments yet. Record one as a transfer from your bank account to the card.</Text>
+        <Text tone="secondary">No bill payments yet. Use “Pay bill” on a card to record one.</Text>
       )}
     </>
   );
@@ -119,6 +132,9 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: Spacing.md,
+  },
+  action: {
+    alignSelf: 'flex-start',
   },
   row: {
     flexDirection: 'row',

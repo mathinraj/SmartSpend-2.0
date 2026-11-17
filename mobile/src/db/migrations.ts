@@ -115,6 +115,10 @@ const MIGRATIONS: ((db: SQLiteDatabase) => Promise<void>)[] = [
   async (db) => {
     await db.execAsync('ALTER TABLE transactions ADD COLUMN deduct_my_share INTEGER NOT NULL DEFAULT 0;');
   },
+
+  async (db) => {
+    await db.execAsync('ALTER TABLE accounts ADD COLUMN custom_type_id TEXT;');
+  },
 ];
 
 async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', seeds: CategorySeed[]) {

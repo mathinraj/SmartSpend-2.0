@@ -7,7 +7,7 @@ import { addDays, toDateKey } from '@/lib/format';
 const SAMPLE_PREFIX = 'sample_';
 
 function account(a: Pick<NewAccount, 'id' | 'name' | 'type' | 'balance'> & Partial<NewAccount>): NewAccount {
-  return { subType: null, icon: null, color: null, creditLimit: null, billingDay: null, dueDay: null, ...a };
+  return { subType: null, icon: null, color: null, creditLimit: null, billingDay: null, dueDay: null, customTypeId: null, ...a };
 }
 
 const ACCOUNTS: NewAccount[] = [

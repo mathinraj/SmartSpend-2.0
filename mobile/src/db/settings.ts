@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: Settings = {
   excludeCCFromBalance: false,
   hideBalances: false,
   defaultTxnType: 'expense',
+  customAccountTypes: [],
   splitPeople: [],
   splitBankDeduction: 'full',
   splitExpenseRecord: 'my_share',

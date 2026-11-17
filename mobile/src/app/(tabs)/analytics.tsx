@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountSection } from '@/components/analytics/account-section';
@@ -39,6 +40,21 @@ export default function AnalyticsScreen() {
   const [section, setSection] = useState<Section>('overview');
   const [period, setPeriod] = useState<AnalyticsPeriod>({ kind: 'month', month: thisMonth });
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [focusAccountId, setFocusAccountId] = useState<string | null>(null);
+
+  // `?account=` (from an account's "View analytics") opens the Accounts tab on that account once.
+  const { account: accountParam } = useLocalSearchParams<{ account?: string }>();
+  const [handledParam, setHandledParam] = useState<string | undefined>();
+  if (accountParam !== handledParam) {
+    setHandledParam(accountParam);
+    if (accountParam) {
+      setSection('accounts');
+      setFocusAccountId(accountParam);
+    }
+  }
+  useEffect(() => {
+    if (accountParam) router.setParams({ account: undefined });
+  }, [accountParam]);
 
   const currency = settings?.currency ?? 'INR';
   const cards = accounts?.filter(isCreditCard) ?? [];
@@ -161,6 +177,8 @@ export default function AnalyticsScreen() {
           <AccountSection
             scope={scope}
             accounts={accounts}
+            accountId={focusAccountId}
+            onSelectAccount={setFocusAccountId}
             selectedMonth={period.kind === 'month' ? period.month : ''}
             onSelectMonth={selectMonth}
           />

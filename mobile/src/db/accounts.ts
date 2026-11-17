@@ -15,6 +15,7 @@ interface AccountRow {
   billing_day: number | null;
   due_day: number | null;
   sort_order: number;
+  custom_type_id: string | null;
   created_at: string;
 }
 
@@ -31,6 +32,7 @@ function toAccount(r: AccountRow): Account {
     billingDay: r.billing_day,
     dueDay: r.due_day,
     sortOrder: r.sort_order,
+    customTypeId: r.custom_type_id,
     createdAt: r.created_at,
   };
 }
@@ -52,8 +54,8 @@ export async function createAccount(db: SQLiteDatabase, input: NewAccount): Prom
   const id = input.id ?? generateId();
   await db.runAsync(
     `INSERT INTO accounts
-       (id, name, type, sub_type, balance, icon, color, credit_limit, billing_day, due_day, sort_order, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM accounts), ?)`,
+       (id, name, type, sub_type, balance, icon, color, credit_limit, billing_day, due_day, custom_type_id, sort_order, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM accounts), ?)`,
     id,
     input.name,
     input.type,
@@ -64,6 +66,7 @@ export async function createAccount(db: SQLiteDatabase, input: NewAccount): Prom
     input.creditLimit,
     input.billingDay,
     input.dueDay,
+    input.customTypeId,
     new Date().toISOString()
   );
   return id;
@@ -77,7 +80,7 @@ export async function updateAccount(db: SQLiteDatabase, id: string, input: Accou
   await db.runAsync(
     `UPDATE accounts
         SET name = ?, type = ?, sub_type = ?, balance = ?, icon = ?, color = ?,
-            credit_limit = ?, billing_day = ?, due_day = ?
+            credit_limit = ?, billing_day = ?, due_day = ?, custom_type_id = ?
       WHERE id = ?`,
     input.name,
     input.type,
@@ -88,8 +91,18 @@ export async function updateAccount(db: SQLiteDatabase, id: string, input: Accou
     input.creditLimit,
     input.billingDay,
     input.dueDay,
+    input.customTypeId,
     id
   );
+}
+
+/** Saves the display order: `ids[0]` comes first. Accounts not listed keep their place after these. */
+export async function setAccountOrder(db: SQLiteDatabase, ids: string[]) {
+  await db.withTransactionAsync(async () => {
+    for (const [i, id] of ids.entries()) {
+      await db.runAsync('UPDATE accounts SET sort_order = ? WHERE id = ?', i, id);
+    }
+  });
 }
 
 /** Transactions that reference the account are kept so history and totals stay intact. */

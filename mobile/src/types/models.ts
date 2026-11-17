@@ -13,7 +13,16 @@ export interface Account {
   billingDay: number | null;
   dueDay: number | null;
   sortOrder: number;
+  /** `custom` accounts: the user-defined type from `Settings.customAccountTypes`, if any. */
+  customTypeId: string | null;
   createdAt: string;
+}
+
+/** A user-defined account group, e.g. "Investments". Accounts of this type copy its emoji into `icon`. */
+export interface CustomAccountType {
+  id: string;
+  label: string;
+  icon: string;
 }
 
 export type TransactionType = 'expense' | 'income' | 'transfer';
@@ -153,6 +162,7 @@ export interface Settings {
   /** Mask account balances until the user peeks. */
   hideBalances: boolean;
   defaultTxnType: TransactionType;
+  customAccountTypes: CustomAccountType[];
   /** People available for splitting; the ledger may also mention people removed from this list. */
   splitPeople: string[];
   /** What leaves your account when you pay a split expense. Applies to new expenses only. */
