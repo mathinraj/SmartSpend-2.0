@@ -1,7 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
+import { Alert, Linking } from 'react-native';
 
 import { addDays, formatCurrency, fromDateTimeKeys } from '@/lib/format';
+import { inQuietHours, intervalTimes } from '@/lib/reminders';
 import type { PlannedPaymentListItem, Settings } from '@/types/models';
 
 Notifications.setNotificationHandler({
@@ -14,7 +16,9 @@ Notifications.setNotificationHandler({
 });
 
 const CHANNEL_ID = 'reminders';
-const DAILY_ID = 'daily-reminder';
+/** Scheduled by versions before custom reminders; still cancelled so it doesn't linger. */
+const LEGACY_DAILY_ID = 'daily-reminder';
+const REMINDER_PREFIX = 'reminder-';
 const BACKUP_ID = 'backup-reminder';
 const DUE_PREFIX = 'due-';
 const BACKUP_INTERVAL_DAYS = 7;
@@ -24,10 +28,15 @@ const MAX_DUE_ALERTS = 20;
 const DUE_ALERT_TIME = '09:00';
 
 async function ensureChannel() {
-  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-    name: 'Reminders',
-    importance: AndroidImportance.DEFAULT,
-  });
+  try {
+    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+      name: 'Reminders',
+      importance: AndroidImportance.DEFAULT,
+    });
+  } catch (error) {
+    // Expo Go sometimes fails to update an existing channel; Android keeps the existing one, so carry on.
+    console.warn('Could not update the notification channel', error);
+  }
 }
 
 /** Asks for notification permission if needed. The channel must exist first on Android 13+. */
@@ -37,6 +46,16 @@ export async function ensureNotificationPermission(): Promise<boolean> {
   if (current.granted) return true;
   if (!current.canAskAgain) return false;
   return (await Notifications.requestPermissionsAsync()).granted;
+}
+
+/** Asks for notification permission before turning a reminder on; explains how to fix it if denied. */
+export async function confirmNotifications(): Promise<boolean> {
+  if (await ensureNotificationPermission()) return true;
+  Alert.alert('Notifications are off', 'Allow notifications for SpendTrak in system settings to get reminders.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Open settings', onPress: () => Linking.openSettings() },
+  ]);
+  return false;
 }
 
 /**
@@ -60,22 +79,43 @@ export async function syncReminders(settings: Settings, planned: PlannedPaymentL
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled
-      .filter((n) => n.identifier === DAILY_ID || n.identifier === BACKUP_ID || n.identifier.startsWith(DUE_PREFIX))
+      .filter(
+        (n) =>
+          n.identifier === LEGACY_DAILY_ID ||
+          n.identifier === BACKUP_ID ||
+          n.identifier.startsWith(REMINDER_PREFIX) ||
+          n.identifier.startsWith(DUE_PREFIX)
+      )
       .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier))
   );
 
   const backupAt = hasData ? nextBackupReminder(settings) : null;
-  if (!settings.dailyReminder && !settings.dueReminders && !backupAt) return;
+  const reminders = settings.reminders.filter((r) => r.enabled);
+  if (reminders.length === 0 && !settings.dueReminders && !backupAt) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
   await ensureChannel();
 
-  if (settings.dailyReminder) {
-    const [hour, minute] = settings.dailyReminderTime.split(':').map(Number);
-    await Notifications.scheduleNotificationAsync({
-      identifier: DAILY_ID,
-      content: { title: 'SpendTrak', body: "Don't forget to log today's expenses." },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
-    });
+  for (const r of reminders) {
+    const content = { title: r.label || 'SpendTrak', body: r.message || "Don't forget to log your expenses." };
+    const [hour, minute] = r.time.split(':').map(Number);
+    if (r.frequency === 'interval') {
+      for (const [i, date] of intervalTimes(r, settings).entries()) {
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${REMINDER_PREFIX}${r.id}-${i}`,
+          content,
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: CHANNEL_ID },
+        });
+      }
+    } else if (!inQuietHours(r.time, settings)) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${REMINDER_PREFIX}${r.id}`,
+        content,
+        trigger:
+          r.frequency === 'weekly'
+            ? { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: r.day + 1, hour, minute, channelId: CHANNEL_ID }
+            : { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
+      });
+    }
   }
 
   if (backupAt) {

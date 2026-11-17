@@ -45,6 +45,8 @@ const ICONS = {
   eye: { ios: 'eye', android: 'visibility', web: 'visibility' },
   eyeOff: { ios: 'eye.slash', android: 'visibility_off', web: 'visibility_off' },
   palette: { ios: 'paintpalette', android: 'palette', web: 'palette' },
+  feedback: { ios: 'bubble.left.and.exclamationmark.bubble.right', android: 'feedback', web: 'feedback' },
+  key: { ios: 'key', android: 'key', web: 'key' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

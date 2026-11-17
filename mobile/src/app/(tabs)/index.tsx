@@ -4,13 +4,14 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { PeekButton } from '@/components/peek-button';
 import { PlannedRow } from '@/components/planned-row';
+import { ProfileAvatar } from '@/components/profile-avatar';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button, IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Fab } from '@/components/ui/fab';
 import { Icon, type IconName } from '@/components/ui/icon';
-import { Avatar } from '@/components/ui/list-row';
+import { AccountAvatar } from '@/components/account-avatar';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
@@ -23,7 +24,7 @@ import { getPeriodSummary, listTransactions } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
-import { accountColor, accountEmoji, isCreditCard, totalBalance } from '@/lib/accounts';
+import { isCreditCard, totalBalance } from '@/lib/accounts';
 import { useBalancePrivacy } from '@/lib/balance-privacy';
 import { formatCurrency, formatMonth, greeting, monthRange } from '@/lib/format';
 import { daysUntil } from '@/lib/planned';
@@ -81,6 +82,11 @@ export default function HomeScreen() {
         title={settings?.profileName ?? 'Welcome'}
         subtitle={greeting()}
         hasFab
+        headerLeft={
+          <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={() => router.push('/profile')}>
+            <ProfileAvatar size={48} />
+          </Pressable>
+        }
         headerRight={
           <IconButton icon="settings" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         }>
@@ -224,7 +230,7 @@ function AccountCard({ account, currency, balance }: { account: Account; currenc
         onPress={() => router.push(`/account/${account.id}`)}
         android_ripple={{ color: colors.border }}
         style={styles.accountInner}>
-        <Avatar emoji={accountEmoji(account, currency)} color={accountColor(account)} />
+        <AccountAvatar account={account} currency={currency} />
         <Text variant="caption" tone="secondary" numberOfLines={1}>
           {account.name}
         </Text>

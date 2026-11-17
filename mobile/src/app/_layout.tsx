@@ -72,6 +72,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="account/pay-bill" options={{ title: 'Pay card bill', presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />
           <Stack.Screen name="customize" options={{ title: 'Customize' }} />
+          <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
           <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
           <Stack.Screen name="categories/new" options={{ title: 'Add category', presentation: 'modal' }} />
           <Stack.Screen name="categories/[id]" options={{ title: 'Edit category', presentation: 'modal' }} />
@@ -86,8 +87,9 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="splits/entry" options={{ title: 'Entry', presentation: 'modal' }} />
           <Stack.Screen name="splits/settle" options={{ title: 'Settle up', presentation: 'modal' }} />
           <Stack.Screen name="security" options={{ title: 'App lock' }} />
-          <Stack.Screen name="pin-setup" options={{ title: 'Set PIN', presentation: 'modal' }} />
+          <Stack.Screen name="pin-setup" options={{ title: 'App lock', presentation: 'modal' }} />
           <Stack.Screen name="reminders" options={{ title: 'Reminders' }} />
+          <Stack.Screen name="reminder" options={{ title: 'Reminder', presentation: 'modal' }} />
         </Stack.Protected>
         <Stack.Protected guard={!settings.onboarded}>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />

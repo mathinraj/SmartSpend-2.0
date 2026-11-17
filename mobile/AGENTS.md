@@ -93,7 +93,9 @@ src/
 
 - PDF and Excel exports share one `buildReport` (`src/db/reports.ts`); `src/lib/report-files.ts` renders it as HTML for `expo-print` and as .xlsx. Request the PDF as base64 and write it yourself: in Expo Go the printed file's own URI can't be read back. Android's print engine fails on CSS `@page` margins, so pad the body instead.
 - Anything that opens system UI the app goes to the background for (share sheet, file picker, biometric prompt) must run inside `withLockSuppressed` from `src/lib/lock.ts`, or the app lock will trigger on return.
-- The PIN is stored only as a salted SHA-256 hash in `expo-secure-store`, never in SQLite or backups.
+- The lock PIN or password (`settings.lockType`) is stored only as a salted SHA-256 hash in `expo-secure-store`, never in SQLite or backups.
+- Logos (Brandfetch) and feedback (EmailJS) read `EXPO_PUBLIC_BRANDFETCH_CLIENT_ID` and `EXPO_PUBLIC_EMAILJS_*` from the gitignored `mobile/.env.local` (same public keys as the web app's `.env.local`); without them the logo picker hides and feedback explains it isn't set up. EAS cloud builds need these as EAS environment variables. EmailJS rejects app requests unless "Allow EmailJS API for non-browser applications" is on in its dashboard.
+- Custom reminders: daily/weekly ones use repeating triggers; repeating (interval) ones are scheduled as individual dates for the next 24 hours, skipping Do Not Disturb, and are topped up whenever `syncReminders` runs (app launch, settings changes). Expo Go may fail to update the notification channel; `ensureChannel` tolerates that.
 - Notifications are scheduled only by `syncReminders` in `src/lib/notifications.ts`, which `useReminderSync` re-runs whenever settings or planned payments change. Don't schedule notifications elsewhere; extend `syncReminders`.
 - Local notifications work in Expo Go; push notifications don't (and aren't used).
 
@@ -130,4 +132,4 @@ src/
    2. (done) PDF export (`expo-print`) and Excel export (own minimal .xlsx writer on `fflate`; the npm `xlsx`/SheetJS build has known CVEs), shared through `withLockSuppressed`.
    3. (deferred, do not start without being asked) Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
    4. (done) Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".
-8. Phase 8 (v1.6.0, polish): multiple custom reminders (daily / weekly / interval) with Do Not Disturb hours, profile photo (`expo-image-picker`), payment app / UPI field, bank logos (Brandfetch), feedback (email intent or EmailJS), optional password lock.
+8. Phase 8 (done, v1.6.0, polish): multiple custom reminders (daily / weekly / repeating) with Do Not Disturb hours, profile photo (a default avatar for now; show the Google account photo through `ProfileAvatar`'s `photoUri` once Google sign-in exists), payment app / UPI field, bank logos (Brandfetch), feedback (EmailJS), optional password lock.

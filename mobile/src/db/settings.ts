@@ -1,6 +1,17 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { Settings } from '@/types/models';
+import type { CustomReminder, Settings } from '@/types/models';
+
+export const DEFAULT_REMINDER: CustomReminder = {
+  id: 'daily',
+  label: 'Log expenses',
+  message: "Don't forget to log today's expenses.",
+  time: '21:00',
+  frequency: 'daily',
+  day: 0,
+  intervalMinutes: 60,
+  enabled: false,
+};
 
 const DEFAULT_SETTINGS: Settings = {
   profileName: null,
@@ -21,10 +32,13 @@ const DEFAULT_SETTINGS: Settings = {
   splitBankDeduction: 'full',
   splitExpenseRecord: 'my_share',
   lockEnabled: false,
+  lockType: 'pin',
   lockBiometric: false,
   lockTimeout: 0,
-  dailyReminder: false,
-  dailyReminderTime: '21:00',
+  reminders: [DEFAULT_REMINDER],
+  dndEnabled: false,
+  dndStart: '23:00',
+  dndEnd: '07:00',
   dueReminders: true,
   backupReminder: true,
   lastBackupAt: null,
@@ -33,8 +47,13 @@ const DEFAULT_SETTINGS: Settings = {
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
   const rows = await db.getAllAsync<{ key: string; value: string }>('SELECT key, value FROM settings');
-  const stored = Object.fromEntries(rows.map((r) => [r.key, JSON.parse(r.value)]));
-  return { ...DEFAULT_SETTINGS, ...stored };
+  const { dailyReminder, dailyReminderTime, ...stored } = Object.fromEntries(rows.map((r) => [r.key, JSON.parse(r.value)]));
+  const settings: Settings = { ...DEFAULT_SETTINGS, ...stored };
+  // Before custom reminders there was a single daily reminder; carry its choice over until reminders are saved.
+  if (!('reminders' in stored) && (dailyReminder !== undefined || dailyReminderTime !== undefined)) {
+    settings.reminders = [{ ...DEFAULT_REMINDER, enabled: dailyReminder === true, time: dailyReminderTime ?? DEFAULT_REMINDER.time }];
+  }
+  return settings;
 }
 
 /** Writes settings without opening a SQL transaction, for use inside one. */

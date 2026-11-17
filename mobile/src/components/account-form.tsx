@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
 import { FormScreen } from '@/components/ui/form-screen';
+import { Text } from '@/components/ui/text';
 import { Field, Input, TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { createAccount, deleteAccount, listAccounts, updateAccount, type AccountInput } from '@/db/accounts';
@@ -13,8 +14,10 @@ import { updateSettings } from '@/db/settings';
 import { countTransactionsForAccount } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
+import { useTheme } from '@/hooks/use-theme';
 import { ACCOUNT_SUBTYPES, ACCOUNT_TYPE_OPTIONS, CUSTOM_TYPE_ICONS, accountEmoji, isCreditCard } from '@/lib/accounts';
 import { parseAmount, sanitizeAmountInput } from '@/lib/format';
+import { logosAvailable, logoUrlForDomain, searchLogos, type LogoResult } from '@/lib/logos';
 import type { Account, AccountType } from '@/types/models';
 
 function parseDay(text: string): number | null {
@@ -37,6 +40,7 @@ export interface AccountFormProps {
 
 export function AccountForm({ initial }: AccountFormProps) {
   const db = useSQLiteContext();
+  const colors = useTheme();
   const settings = useSettings();
   const accounts = useDbQuery(listAccounts, ['accounts']);
   const currency = settings?.currency ?? 'INR';
@@ -53,9 +57,24 @@ export function AccountForm({ initial }: AccountFormProps) {
   const [creatingType, setCreatingType] = useState(false);
   const [newTypeLabel, setNewTypeLabel] = useState('');
   const [newTypeIcon, setNewTypeIcon] = useState(CUSTOM_TYPE_ICONS[0]);
+  const [logoUrl, setLogoUrl] = useState(initial?.logoUrl ?? null);
+  const [logoQuery, setLogoQuery] = useState('');
+  const [logoResults, setLogoResults] = useState<LogoResult[] | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const subTypes = ACCOUNT_SUBTYPES[type];
+
+  async function findLogos() {
+    const query = (logoQuery || name).trim();
+    if (!query) return;
+    setSearching(true);
+    const results = await searchLogos(query);
+    setLogoFailed(results === null);
+    setLogoResults(results ?? null);
+    setSearching(false);
+  }
   const isCredit = type === 'card' && subType === 'credit';
   const customType = type === 'custom' ? customTypes.find((t) => t.id === customTypeId) : undefined;
   const customTypeInUse = !!customType && !!accounts?.some((a) => a.id !== initial?.id && a.customTypeId === customType.id);
@@ -111,7 +130,7 @@ export function AccountForm({ initial }: AccountFormProps) {
       billingDay: isCredit ? parseDay(billingDay) : null,
       dueDay: isCredit ? parseDay(dueDay) : null,
       customTypeId: customType?.id ?? null,
-      logoUrl: initial?.logoUrl ?? null,
+      logoUrl,
     };
     try {
       if (initial) await updateAccount(db, initial.id, input);
@@ -257,6 +276,63 @@ export function AccountForm({ initial }: AccountFormProps) {
         maxLength={40}
       />
 
+      {logosAvailable ? (
+        <Field label="Logo" hint="Optional. Logos load from Brandfetch over the internet.">
+          {logoUrl ? (
+            <View style={styles.row}>
+              <Image source={{ uri: logoUrl }} style={styles.logo} accessibilityIgnoresInvertColors />
+              <Button label="Remove logo" size="small" variant="destructive" onPress={() => setLogoUrl(null)} />
+            </View>
+          ) : null}
+          <View style={styles.row}>
+            <Input
+              style={styles.flex}
+              value={logoQuery}
+              onChangeText={setLogoQuery}
+              placeholder={name.trim() ? `Search "${name.trim()}"` : 'Bank or brand name'}
+              returnKeyType="search"
+              onSubmitEditing={findLogos}
+              accessibilityLabel="Search logos"
+            />
+            <Button label={searching ? 'Searching…' : 'Search'} icon="search" size="small" disabled={searching} onPress={findLogos} />
+          </View>
+          {logoFailed ? (
+            <Text variant="caption" tone="danger">
+              Couldn&apos;t reach Brandfetch. Check your internet connection and try again.
+            </Text>
+          ) : null}
+          {logoResults?.length === 0 ? (
+            <Text variant="caption" tone="secondary">
+              No logos found. Try the bank&apos;s short name, e.g. HDFC.
+            </Text>
+          ) : null}
+          {logoResults && logoResults.length > 0 ? (
+            <ChipGroup>
+              {logoResults.map((r) => {
+                const url = logoUrlForDomain(r.domain);
+                return (
+                  <Pressable
+                    key={r.domain}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Use ${r.name} logo`}
+                    onPress={() => {
+                      setLogoUrl(url);
+                      setLogoResults(null);
+                      setLogoQuery('');
+                    }}
+                    style={[styles.logoOption, { borderColor: url === logoUrl ? colors.primary : colors.border, backgroundColor: colors.card }]}>
+                    <Image source={{ uri: url }} style={styles.logoSmall} accessibilityIgnoresInvertColors />
+                    <Text variant="caption" numberOfLines={1} style={styles.logoName}>
+                      {r.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ChipGroup>
+          ) : null}
+        </Field>
+      ) : null}
+
       <TextField
         label={isCredit ? 'Amount used' : initial ? 'Current balance' : 'Opening balance'}
         hint={
@@ -325,5 +401,28 @@ const styles = StyleSheet.create({
   },
   inlineAction: {
     alignSelf: 'flex-start',
+  },
+  logo: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  logoOption: {
+    width: 96,
+    alignItems: 'center',
+    gap: Spacing.xs,
+    padding: Spacing.sm,
+    borderWidth: 1.5,
+    borderRadius: 12,
+  },
+  logoSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  logoName: {
+    maxWidth: 80,
   },
 });

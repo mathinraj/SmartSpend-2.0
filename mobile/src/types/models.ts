@@ -147,6 +147,24 @@ export type SplitAmountMode = 'full' | 'my_share';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
+export type LockType = 'pin' | 'password';
+
+export type ReminderFrequency = 'daily' | 'weekly' | 'interval';
+
+export interface CustomReminder {
+  id: string;
+  label: string;
+  message: string;
+  /** `HH:mm`, for daily and weekly reminders. */
+  time: string;
+  frequency: ReminderFrequency;
+  /** Weekly reminders: 0 = Sunday … 6 = Saturday. */
+  day: number;
+  /** Interval reminders: minutes between notifications. */
+  intervalMinutes: number;
+  enabled: boolean;
+}
+
 /** What the big card on Home leads with. */
 export type HomeView = 'balance' | 'expenses';
 
@@ -177,12 +195,17 @@ export interface Settings {
   /** What analytics and the Home card count as your spending for split expenses. */
   splitExpenseRecord: SplitAmountMode;
   lockEnabled: boolean;
+  /** What the lock screen asks for. Both are stored only as a salted hash in the keystore. */
+  lockType: LockType;
   lockBiometric: boolean;
   /** Seconds in the background before the app locks again. */
   lockTimeout: number;
-  dailyReminder: boolean;
-  /** `HH:mm`. */
-  dailyReminderTime: string;
+  /** User-defined reminders (web app format). */
+  reminders: CustomReminder[];
+  /** Quiet hours: custom reminders aren't scheduled between `dndStart` and `dndEnd` (`HH:mm`, may wrap midnight). */
+  dndEnabled: boolean;
+  dndStart: string;
+  dndEnd: string;
   dueReminders: boolean;
   /** Weekly notification to export a backup, until one is made. */
   backupReminder: boolean;

@@ -3,6 +3,9 @@ import { AppState, BackHandler, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PinPad } from '@/components/pin-pad';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { Input } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { authenticateWithBiometrics, biometricsAvailable, isLockSuppressed, verifyPin } from '@/lib/lock';
@@ -43,20 +46,21 @@ export function LockGate({ settings, children }: LockGateProps) {
     <>
       {children}
       {locked && settings.lockEnabled ? (
-        <LockScreen biometric={settings.lockBiometric} onUnlock={() => setLocked(false)} />
+        <LockScreen biometric={settings.lockBiometric} password={settings.lockType === 'password'} onUnlock={() => setLocked(false)} />
       ) : null}
     </>
   );
 }
 
-function LockScreen({ biometric, onUnlock }: { biometric: boolean; onUnlock: () => void }) {
+function LockScreen({ biometric, password, onUnlock }: { biometric: boolean; password: boolean; onUnlock: () => void }) {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
   const [error, setError] = useState<string | null>(null);
   const [canUseBiometrics, setCanUseBiometrics] = useState(false);
+  const [typed, setTyped] = useState('');
 
   async function promptBiometrics() {
-    if (await authenticateWithBiometrics()) onUnlock();
+    if (await authenticateWithBiometrics(password ? 'Use password' : 'Use PIN')) onUnlock();
   }
 
   const autoPrompt = useEffectEvent(() => {
@@ -82,9 +86,13 @@ function LockScreen({ biometric, onUnlock }: { biometric: boolean; onUnlock: () 
     return () => subscription.remove();
   }, []);
 
-  async function check(pin: string) {
-    if (await verifyPin(pin)) onUnlock();
-    else setError('Wrong PIN. Try again.');
+  async function check(secret: string) {
+    if (await verifyPin(secret)) {
+      onUnlock();
+      return;
+    }
+    setTyped('');
+    setError(password ? 'Wrong password. Try again.' : 'Wrong PIN. Try again.');
   }
 
   return (
@@ -94,13 +102,45 @@ function LockScreen({ biometric, onUnlock }: { biometric: boolean; onUnlock: () 
         styles.overlay,
         { backgroundColor: colors.background, paddingTop: insets.top + Spacing.xxl, paddingBottom: insets.bottom },
       ]}>
-      <PinPad
-        title="SpendTrak is locked"
-        subtitle="Enter your PIN"
-        error={error}
-        onComplete={check}
-        onBiometric={canUseBiometrics ? promptBiometrics : undefined}
-      />
+      {password ? (
+        <View style={styles.passwordBox}>
+          <Text variant="title" style={styles.center}>
+            SpendTrak is locked
+          </Text>
+          <Input
+            value={typed}
+            onChangeText={(text) => {
+              setTyped(text);
+              setError(null);
+            }}
+            placeholder="Password"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus
+            returnKeyType="go"
+            onSubmitEditing={() => check(typed)}
+            accessibilityLabel="Password"
+          />
+          {error ? (
+            <Text tone="danger" style={styles.center}>
+              {error}
+            </Text>
+          ) : null}
+          <Button label="Unlock" icon="lock" disabled={!typed} onPress={() => check(typed)} />
+          {canUseBiometrics ? (
+            <Button label="Use fingerprint" icon="fingerprint" variant="secondary" onPress={promptBiometrics} />
+          ) : null}
+        </View>
+      ) : (
+        <PinPad
+          title="SpendTrak is locked"
+          subtitle="Enter your PIN"
+          error={error}
+          onComplete={check}
+          onBiometric={canUseBiometrics ? promptBiometrics : undefined}
+        />
+      )}
     </View>
   );
 }
@@ -110,5 +150,12 @@ const styles = StyleSheet.create({
     zIndex: 100,
     elevation: 100,
     justifyContent: 'center',
+  },
+  passwordBox: {
+    gap: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+  },
+  center: {
+    textAlign: 'center',
   },
 });

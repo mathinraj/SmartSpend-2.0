@@ -17,7 +17,10 @@ function hashPin(pin: string, salt: string): Promise<string> {
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `${salt}:${pin}`);
 }
 
-/** Only a salted hash is stored, in the platform keystore rather than the app database. */
+/**
+ * Saves the lock PIN or password. Only a salted hash is stored, in the platform keystore rather than the
+ * app database.
+ */
 export async function savePin(pin: string) {
   const salt = toHex(Crypto.getRandomBytes(16));
   const stored: StoredPin = { salt, hash: await hashPin(pin, salt) };
@@ -39,11 +42,11 @@ export async function biometricsAvailable(): Promise<boolean> {
   return (await LocalAuthentication.hasHardwareAsync()) && (await LocalAuthentication.isEnrolledAsync());
 }
 
-export async function authenticateWithBiometrics(): Promise<boolean> {
+export async function authenticateWithBiometrics(cancelLabel = 'Use PIN'): Promise<boolean> {
   const result = await withLockSuppressed(() =>
     LocalAuthentication.authenticateAsync({
       promptMessage: 'Unlock SpendTrak',
-      cancelLabel: 'Use PIN',
+      cancelLabel,
       disableDeviceFallback: true,
     })
   );

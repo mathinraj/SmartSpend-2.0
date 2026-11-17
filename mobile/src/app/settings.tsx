@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Alert } from 'react-native';
 
+import { ProfileAvatar } from '@/components/profile-avatar';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { ListRow } from '@/components/ui/list-row';
@@ -79,7 +80,7 @@ export default function SettingsScreen() {
       <SectionHeader title="Preferences" />
       <Card flush>
         <ListRow
-          leading={<Icon name="person" color={colors.primary} />}
+          leading={<ProfileAvatar size={28} />}
           title="Name"
           subtitle={settings?.profileName ?? 'Not set'}
           onPress={() => router.push('/profile')}
@@ -129,7 +130,7 @@ export default function SettingsScreen() {
         <ListRow
           leading={<Icon name="lock" color={colors.primary} />}
           title="App lock"
-          subtitle={settings?.lockEnabled ? 'On' : 'Off'}
+          subtitle={settings?.lockEnabled ? `On · ${settings.lockType === 'password' ? 'Password' : 'PIN'}` : 'Off'}
           onPress={() => router.push('/security')}
         />
         <ListRow
@@ -138,7 +139,9 @@ export default function SettingsScreen() {
           title="Reminders"
           subtitle={
             [
-              settings?.dailyReminder ? 'Daily' : null,
+              settings?.reminders.some((r) => r.enabled)
+                ? `${settings.reminders.filter((r) => r.enabled).length} custom`
+                : null,
               settings?.dueReminders ? 'Payment due' : null,
               settings?.backupReminder ? 'Backup' : null,
             ]
@@ -220,6 +223,13 @@ export default function SettingsScreen() {
           title="SpendTrak"
           subtitle="All data stays on this device"
           trailing={<Text tone="secondary">v{Constants.expoConfig?.version ?? '—'}</Text>}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="feedback" color={colors.primary} />}
+          title="Send feedback"
+          subtitle="Report a bug or suggest a feature"
+          onPress={() => router.push('/feedback')}
         />
       </Card>
     </Screen>

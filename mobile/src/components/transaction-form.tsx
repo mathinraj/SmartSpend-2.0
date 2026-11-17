@@ -17,6 +17,7 @@ import { getCurrency } from '@/constants/currencies';
 import { Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
+import { updateSettings } from '@/db/settings';
 import { addSplitExpense, equalShare, type SplitShare } from '@/db/splits';
 import { addTransaction, updateTransaction, type NewTransaction } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
@@ -74,6 +75,9 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   const [splitWith, setSplitWith] = useState<string[]>([]);
   const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
   const [customShares, setCustomShares] = useState<Record<string, string>>({});
+  const [paymentApp, setPaymentApp] = useState(initial?.paymentApp ?? null);
+  const [addingApp, setAddingApp] = useState(false);
+  const [newApp, setNewApp] = useState('');
   const [saving, setSaving] = useState(false);
 
   if (!accounts || !expenseCategories || !incomeCategories) return null;
@@ -154,6 +158,22 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
     setSubcategoryId(null);
   }
 
+  const trackApp = settings?.trackPaymentApp ?? true;
+  const paymentApps = settings?.paymentApps ?? [];
+  // An app saved on this transaction but since removed from the list still shows, so it can be kept.
+  const appChoices = paymentApp && !paymentApps.includes(paymentApp) ? [...paymentApps, paymentApp] : paymentApps;
+
+  async function addPaymentApp() {
+    const name = newApp.trim();
+    if (!name) return;
+    if (!paymentApps.some((a) => a.toLowerCase() === name.toLowerCase())) {
+      await updateSettings(db, { paymentApps: [...paymentApps, name] });
+    }
+    setPaymentApp(paymentApps.find((a) => a.toLowerCase() === name.toLowerCase()) ?? name);
+    setNewApp('');
+    setAddingApp(false);
+  }
+
   async function save() {
     if (problem || saving) return;
     setSaving(true);
@@ -174,7 +194,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
       deductMyShare: initial?.deductMyShare ?? false,
       source: initial?.source ?? 'manual',
       sourceRef: initial?.sourceRef ?? null,
-      paymentApp: initial?.paymentApp ?? null,
+      paymentApp: trackApp ? paymentApp : (initial?.paymentApp ?? null),
     };
     try {
       if (initial) await updateTransaction(db, initial.id, input);
@@ -340,6 +360,31 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
           ) : null}
         </>
       )}
+
+      {trackApp ? (
+        <Field label="Paid with" hint="Optional. Manage this list in Settings → Customize.">
+          <ChipGroup>
+            {appChoices.map((app) => (
+              <Chip key={app} label={app} selected={app === paymentApp} onPress={() => setPaymentApp(app === paymentApp ? null : app)} />
+            ))}
+            <Chip label="Add" emoji="➕" selected={addingApp} onPress={() => setAddingApp(!addingApp)} />
+          </ChipGroup>
+          {addingApp ? (
+            <View style={styles.shareRow}>
+              <Input
+                style={styles.shareName}
+                value={newApp}
+                onChangeText={setNewApp}
+                placeholder="e.g. BHIM"
+                maxLength={20}
+                autoFocus
+                accessibilityLabel="New payment app"
+              />
+              <Button label="Add" icon="add" size="small" disabled={!newApp.trim()} onPress={addPaymentApp} />
+            </View>
+          ) : null}
+        </Field>
+      ) : null}
 
       <Field label="Date & time">
         <View style={styles.dateRow}>

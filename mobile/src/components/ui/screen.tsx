@@ -16,12 +16,14 @@ export interface ScreenProps {
   title?: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  /** Shown before the title, e.g. the profile picture. */
+  headerLeft?: ReactNode;
   /** Leave room at the bottom for a `Fab` rendered over this screen. */
   hasFab?: boolean;
   children: ReactNode;
 }
 
-export function Screen({ variant = 'tab', title, subtitle, headerRight, hasFab, children }: ScreenProps) {
+export function Screen({ variant = 'tab', title, subtitle, headerRight, headerLeft, hasFab, children }: ScreenProps) {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
   const isTab = variant === 'tab';
@@ -36,15 +38,26 @@ export function Screen({ variant = 'tab', title, subtitle, headerRight, hasFab, 
           paddingBottom: (isTab ? BottomTabInset : insets.bottom) + Spacing.xxl + (hasFab ? FAB_CLEARANCE : 0),
         },
       ]}>
-      {title ? <ScreenHeader title={title} subtitle={subtitle} right={headerRight} /> : null}
+      {title ? <ScreenHeader title={title} subtitle={subtitle} right={headerRight} left={headerLeft} /> : null}
       {children}
     </ScrollView>
   );
 }
 
-export function ScreenHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
+export function ScreenHeader({
+  title,
+  subtitle,
+  right,
+  left,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  left?: ReactNode;
+}) {
   return (
     <View style={styles.header}>
+      {left}
       <View style={styles.headerText}>
         {subtitle ? <Text tone="secondary">{subtitle}</Text> : null}
         <Text variant="title" numberOfLines={1}>

@@ -1,12 +1,15 @@
 import { useSQLiteContext } from 'expo-sqlite';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Chip, ChipGroup } from '@/components/ui/chip';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { SwitchRow } from '@/components/ui/switch-row';
-import { Field } from '@/components/ui/text-field';
+import { Field, Input } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { updateSettings } from '@/db/settings';
 import { useSettings } from '@/hooks/use-settings';
@@ -15,7 +18,17 @@ import { MASKED_AMOUNT } from '@/lib/balance-privacy';
 export default function CustomizeScreen() {
   const db = useSQLiteContext();
   const settings = useSettings();
+  const [newApp, setNewApp] = useState('');
   if (!settings) return null;
+
+  function addApp() {
+    const name = newApp.trim();
+    if (!name || !settings) return;
+    if (!settings.paymentApps.some((a) => a.toLowerCase() === name.toLowerCase())) {
+      updateSettings(db, { paymentApps: [...settings.paymentApps, name] });
+    }
+    setNewApp('');
+  }
 
   return (
     <Screen variant="stack">
@@ -104,6 +117,39 @@ export default function CustomizeScreen() {
             onChange={(defaultTxnType) => updateSettings(db, { defaultTxnType })}
           />
         </Field>
+        <Card flush>
+          <SwitchRow
+            title="Ask how I paid"
+            subtitle="Show payment app choices (GPay, Card Swipe, ...) when adding a transaction"
+            value={settings.trackPaymentApp}
+            onValueChange={(trackPaymentApp) => updateSettings(db, { trackPaymentApp })}
+          />
+        </Card>
+        {settings.trackPaymentApp ? (
+          <Field label="Payment apps" hint="Tap an app to remove it from the list. Past transactions keep it.">
+            <ChipGroup>
+              {settings.paymentApps.map((app) => (
+                <Chip
+                  key={app}
+                  label={app}
+                  removable
+                  onPress={() => updateSettings(db, { paymentApps: settings.paymentApps.filter((a) => a !== app) })}
+                />
+              ))}
+            </ChipGroup>
+            <View style={styles.row}>
+              <Input
+                style={styles.flex}
+                value={newApp}
+                onChangeText={setNewApp}
+                placeholder="Add an app"
+                maxLength={20}
+                accessibilityLabel="New payment app"
+              />
+              <Button label="Add" icon="add" disabled={!newApp.trim()} onPress={addApp} />
+            </View>
+          </Field>
+        ) : null}
       </View>
     </Screen>
   );
@@ -112,5 +158,13 @@ export default function CustomizeScreen() {
 const styles = StyleSheet.create({
   section: {
     gap: Spacing.lg,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  flex: {
+    flex: 1,
   },
 });

@@ -8,7 +8,8 @@ import { Button, IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Fab } from '@/components/ui/fab';
-import { Avatar, ListRow } from '@/components/ui/list-row';
+import { AccountAvatar } from '@/components/account-avatar';
+import { ListRow } from '@/components/ui/list-row';
 import { MoveButtons } from '@/components/ui/move-buttons';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -19,7 +20,7 @@ import { loadSampleData } from '@/db/sample-data';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
-import { ACCOUNT_TYPE_LABELS, accountColor, accountEmoji, isCreditCard, subTypeLabel } from '@/lib/accounts';
+import { ACCOUNT_TYPE_LABELS, isCreditCard, subTypeLabel } from '@/lib/accounts';
 import { useBalancePrivacy } from '@/lib/balance-privacy';
 import { formatCurrency } from '@/lib/format';
 import type { Account, CustomAccountType } from '@/types/models';
@@ -148,7 +149,7 @@ export default function AccountsScreen() {
                   key={account.id}
                   divider={i > 0}
                   onPress={reordering ? undefined : () => router.push(`/account/${account.id}`)}
-                  leading={<Avatar emoji={accountEmoji(account, currency)} color={accountColor(account)} />}
+                  leading={<AccountAvatar account={account} currency={currency} />}
                   title={account.name}
                   subtitle={describe(account, currency)}
                   trailing={
