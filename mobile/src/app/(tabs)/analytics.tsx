@@ -1,21 +1,34 @@
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { DonutChart } from '@/components/charts/donut-chart';
 import { ChartLegend, MonthBars } from '@/components/charts/month-bars';
 import { IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PickerButton } from '@/components/ui/picker-button';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Text } from '@/components/ui/text';
 import { Radius, Spacing } from '@/constants/theme';
+import { listAccounts } from '@/db/accounts';
 import { getCategoryTotals, getMonthlyTotals, getPeriodSummary } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
-import { formatCurrency, formatMonth, monthRange, parseDateKey, shiftMonth, toMonthKey } from '@/lib/format';
+import { accountEmoji } from '@/lib/accounts';
+import {
+  PERIOD_PRESETS,
+  periodForPreset,
+  periodLabel,
+  periodRange,
+  presetOf,
+  type AnalyticsPeriod,
+} from '@/lib/analytics-period';
+import { formatCurrency, formatShortDate, parseDateKey, shiftMonth, toDateKey, toMonthKey } from '@/lib/format';
+import { pickDate } from '@/lib/pickers';
 
 type Kind = 'expense' | 'income';
 
@@ -29,21 +42,39 @@ export default function AnalyticsScreen() {
   const settings = useSettings();
   const currency = settings?.currency ?? 'INR';
   const thisMonth = toMonthKey(new Date());
-  const [month, setMonth] = useState(thisMonth);
+  const [period, setPeriod] = useState<AnalyticsPeriod>({ kind: 'month', month: thisMonth });
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [kind, setKind] = useState<Kind>('expense');
 
-  const monthDate = parseDateKey(`${month}-01`);
-  const { from, to } = monthRange(monthDate);
+  const accounts = useDbQuery(listAccounts, ['accounts']);
+  const accountIds = selectedAccountIds.filter((id) => accounts?.some((a) => a.id === id));
+  const { from, to } = periodRange(period);
+  const label = periodLabel(period);
+  const preset = presetOf(period);
   const record = settings?.splitExpenseRecord ?? 'my_share';
-  const summary = useDbQuery(getPeriodSummary, ['transactions'], from, to, record);
-  const categories = useDbQuery(getCategoryTotals, ['transactions', 'categories'], kind, from, to, record);
+  const summary = useDbQuery(getPeriodSummary, ['transactions'], from, to, record, accountIds);
+  const categories = useDbQuery(getCategoryTotals, ['transactions', 'categories'], kind, from, to, record, accountIds);
   const trend = useDbQuery(
     getMonthlyTotals,
     ['transactions'],
     toMonthKey(shiftMonth(new Date(), -5)),
     thisMonth,
-    record
+    record,
+    accountIds
   );
+
+  const selectMonth = (month: string) => setPeriod({ kind: 'month', month });
+  const toggleAccount = (id: string) =>
+    setSelectedAccountIds(accountIds.includes(id) ? accountIds.filter((x) => x !== id) : [...accountIds, id]);
+
+  function pickCustom(edge: 'from' | 'to') {
+    if (period.kind !== 'custom') return;
+    pickDate(parseDateKey(period[edge]), (d) => {
+      const key = toDateKey(d);
+      if (edge === 'from') setPeriod({ kind: 'custom', from: key, to: key > period.to ? key : period.to });
+      else setPeriod({ kind: 'custom', from: key < period.from ? key : period.from, to: key });
+    });
+  }
 
   const income = summary?.income ?? 0;
   const expense = summary?.expense ?? 0;
@@ -53,25 +84,62 @@ export default function AnalyticsScreen() {
 
   return (
     <Screen title="Analytics">
-      <View style={styles.monthSwitcher}>
-        <IconButton
-          icon="chevronLeft"
-          accessibilityLabel="Previous month"
-          onPress={() => setMonth(toMonthKey(shiftMonth(monthDate, -1)))}
-        />
-        <Text variant="heading" style={styles.monthLabel}>
-          {formatMonth(monthDate)}
-        </Text>
-        {month < thisMonth ? (
-          <IconButton
-            icon="chevronRight"
-            accessibilityLabel="Next month"
-            onPress={() => setMonth(toMonthKey(shiftMonth(monthDate, 1)))}
+      <ChipRow>
+        {PERIOD_PRESETS.map((p) => (
+          <Chip
+            key={p.id}
+            label={p.label}
+            selected={preset === p.id}
+            onPress={() => setPeriod(periodForPreset(p.id, period))}
           />
-        ) : (
-          <View style={styles.iconPlaceholder} />
-        )}
-      </View>
+        ))}
+      </ChipRow>
+
+      {period.kind === 'month' ? (
+        <View style={styles.monthSwitcher}>
+          <IconButton
+            icon="chevronLeft"
+            accessibilityLabel="Previous month"
+            onPress={() => selectMonth(toMonthKey(shiftMonth(parseDateKey(`${period.month}-01`), -1)))}
+          />
+          <Text variant="heading" style={styles.monthLabel}>
+            {label}
+          </Text>
+          {period.month < thisMonth ? (
+            <IconButton
+              icon="chevronRight"
+              accessibilityLabel="Next month"
+              onPress={() => selectMonth(toMonthKey(shiftMonth(parseDateKey(`${period.month}-01`), 1)))}
+            />
+          ) : (
+            <View style={styles.iconPlaceholder} />
+          )}
+        </View>
+      ) : period.kind === 'custom' ? (
+        <View style={styles.customRow}>
+          <PickerButton icon="calendar" label={formatShortDate(period.from)} onPress={() => pickCustom('from')} />
+          <PickerButton icon="calendar" label={formatShortDate(period.to)} onPress={() => pickCustom('to')} />
+        </View>
+      ) : (
+        <Text variant="heading" style={styles.periodLabel}>
+          {label}
+        </Text>
+      )}
+
+      {accounts && accounts.length > 1 ? (
+        <ChipRow>
+          <Chip label="All accounts" selected={accountIds.length === 0} onPress={() => setSelectedAccountIds([])} />
+          {accounts.map((a) => (
+            <Chip
+              key={a.id}
+              label={a.name}
+              emoji={accountEmoji(a, currency)}
+              selected={accountIds.includes(a.id)}
+              onPress={() => toggleAccount(a.id)}
+            />
+          ))}
+        </ChipRow>
+      ) : null}
 
       <View style={styles.statsRow}>
         <StatCard label="Income" value={formatCurrency(income, currency)} tone="success" />
@@ -89,7 +157,9 @@ export default function AnalyticsScreen() {
         <EmptyState
           emoji="📊"
           title={kind === 'expense' ? 'No expenses' : 'No income'}
-          message={`Nothing recorded for ${formatMonth(monthDate)}.`}
+          message={`Nothing recorded${accountIds.length > 0 ? ' in the selected accounts' : ''} for ${
+            period.kind === 'last_30' || period.kind === 'last_90' ? `the ${label.toLowerCase()}` : label
+          }.`}
         />
       ) : (
         <Card style={styles.breakdown}>
@@ -133,7 +203,9 @@ export default function AnalyticsScreen() {
 
       <SectionHeader title="Last 6 months" />
       <Card style={styles.trend}>
-        {trend ? <MonthBars data={trend} selected={month} onSelect={setMonth} /> : null}
+        {trend ? (
+          <MonthBars data={trend} selected={period.kind === 'month' ? period.month : ''} onSelect={selectMonth} />
+        ) : null}
         <ChartLegend
           items={[
             { label: 'Income', color: colors.success },
@@ -142,6 +214,19 @@ export default function AnalyticsScreen() {
         />
       </Card>
     </Screen>
+  );
+}
+
+/** A single line of chips that scrolls sideways, bleeding to the screen edges. */
+function ChipRow({ children }: { children: ReactNode }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.chipRow}
+      contentContainerStyle={styles.chipRowContent}>
+      {children}
+    </ScrollView>
   );
 }
 
@@ -173,6 +258,20 @@ const styles = StyleSheet.create({
   },
   iconPlaceholder: {
     width: 44,
+  },
+  periodLabel: {
+    textAlign: 'center',
+  },
+  customRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  chipRow: {
+    marginHorizontal: -Spacing.lg,
+  },
+  chipRowContent: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
   },
   statsRow: {
     flexDirection: 'row',

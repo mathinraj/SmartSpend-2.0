@@ -99,6 +99,15 @@ export function formatMonth(date: Date): string {
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
+/** `3 Nov`, or `3 Nov 2025` outside the current year. */
+export function formatShortDate(key: string): string {
+  return parseDateKey(key).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: key.slice(0, 4) === toDateKey(new Date()).slice(0, 4) ? undefined : 'numeric',
+  });
+}
+
 export function formatDayLabel(key: string): string {
   const today = toDateKey(new Date());
   if (key === today) return 'Today';

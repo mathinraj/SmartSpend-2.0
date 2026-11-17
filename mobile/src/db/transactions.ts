@@ -198,19 +198,29 @@ function spentSql(record: SplitAmountMode): string {
   return record === 'my_share' ? 't.amount - CASE WHEN t.is_split = 1 THEN COALESCE(t.split_amount, 0) ELSE 0 END' : 't.amount';
 }
 
+/**
+ * Restricts income/expense rows to these accounts; an empty list means all accounts. Transfers never
+ * count toward these totals, so only `account_id` is checked.
+ */
+function accountSql(accountIds: string[]): string {
+  return accountIds.length > 0 ? ` AND t.account_id IN (${accountIds.map(() => '?').join(', ')})` : '';
+}
+
 export async function getPeriodSummary(
   db: SQLiteDatabase,
   from: string,
   to: string,
-  record: SplitAmountMode
+  record: SplitAmountMode,
+  accountIds: string[] = []
 ): Promise<PeriodSummary> {
   const row = await db.getFirstAsync<PeriodSummary>(
     `SELECT COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount END), 0)        AS income,
             COALESCE(SUM(CASE WHEN t.type = 'expense' THEN ${spentSql(record)} END), 0) AS expense
        FROM transactions t
-      WHERE t.date >= ? AND t.date < ?`,
+      WHERE t.date >= ? AND t.date < ?${accountSql(accountIds)}`,
     from,
-    to
+    to,
+    ...accountIds
   );
   return row ?? { income: 0, expense: 0 };
 }
@@ -228,7 +238,8 @@ export async function getCategoryTotals(
   type: 'expense' | 'income',
   from: string,
   to: string,
-  record: SplitAmountMode
+  record: SplitAmountMode,
+  accountIds: string[] = []
 ): Promise<CategoryTotal[]> {
   return db.getAllAsync<CategoryTotal>(
     `SELECT t.category_id              AS categoryId,
@@ -238,12 +249,13 @@ export async function getCategoryTotals(
             SUM(${type === 'expense' ? spentSql(record) : 't.amount'}) AS total
        FROM transactions t
        LEFT JOIN categories c ON c.id = t.category_id
-      WHERE t.type = ? AND t.date >= ? AND t.date < ?
+      WHERE t.type = ? AND t.date >= ? AND t.date < ?${accountSql(accountIds)}
       GROUP BY t.category_id
       ORDER BY total DESC`,
     type,
     from,
-    to
+    to,
+    ...accountIds
   );
 }
 
@@ -384,17 +396,19 @@ export async function getMonthlyTotals(
   db: SQLiteDatabase,
   fromMonth: string,
   toMonth: string,
-  record: SplitAmountMode
+  record: SplitAmountMode,
+  accountIds: string[] = []
 ): Promise<MonthTotal[]> {
   const rows = await db.getAllAsync<MonthTotal>(
     `SELECT substr(t.date, 1, 7) AS month,
             COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount END), 0)        AS income,
             COALESCE(SUM(CASE WHEN t.type = 'expense' THEN ${spentSql(record)} END), 0) AS expense
        FROM transactions t
-      WHERE substr(t.date, 1, 7) BETWEEN ? AND ?
+      WHERE substr(t.date, 1, 7) BETWEEN ? AND ?${accountSql(accountIds)}
       GROUP BY month`,
     fromMonth,
-    toMonth
+    toMonth,
+    ...accountIds
   );
   const byMonth = new Map(rows.map((r) => [r.month, r]));
   const result: MonthTotal[] = [];
