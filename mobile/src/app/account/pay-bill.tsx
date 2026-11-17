@@ -69,6 +69,7 @@ function PayBillForm({ card, sources }: { card: Account; sources: Account[] }) {
       deductMyShare: false,
       source: 'manual',
       sourceRef: null,
+      paymentApp: null,
     });
     router.back();
   }

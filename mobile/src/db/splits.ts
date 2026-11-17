@@ -185,6 +185,7 @@ export async function addSplitOwed(
         deductMyShare: false,
         source: 'manual',
         sourceRef: null,
+        paymentApp: null,
       });
     }
     await insertSplitEntry(db, {
@@ -231,6 +232,7 @@ export async function recordSettlement(db: SQLiteDatabase, input: SettlementInpu
         deductMyShare: false,
         source: 'manual',
         sourceRef: null,
+        paymentApp: null,
       });
     }
     await insertSplitEntry(db, {

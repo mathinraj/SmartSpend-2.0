@@ -174,6 +174,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
       deductMyShare: initial?.deductMyShare ?? false,
       source: initial?.source ?? 'manual',
       sourceRef: initial?.sourceRef ?? null,
+      paymentApp: initial?.paymentApp ?? null,
     };
     try {
       if (initial) await updateTransaction(db, initial.id, input);

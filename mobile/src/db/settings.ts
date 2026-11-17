@@ -15,6 +15,8 @@ const DEFAULT_SETTINGS: Settings = {
   hideBalances: false,
   defaultTxnType: 'expense',
   customAccountTypes: [],
+  paymentApps: ['GPay', 'PhonePe', 'Paytm', 'CRED', 'Amazon Pay', 'Cash', 'Card Swipe', 'Net Banking'],
+  trackPaymentApp: true,
   splitPeople: [],
   splitBankDeduction: 'full',
   splitExpenseRecord: 'my_share',

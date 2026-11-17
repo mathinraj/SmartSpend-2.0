@@ -15,6 +15,8 @@ export interface Account {
   sortOrder: number;
   /** `custom` accounts: the user-defined type from `Settings.customAccountTypes`, if any. */
   customTypeId: string | null;
+  /** Bank logo image URL from the web app (Brandfetch); kept so backups round-trip. */
+  logoUrl: string | null;
   createdAt: string;
 }
 
@@ -56,6 +58,8 @@ export interface Transaction {
   deductMyShare: boolean;
   source: TransactionSource;
   sourceRef: string | null;
+  /** How it was paid, e.g. "GPay" (web app field). */
+  paymentApp: string | null;
   createdAt: string;
 }
 
@@ -163,6 +167,9 @@ export interface Settings {
   hideBalances: boolean;
   defaultTxnType: TransactionType;
   customAccountTypes: CustomAccountType[];
+  /** Payment app choices (web app setting). */
+  paymentApps: string[];
+  trackPaymentApp: boolean;
   /** People available for splitting; the ledger may also mention people removed from this list. */
   splitPeople: string[];
   /** What leaves your account when you pay a split expense. Applies to new expenses only. */

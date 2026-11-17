@@ -20,6 +20,7 @@ interface TransactionRow {
   deduct_my_share: number;
   source: Transaction['source'];
   source_ref: string | null;
+  payment_app: string | null;
   created_at: string;
 }
 
@@ -51,6 +52,7 @@ function toTransaction(r: TransactionRow): Transaction {
     deductMyShare: r.deduct_my_share === 1,
     source: r.source,
     sourceRef: r.source_ref,
+    paymentApp: r.payment_app,
     createdAt: r.created_at,
   };
 }
@@ -360,8 +362,8 @@ export async function insertTransaction(db: SQLiteDatabase, input: NewTransactio
   await db.runAsync(
     `INSERT INTO transactions
        (id, type, amount, account_id, from_account_id, to_account_id, category_id, subcategory_id,
-        note, date, time, is_split, split_amount, deduct_my_share, source, source_ref, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        note, date, time, is_split, split_amount, deduct_my_share, source, source_ref, payment_app, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id,
     input.type,
     input.amount,
@@ -378,6 +380,7 @@ export async function insertTransaction(db: SQLiteDatabase, input: NewTransactio
     input.deductMyShare ? 1 : 0,
     input.source,
     input.sourceRef,
+    input.paymentApp,
     new Date().toISOString()
   );
   return id;
@@ -409,7 +412,7 @@ export async function updateTransaction(db: SQLiteDatabase, id: string, input: N
       `UPDATE transactions
           SET type = ?, amount = ?, account_id = ?, from_account_id = ?, to_account_id = ?,
               category_id = ?, subcategory_id = ?, note = ?, date = ?, time = ?,
-              is_split = ?, split_amount = ?, deduct_my_share = ?
+              is_split = ?, split_amount = ?, deduct_my_share = ?, payment_app = ?
         WHERE id = ?`,
       input.type,
       input.amount,
@@ -424,6 +427,7 @@ export async function updateTransaction(db: SQLiteDatabase, id: string, input: N
       input.isSplit ? 1 : 0,
       input.splitAmount,
       input.deductMyShare ? 1 : 0,
+      input.paymentApp,
       id
     );
     await applyBalance(db, input, 1);

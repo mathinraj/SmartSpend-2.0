@@ -16,6 +16,7 @@ interface AccountRow {
   due_day: number | null;
   sort_order: number;
   custom_type_id: string | null;
+  logo_url: string | null;
   created_at: string;
 }
 
@@ -33,6 +34,7 @@ function toAccount(r: AccountRow): Account {
     dueDay: r.due_day,
     sortOrder: r.sort_order,
     customTypeId: r.custom_type_id,
+    logoUrl: r.logo_url,
     createdAt: r.created_at,
   };
 }
@@ -54,8 +56,8 @@ export async function createAccount(db: SQLiteDatabase, input: NewAccount): Prom
   const id = input.id ?? generateId();
   await db.runAsync(
     `INSERT INTO accounts
-       (id, name, type, sub_type, balance, icon, color, credit_limit, billing_day, due_day, custom_type_id, sort_order, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM accounts), ?)`,
+       (id, name, type, sub_type, balance, icon, color, credit_limit, billing_day, due_day, custom_type_id, logo_url, sort_order, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM accounts), ?)`,
     id,
     input.name,
     input.type,
@@ -67,6 +69,7 @@ export async function createAccount(db: SQLiteDatabase, input: NewAccount): Prom
     input.billingDay,
     input.dueDay,
     input.customTypeId,
+    input.logoUrl,
     new Date().toISOString()
   );
   return id;
@@ -80,7 +83,7 @@ export async function updateAccount(db: SQLiteDatabase, id: string, input: Accou
   await db.runAsync(
     `UPDATE accounts
         SET name = ?, type = ?, sub_type = ?, balance = ?, icon = ?, color = ?,
-            credit_limit = ?, billing_day = ?, due_day = ?, custom_type_id = ?
+            credit_limit = ?, billing_day = ?, due_day = ?, custom_type_id = ?, logo_url = ?
       WHERE id = ?`,
     input.name,
     input.type,
@@ -92,6 +95,7 @@ export async function updateAccount(db: SQLiteDatabase, id: string, input: Accou
     input.billingDay,
     input.dueDay,
     input.customTypeId,
+    input.logoUrl,
     id
   );
 }

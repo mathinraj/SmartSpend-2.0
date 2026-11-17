@@ -100,6 +100,7 @@ export default function TransactionDetailScreen() {
         <DetailRow label="Date" value={formatLongDate(t.date)} />
         {t.time ? <DetailRow label="Time" value={formatTime(t.time)} /> : null}
         {t.note ? <DetailRow label="Note" value={t.note} /> : null}
+        {t.paymentApp ? <DetailRow label="Paid with" value={t.paymentApp} /> : null}
         {SOURCE_LABELS[t.source] ? <DetailRow label="Source" value={SOURCE_LABELS[t.source]!} /> : null}
       </Card>
 

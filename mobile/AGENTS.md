@@ -124,7 +124,7 @@ src/
    3. (done) Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
    4. (done) History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
 7. Phase 7 (v1.5.0, data and sync):
-   1. Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
+   1. (done) Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
    2. PDF export (`expo-print`) and Excel export (SheetJS, pure JS), shared through `withLockSuppressed`.
    3. Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
    4. Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".

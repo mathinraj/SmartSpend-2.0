@@ -147,6 +147,7 @@ export async function markPlannedPaid(db: SQLiteDatabase, id: string) {
           deductMyShare: false,
           source: 'manual',
           sourceRef: null,
+          paymentApp: null,
         });
       }
     }

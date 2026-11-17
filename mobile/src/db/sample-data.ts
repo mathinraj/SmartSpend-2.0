@@ -7,7 +7,7 @@ import { addDays, toDateKey } from '@/lib/format';
 const SAMPLE_PREFIX = 'sample_';
 
 function account(a: Pick<NewAccount, 'id' | 'name' | 'type' | 'balance'> & Partial<NewAccount>): NewAccount {
-  return { subType: null, icon: null, color: null, creditLimit: null, billingDay: null, dueDay: null, customTypeId: null, ...a };
+  return { subType: null, icon: null, color: null, creditLimit: null, billingDay: null, dueDay: null, customTypeId: null, logoUrl: null, ...a };
 }
 
 const ACCOUNTS: NewAccount[] = [
@@ -28,18 +28,18 @@ const ACCOUNTS: NewAccount[] = [
 ];
 
 type SampleTxn = Pick<NewTransaction, 'type' | 'amount' | 'note'> &
-  Partial<Pick<NewTransaction, 'accountId' | 'fromAccountId' | 'toAccountId' | 'categoryId' | 'subcategoryId' | 'time'>> & {
+  Partial<Pick<NewTransaction, 'accountId' | 'fromAccountId' | 'toAccountId' | 'categoryId' | 'subcategoryId' | 'time' | 'paymentApp'>> & {
     daysAgo: number;
   };
 
 const TRANSACTIONS: SampleTxn[] = [
-  { daysAgo: 0, type: 'expense', amount: 389, accountId: 'sample_paytm', categoryId: 'food', subcategoryId: 'food_delivery', note: 'Swiggy dinner', time: '21:15' },
+  { daysAgo: 0, type: 'expense', amount: 389, accountId: 'sample_paytm', categoryId: 'food', subcategoryId: 'food_delivery', note: 'Swiggy dinner', time: '21:15', paymentApp: 'Paytm' },
   { daysAgo: 0, type: 'expense', amount: 85, accountId: 'sample_cash', categoryId: 'transport', subcategoryId: 'transport_taxi', note: 'Auto to office', time: '09:10' },
   { daysAgo: 1, type: 'income', amount: 75000, accountId: 'sample_sbi', categoryId: 'income_salary', note: 'Salary', time: '10:00' },
   { daysAgo: 1, type: 'transfer', amount: 5000, fromAccountId: 'sample_sbi', toAccountId: 'sample_paytm', note: 'Top up wallet', time: '10:30' },
   { daysAgo: 2, type: 'expense', amount: 1199, accountId: 'sample_hdfc', categoryId: 'bills', subcategoryId: 'bills_internet', note: 'Jio fiber bill', time: '18:20' },
-  { daysAgo: 3, type: 'expense', amount: 3499, accountId: 'sample_icici_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Amazon - earbuds', time: '22:10' },
-  { daysAgo: 4, type: 'expense', amount: 620, accountId: 'sample_hdfc', categoryId: 'food', subcategoryId: 'food_restaurant', note: 'Lunch with team', time: '13:30' },
+  { daysAgo: 3, type: 'expense', amount: 3499, accountId: 'sample_icici_cc', categoryId: 'shopping', subcategoryId: 'shopping_electronics', note: 'Amazon - earbuds', time: '22:10', paymentApp: 'Amazon Pay' },
+  { daysAgo: 4, type: 'expense', amount: 620, accountId: 'sample_hdfc', categoryId: 'food', subcategoryId: 'food_restaurant', note: 'Lunch with team', time: '13:30', paymentApp: 'GPay' },
   { daysAgo: 6, type: 'expense', amount: 4500, accountId: 'sample_hdfc', categoryId: 'health', subcategoryId: 'health_gym', note: 'Gym membership', time: '07:00' },
   { daysAgo: 7, type: 'income', amount: 12000, accountId: 'sample_hdfc', categoryId: 'income_freelance', note: 'Logo design project', time: '16:00' },
   { daysAgo: 8, type: 'expense', amount: 8500, accountId: 'sample_icici_cc', categoryId: 'bills', subcategoryId: 'bills_rent', note: 'Room rent share', time: '10:00' },
@@ -51,7 +51,7 @@ const TRANSACTIONS: SampleTxn[] = [
   { daysAgo: 31, type: 'income', amount: 75000, accountId: 'sample_sbi', categoryId: 'income_salary', note: 'Salary', time: '10:00' },
   { daysAgo: 33, type: 'expense', amount: 6800, accountId: 'sample_icici_cc', categoryId: 'travel', subcategoryId: 'travel_flights', note: 'Flight to Goa', time: '12:00' },
   { daysAgo: 36, type: 'expense', amount: 4500, accountId: 'sample_hdfc', categoryId: 'health', subcategoryId: 'health_gym', note: 'Gym membership', time: '07:00' },
-  { daysAgo: 40, type: 'expense', amount: 1950, accountId: 'sample_paytm', categoryId: 'food', subcategoryId: 'food_groceries', note: 'Zepto groceries', time: '10:15' },
+  { daysAgo: 40, type: 'expense', amount: 1950, accountId: 'sample_paytm', categoryId: 'food', subcategoryId: 'food_groceries', note: 'Zepto groceries', time: '10:15', paymentApp: 'Paytm' },
 ];
 
 export async function hasSampleData(db: SQLiteDatabase): Promise<boolean> {
@@ -86,6 +86,7 @@ export async function loadSampleData(db: SQLiteDatabase) {
         deductMyShare: false,
         source: 'manual',
         sourceRef: null,
+        paymentApp: t.paymentApp ?? null,
       });
     }
   });

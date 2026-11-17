@@ -54,6 +54,8 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       hideBalances: settings.hideBalances,
       defaultTxnType: settings.defaultTxnType,
       customAccountTypes: settings.customAccountTypes,
+      paymentApps: settings.paymentApps,
+      trackPaymentApp: settings.trackPaymentApp,
       splitEnabled: true,
       plannedEnabled: true,
     },
@@ -68,6 +70,7 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       dueDate: a.dueDay,
       creditLimit: a.creditLimit,
       customTypeId: a.customTypeId,
+      logoUrl: a.logoUrl,
     })),
     transactions: transactions.map((t) => ({
       id: t.id,
@@ -85,6 +88,7 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       splitAmount: t.splitAmount ?? 0,
       deductMyShare: t.deductMyShare,
       source: t.source,
+      paymentApp: t.paymentApp,
       createdAt: t.createdAt,
     })),
     categories: {
@@ -133,9 +137,9 @@ function csvCell(value: string | number | null | undefined): string {
 /** Transactions as CSV for spreadsheets, oldest last. */
 export async function buildTransactionsCsv(db: SQLiteDatabase): Promise<string> {
   const rows = await listTransactions(db);
-  const header = ['Date', 'Time', 'Type', 'Amount', 'Category', 'Subcategory', 'Account', 'From Account', 'To Account', 'Note'];
+  const header = ['Date', 'Time', 'Type', 'Amount', 'Category', 'Subcategory', 'Account', 'From Account', 'To Account', 'Note', 'Payment App'];
   const lines = rows.map((t) =>
-    [t.date, t.time, t.type, t.amount, t.categoryName, t.subcategoryName, t.accountName, t.fromAccountName, t.toAccountName, t.note]
+    [t.date, t.time, t.type, t.amount, t.categoryName, t.subcategoryName, t.accountName, t.fromAccountName, t.toAccountName, t.note, t.paymentApp]
       .map(csvCell)
       .join(',')
   );
@@ -279,6 +283,7 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         balance: num(a.balance) ?? 0,
         icon: text(a.icon) ?? customType?.icon ?? null,
         customTypeId: customType?.id ?? null,
+        logoUrl: text(a.logoUrl),
         color: text(a.color),
         creditLimit: isCredit ? num(a.creditLimit) : null,
         billingDay: isCredit ? day(a.billingDate ?? a.billingDay) : null,
@@ -313,6 +318,7 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         deductMyShare: t.isSplit === true && t.deductMyShare === true,
         source: oneOf(t.source, SOURCES) ?? 'import',
         sourceRef: text(t.sourceRef),
+        paymentApp: text(t.paymentApp),
       };
       await insertTransaction(db, input);
       txnIds.add(id);
@@ -409,6 +415,10 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         hideBalances: bool(settingsData.hideBalances) ?? current.hideBalances,
         defaultTxnType: oneOf(settingsData.defaultTxnType, TXN_TYPES) ?? current.defaultTxnType,
         customAccountTypes: customTypes,
+        paymentApps: Array.isArray(settingsData.paymentApps)
+          ? settingsData.paymentApps.filter((a): a is string => typeof a === 'string' && a.trim() !== '')
+          : current.paymentApps,
+        trackPaymentApp: bool(settingsData.trackPaymentApp) ?? current.trackPaymentApp,
       });
     } else {
       await writeSettings(db, { splitPeople, customAccountTypes: customTypes });

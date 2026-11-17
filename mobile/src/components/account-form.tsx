@@ -111,6 +111,7 @@ export function AccountForm({ initial }: AccountFormProps) {
       billingDay: isCredit ? parseDay(billingDay) : null,
       dueDay: isCredit ? parseDay(dueDay) : null,
       customTypeId: customType?.id ?? null,
+      logoUrl: initial?.logoUrl ?? null,
     };
     try {
       if (initial) await updateAccount(db, initial.id, input);
