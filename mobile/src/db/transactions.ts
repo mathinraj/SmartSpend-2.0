@@ -1,7 +1,7 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
 
 import { generateId } from '@/lib/id';
-import type { Transaction, TransactionListItem } from '@/types/models';
+import type { Transaction, TransactionListItem, TransactionType } from '@/types/models';
 
 interface TransactionRow {
   id: string;
@@ -66,12 +66,80 @@ function toListItem(r: TransactionListRow): TransactionListItem {
   };
 }
 
+export type SearchField = 'all' | 'note' | 'category' | 'amount' | 'account';
+
 export interface TransactionFilter {
   /** Inclusive `YYYY-MM-DD`. */
   from?: string;
   /** Exclusive `YYYY-MM-DD`. */
   to?: string;
   limit?: number;
+  type?: TransactionType;
+  /** Case-insensitive substring match on `searchField`. */
+  search?: string;
+  searchField?: SearchField;
+  categoryIds?: string[];
+  /** Matches the account, or either side of a transfer. */
+  accountIds?: string[];
+  minAmount?: number;
+  maxAmount?: number;
+}
+
+const SEARCH_COLUMNS: Record<Exclude<SearchField, 'all'>, string[]> = {
+  note: ['t.note'],
+  category: ["CASE WHEN t.type = 'transfer' THEN 'Transfer' ELSE c.name END", 's.name'],
+  amount: ['CAST(t.amount AS TEXT)'],
+  account: ['a.name', 'fa.name', 'ta.name'],
+};
+
+function escapeLike(text: string): string {
+  return text.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+function placeholders(values: unknown[]): string {
+  return values.map(() => '?').join(', ');
+}
+
+function buildWhere(filter: TransactionFilter): { sql: string; params: SQLiteBindValue[] } {
+  const clauses: string[] = [];
+  const params: SQLiteBindValue[] = [];
+  if (filter.from) {
+    clauses.push('t.date >= ?');
+    params.push(filter.from);
+  }
+  if (filter.to) {
+    clauses.push('t.date < ?');
+    params.push(filter.to);
+  }
+  if (filter.type) {
+    clauses.push('t.type = ?');
+    params.push(filter.type);
+  }
+  const search = filter.search?.trim();
+  if (search) {
+    const field = filter.searchField ?? 'all';
+    const columns = field === 'all' ? Object.values(SEARCH_COLUMNS).flat() : SEARCH_COLUMNS[field];
+    clauses.push(`(${columns.map((col) => `${col} LIKE ? ESCAPE '\\'`).join(' OR ')})`);
+    params.push(...columns.map(() => `%${escapeLike(search)}%`));
+  }
+  if (filter.categoryIds?.length) {
+    clauses.push(`t.category_id IN (${placeholders(filter.categoryIds)})`);
+    params.push(...filter.categoryIds);
+  }
+  if (filter.accountIds?.length) {
+    const list = placeholders(filter.accountIds);
+    clauses.push(`(t.account_id IN (${list}) OR t.from_account_id IN (${list}) OR t.to_account_id IN (${list}))`);
+    params.push(...filter.accountIds, ...filter.accountIds, ...filter.accountIds);
+  }
+  if (filter.minAmount !== undefined) {
+    clauses.push('t.amount >= ?');
+    params.push(filter.minAmount);
+  }
+  if (filter.maxAmount !== undefined) {
+    clauses.push('t.amount <= ?');
+    params.push(filter.maxAmount);
+  }
+  return { sql: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', params };
 }
 
 const SELECT_LIST_ITEM = `
@@ -92,15 +160,15 @@ const SELECT_LIST_ITEM = `
 
 export async function listTransactions(
   db: SQLiteDatabase,
-  { from, to, limit }: TransactionFilter = {}
+  filter: TransactionFilter = {}
 ): Promise<TransactionListItem[]> {
+  const where = buildWhere(filter);
   const rows = await db.getAllAsync<TransactionListRow>(
     `${SELECT_LIST_ITEM}
-      WHERE ($from IS NULL OR t.date >= $from)
-        AND ($to IS NULL OR t.date < $to)
+      ${where.sql}
       ORDER BY t.date DESC, t.time DESC, t.created_at DESC
-      LIMIT $limit`,
-    { $from: from ?? null, $to: to ?? null, $limit: limit ?? -1 }
+      LIMIT ?`,
+    [...where.params, filter.limit ?? -1]
   );
   return rows.map(toListItem);
 }

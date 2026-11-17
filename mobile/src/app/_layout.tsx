@@ -60,6 +60,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="transaction/new" options={{ title: 'Add transaction', presentation: 'modal' }} />
           <Stack.Screen name="transaction/[id]" options={{ title: 'Transaction' }} />
           <Stack.Screen name="transaction/edit/[id]" options={{ title: 'Edit transaction', presentation: 'modal' }} />
+          <Stack.Screen name="history-filters" options={{ title: 'Filter transactions', presentation: 'modal' }} />
           <Stack.Screen name="account/new" options={{ title: 'Add account', presentation: 'modal' }} />
           <Stack.Screen name="account/[id]" options={{ title: 'Edit account', presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />

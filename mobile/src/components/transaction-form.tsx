@@ -1,20 +1,20 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Chip, ChipGroup } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FormScreen } from '@/components/ui/form-screen';
-import { Icon, type IconName } from '@/components/ui/icon';
+import { PickerButton } from '@/components/ui/picker-button';
 import { Screen } from '@/components/ui/screen';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Text } from '@/components/ui/text';
 import { Field, TextField } from '@/components/ui/text-field';
 import { getCurrency } from '@/constants/currencies';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
 import { addSplitExpense, equalShare } from '@/db/splits';
@@ -313,24 +313,6 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   );
 }
 
-function PickerButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
-  const colors = useTheme();
-  return (
-    <View style={[styles.pickerClip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-        android_ripple={{ color: colors.border }}
-        style={styles.picker}>
-        <Icon name={icon} size={20} color={colors.primary} />
-        <Text variant="bodyStrong" numberOfLines={1}>
-          {label}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   amountCard: {
     gap: Spacing.xs,
@@ -353,18 +335,5 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-  },
-  pickerClip: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-  },
-  picker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    minHeight: 50,
-    paddingHorizontal: Spacing.lg,
   },
 });

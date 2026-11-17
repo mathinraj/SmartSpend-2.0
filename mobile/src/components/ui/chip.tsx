@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -9,11 +10,14 @@ export interface ChipProps {
   label: string;
   emoji?: string;
   selected?: boolean;
+  /** Shows a trailing close icon; `onPress` should remove whatever the chip represents. */
+  removable?: boolean;
   onPress: () => void;
 }
 
-export function Chip({ label, emoji, selected, onPress }: ChipProps) {
+export function Chip({ label, emoji, selected, removable, onPress }: ChipProps) {
   const colors = useTheme();
+  const foreground = selected ? colors.primary : colors.text;
   return (
     <View
       style={[
@@ -26,13 +30,15 @@ export function Chip({ label, emoji, selected, onPress }: ChipProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected }}
+        accessibilityHint={removable ? 'Removes this filter' : undefined}
         onPress={onPress}
         android_ripple={{ color: colors.border }}
         style={styles.chip}>
         {emoji ? <Text style={styles.emoji}>{emoji}</Text> : null}
-        <Text variant="bodyStrong" style={{ color: selected ? colors.primary : colors.text }} numberOfLines={1}>
+        <Text variant="bodyStrong" style={{ color: foreground }} numberOfLines={1}>
           {label}
         </Text>
+        {removable ? <Icon name="close" size={16} color={foreground} /> : null}
       </Pressable>
     </View>
   );
