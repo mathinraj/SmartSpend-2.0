@@ -1,7 +1,7 @@
 import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
 
 import { generateId } from '@/lib/id';
-import type { Transaction, TransactionListItem, TransactionType } from '@/types/models';
+import type { SplitAmountMode, Transaction, TransactionListItem, TransactionType } from '@/types/models';
 
 interface TransactionRow {
   id: string;
@@ -17,6 +17,7 @@ interface TransactionRow {
   time: string | null;
   is_split: number;
   split_amount: number | null;
+  deduct_my_share: number;
   source: Transaction['source'];
   source_ref: string | null;
   created_at: string;
@@ -47,6 +48,7 @@ function toTransaction(r: TransactionRow): Transaction {
     time: r.time,
     isSplit: r.is_split === 1,
     splitAmount: r.split_amount,
+    deductMyShare: r.deduct_my_share === 1,
     source: r.source,
     sourceRef: r.source_ref,
     createdAt: r.created_at,
@@ -191,12 +193,22 @@ export interface PeriodSummary {
   expense: number;
 }
 
-export async function getPeriodSummary(db: SQLiteDatabase, from: string, to: string): Promise<PeriodSummary> {
+/** SQL for how much of an expense row `t` counts as your spending (see `Settings.splitExpenseRecord`). */
+function spentSql(record: SplitAmountMode): string {
+  return record === 'my_share' ? 't.amount - CASE WHEN t.is_split = 1 THEN COALESCE(t.split_amount, 0) ELSE 0 END' : 't.amount';
+}
+
+export async function getPeriodSummary(
+  db: SQLiteDatabase,
+  from: string,
+  to: string,
+  record: SplitAmountMode
+): Promise<PeriodSummary> {
   const row = await db.getFirstAsync<PeriodSummary>(
-    `SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN amount END), 0)  AS income,
-            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount END), 0) AS expense
-       FROM transactions
-      WHERE date >= ? AND date < ?`,
+    `SELECT COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount END), 0)        AS income,
+            COALESCE(SUM(CASE WHEN t.type = 'expense' THEN ${spentSql(record)} END), 0) AS expense
+       FROM transactions t
+      WHERE t.date >= ? AND t.date < ?`,
     from,
     to
   );
@@ -215,14 +227,15 @@ export async function getCategoryTotals(
   db: SQLiteDatabase,
   type: 'expense' | 'income',
   from: string,
-  to: string
+  to: string,
+  record: SplitAmountMode
 ): Promise<CategoryTotal[]> {
   return db.getAllAsync<CategoryTotal>(
     `SELECT t.category_id              AS categoryId,
             COALESCE(c.name, 'Uncategorized') AS name,
             COALESCE(c.icon, '📦')      AS icon,
             COALESCE(c.color, '#B2BEC3') AS color,
-            SUM(t.amount)               AS total
+            SUM(${type === 'expense' ? spentSql(record) : 't.amount'}) AS total
        FROM transactions t
        LEFT JOIN categories c ON c.id = t.category_id
       WHERE t.type = ? AND t.date >= ? AND t.date < ?
@@ -234,15 +247,20 @@ export async function getCategoryTotals(
   );
 }
 
-type BalanceInput = Pick<Transaction, 'type' | 'amount' | 'accountId' | 'fromAccountId' | 'toAccountId'>;
+type BalanceInput = Pick<
+  Transaction,
+  'type' | 'amount' | 'accountId' | 'fromAccountId' | 'toAccountId' | 'isSplit' | 'splitAmount' | 'deductMyShare'
+>;
 
 /** How a transaction changes account balances. Reversing it applies the same deltas negated. */
 function balanceDeltas(t: BalanceInput): [accountId: string, delta: number][] {
   switch (t.type) {
     case 'income':
       return t.accountId ? [[t.accountId, t.amount]] : [];
-    case 'expense':
-      return t.accountId ? [[t.accountId, -t.amount]] : [];
+    case 'expense': {
+      const othersPaid = t.isSplit && t.deductMyShare ? (t.splitAmount ?? 0) : 0;
+      return t.accountId ? [[t.accountId, -(t.amount - othersPaid)]] : [];
+    }
     case 'transfer': {
       const deltas: [string, number][] = [];
       if (t.fromAccountId) deltas.push([t.fromAccountId, -t.amount]);
@@ -270,8 +288,8 @@ export async function insertTransaction(db: SQLiteDatabase, input: NewTransactio
   await db.runAsync(
     `INSERT INTO transactions
        (id, type, amount, account_id, from_account_id, to_account_id, category_id, subcategory_id,
-        note, date, time, is_split, split_amount, source, source_ref, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        note, date, time, is_split, split_amount, deduct_my_share, source, source_ref, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id,
     input.type,
     input.amount,
@@ -285,6 +303,7 @@ export async function insertTransaction(db: SQLiteDatabase, input: NewTransactio
     input.time,
     input.isSplit ? 1 : 0,
     input.splitAmount,
+    input.deductMyShare ? 1 : 0,
     input.source,
     input.sourceRef,
     new Date().toISOString()
@@ -318,7 +337,7 @@ export async function updateTransaction(db: SQLiteDatabase, id: string, input: N
       `UPDATE transactions
           SET type = ?, amount = ?, account_id = ?, from_account_id = ?, to_account_id = ?,
               category_id = ?, subcategory_id = ?, note = ?, date = ?, time = ?,
-              is_split = ?, split_amount = ?
+              is_split = ?, split_amount = ?, deduct_my_share = ?
         WHERE id = ?`,
       input.type,
       input.amount,
@@ -332,6 +351,7 @@ export async function updateTransaction(db: SQLiteDatabase, id: string, input: N
       input.time,
       input.isSplit ? 1 : 0,
       input.splitAmount,
+      input.deductMyShare ? 1 : 0,
       id
     );
     await applyBalance(db, input, 1);
@@ -360,13 +380,18 @@ export interface MonthTotal {
 }
 
 /** Income and expense per month for `[fromMonth, toMonth]`, oldest first, including empty months. */
-export async function getMonthlyTotals(db: SQLiteDatabase, fromMonth: string, toMonth: string): Promise<MonthTotal[]> {
+export async function getMonthlyTotals(
+  db: SQLiteDatabase,
+  fromMonth: string,
+  toMonth: string,
+  record: SplitAmountMode
+): Promise<MonthTotal[]> {
   const rows = await db.getAllAsync<MonthTotal>(
-    `SELECT substr(date, 1, 7) AS month,
-            COALESCE(SUM(CASE WHEN type = 'income' THEN amount END), 0)  AS income,
-            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount END), 0) AS expense
-       FROM transactions
-      WHERE substr(date, 1, 7) BETWEEN ? AND ?
+    `SELECT substr(t.date, 1, 7) AS month,
+            COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount END), 0)        AS income,
+            COALESCE(SUM(CASE WHEN t.type = 'expense' THEN ${spentSql(record)} END), 0) AS expense
+       FROM transactions t
+      WHERE substr(t.date, 1, 7) BETWEEN ? AND ?
       GROUP BY month`,
     fromMonth,
     toMonth

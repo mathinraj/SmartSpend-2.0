@@ -144,6 +144,7 @@ export async function markPlannedPaid(db: SQLiteDatabase, id: string) {
           time: toTimeKey(now),
           isSplit: false,
           splitAmount: null,
+          deductMyShare: false,
           source: 'manual',
           sourceRef: null,
         });

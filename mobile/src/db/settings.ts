@@ -7,6 +7,8 @@ const DEFAULT_SETTINGS: Settings = {
   currency: 'INR',
   onboarded: false,
   splitPeople: [],
+  splitBankDeduction: 'full',
+  splitExpenseRecord: 'my_share',
   lockEnabled: false,
   lockBiometric: false,
   lockTimeout: 0,

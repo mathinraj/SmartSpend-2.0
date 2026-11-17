@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
@@ -7,14 +8,18 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Avatar, ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Text } from '@/components/ui/text';
+import { Field } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
+import { updateSettings } from '@/db/settings';
 import { getPersonBalances } from '@/db/splits';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { formatCurrency } from '@/lib/format';
 
 export default function SplitsScreen() {
+  const db = useSQLiteContext();
   const settings = useSettings();
   const currency = settings?.currency ?? 'INR';
   const balances = useDbQuery(getPersonBalances, ['split_entries'], settings?.splitPeople ?? []);
@@ -78,6 +83,38 @@ export default function SplitsScreen() {
       )}
 
       <Button label="Add person" icon="add" onPress={() => router.push('/splits/add-person')} />
+
+      {settings ? (
+        <View style={styles.section}>
+          <SectionHeader title="Settings" />
+          <Field
+            label="When you pay for a group"
+            hint={
+              settings.splitBankDeduction === 'my_share'
+                ? 'Only your share is taken from the account. Use this if friends paid you back right away. Applies to new split expenses.'
+                : 'The whole bill is taken from the account. Applies to new split expenses.'
+            }>
+            <SegmentedControl
+              options={[
+                { value: 'full', label: 'Take full amount' },
+                { value: 'my_share', label: 'Only my share' },
+              ]}
+              value={settings.splitBankDeduction}
+              onChange={(value) => updateSettings(db, { splitBankDeduction: value })}
+            />
+          </Field>
+          <Field label="Count as my spending" hint="What Home and Analytics show for split expenses.">
+            <SegmentedControl
+              options={[
+                { value: 'my_share', label: 'Only my share' },
+                { value: 'full', label: 'Full amount' },
+              ]}
+              value={settings.splitExpenseRecord}
+              onChange={(value) => updateSettings(db, { splitExpenseRecord: value })}
+            />
+          </Field>
+        </View>
+      ) : null}
     </Screen>
   );
 }

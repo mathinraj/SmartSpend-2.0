@@ -103,25 +103,50 @@ export async function deleteSplitEntry(db: SQLiteDatabase, id: string) {
   await db.runAsync('DELETE FROM split_entries WHERE id = ?', id);
 }
 
+export async function getSplitEntry(db: SQLiteDatabase, id: string): Promise<SplitEntry | null> {
+  const row = await db.getFirstAsync<SplitRow>('SELECT * FROM split_entries WHERE id = ?', id);
+  return row ? toEntry(row) : null;
+}
+
+/** Edits a ledger entry only; a transaction linked to it is left as it is (same as the web app). */
+export async function updateSplitEntry(
+  db: SQLiteDatabase,
+  id: string,
+  patch: Pick<SplitEntry, 'amount' | 'note' | 'date'>
+) {
+  await db.runAsync(
+    'UPDATE split_entries SET amount = ?, note = ?, date = ? WHERE id = ?',
+    patch.amount,
+    patch.note,
+    patch.date,
+    id
+  );
+}
+
 /** Shares are rounded to cents; the payer absorbs any rounding remainder. */
 export function equalShare(total: number, otherPeople: number): number {
   return Math.round((total / (otherPeople + 1)) * 100) / 100;
 }
 
+export interface SplitShare {
+  person: string;
+  amount: number;
+}
+
 /**
- * Records an expense you paid that is shared equally with `people`, and a `split_paid` entry for each
- * of them, atomically. The full amount still leaves your account.
+ * Records an expense you paid that others share, and a `split_paid` entry per person, atomically.
+ * With `input.deductMyShare`, only your part leaves the account; otherwise the full amount does.
  */
-export async function addSplitExpense(db: SQLiteDatabase, input: NewTransaction, people: string[]): Promise<string> {
-  const share = equalShare(input.amount, people.length);
+export async function addSplitExpense(db: SQLiteDatabase, input: NewTransaction, shares: SplitShare[]): Promise<string> {
+  const othersTotal = Math.round(shares.reduce((sum, s) => sum + s.amount, 0) * 100) / 100;
   let id = '';
   await db.withTransactionAsync(async () => {
-    id = await recordTransaction(db, { ...input, isSplit: true, splitAmount: share * people.length });
-    for (const person of people) {
+    id = await recordTransaction(db, { ...input, isSplit: true, splitAmount: othersTotal });
+    for (const share of shares) {
       await insertSplitEntry(db, {
         type: 'split_paid',
-        person,
-        amount: share,
+        person: share.person,
+        amount: share.amount,
         direction: null,
         note: input.note ?? 'Shared expense',
         date: input.date,
@@ -130,6 +155,48 @@ export async function addSplitExpense(db: SQLiteDatabase, input: NewTransaction,
     }
   });
   return id;
+}
+
+/**
+ * Records that `entry.person` paid for you (`split_owed`). With `accountId`, the money also arrived in that
+ * account (they sent it to you), so it is logged there as income, like the web app's "Received in".
+ */
+export async function addSplitOwed(
+  db: SQLiteDatabase,
+  entry: Pick<SplitEntry, 'person' | 'amount' | 'note' | 'date'>,
+  accountId: string | null
+) {
+  await db.withTransactionAsync(async () => {
+    let transactionId: string | null = null;
+    if (accountId) {
+      transactionId = await recordTransaction(db, {
+        type: 'income',
+        amount: entry.amount,
+        accountId,
+        fromAccountId: null,
+        toAccountId: null,
+        categoryId: 'income_split_settlement',
+        subcategoryId: null,
+        note: entry.note ? `${entry.note} (from ${entry.person})` : `Split payment from ${entry.person}`,
+        date: entry.date,
+        time: toTimeKey(new Date()),
+        isSplit: false,
+        splitAmount: null,
+        deductMyShare: false,
+        source: 'manual',
+        sourceRef: null,
+      });
+    }
+    await insertSplitEntry(db, {
+      type: 'split_owed',
+      person: entry.person,
+      amount: entry.amount,
+      direction: null,
+      note: entry.note,
+      date: entry.date,
+      transactionId,
+    });
+  });
 }
 
 export interface SettlementInput {
@@ -161,6 +228,7 @@ export async function recordSettlement(db: SQLiteDatabase, input: SettlementInpu
         time: toTimeKey(now),
         isSplit: false,
         splitAmount: null,
+        deductMyShare: false,
         source: 'manual',
         sourceRef: null,
       });

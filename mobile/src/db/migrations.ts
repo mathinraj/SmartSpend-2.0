@@ -111,6 +111,10 @@ const MIGRATIONS: ((db: SQLiteDatabase) => Promise<void>)[] = [
       CREATE INDEX idx_split_transaction ON split_entries (transaction_id);
     `);
   },
+
+  async (db) => {
+    await db.execAsync('ALTER TABLE transactions ADD COLUMN deduct_my_share INTEGER NOT NULL DEFAULT 0;');
+  },
 ];
 
 async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', seeds: CategorySeed[]) {

@@ -87,6 +87,16 @@ export default function TransactionDetailScreen() {
             <DetailRow label="Account" value={t.accountName ?? 'Deleted account'} />
           </>
         )}
+        {t.isSplit && t.splitAmount ? (
+          <>
+            <DetailRow label="Others owe" value={formatCurrency(t.splitAmount, currency)} />
+            <DetailRow label="Your share" value={formatCurrency(t.amount - t.splitAmount, currency)} />
+            <DetailRow
+              label="Taken from account"
+              value={formatCurrency(t.deductMyShare ? t.amount - t.splitAmount : t.amount, currency)}
+            />
+          </>
+        ) : null}
         <DetailRow label="Date" value={formatLongDate(t.date)} />
         {t.time ? <DetailRow label="Time" value={formatTime(t.time)} /> : null}
         {t.note ? <DetailRow label="Note" value={t.note} /> : null}

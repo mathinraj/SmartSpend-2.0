@@ -12,12 +12,12 @@ import { PickerButton } from '@/components/ui/picker-button';
 import { Screen } from '@/components/ui/screen';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Text } from '@/components/ui/text';
-import { Field, TextField } from '@/components/ui/text-field';
+import { Field, Input, TextField } from '@/components/ui/text-field';
 import { getCurrency } from '@/constants/currencies';
 import { Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
-import { addSplitExpense, equalShare } from '@/db/splits';
+import { addSplitExpense, equalShare, type SplitShare } from '@/db/splits';
 import { addTransaction, updateTransaction, type NewTransaction } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
@@ -40,6 +40,11 @@ const TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
   { value: 'expense', label: 'Expense' },
   { value: 'income', label: 'Income' },
   { value: 'transfer', label: 'Transfer' },
+];
+
+const SPLIT_MODE_OPTIONS: { value: 'equal' | 'custom'; label: string }[] = [
+  { value: 'equal', label: 'Split equally' },
+  { value: 'custom', label: 'Custom amounts' },
 ];
 
 export interface TransactionFormProps {
@@ -67,6 +72,8 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   const [time, setTime] = useState(initial ? initial.time : toTimeKey(new Date()));
   const [note, setNote] = useState(initial?.note ?? '');
   const [splitWith, setSplitWith] = useState<string[]>([]);
+  const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
+  const [customShares, setCustomShares] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   if (!accounts || !expenseCategories || !incomeCategories) return null;
@@ -98,13 +105,30 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   // Splits are created with the expense; editing one later doesn't rewrite the shares.
   const canSplit = type === 'expense' && !initial;
   const splitPeople = canSplit ? splitWith.filter((p) => people.includes(p)) : [];
+  const shares: SplitShare[] = splitPeople.map((person) => ({
+    person,
+    amount: splitMode === 'equal' ? equalShare(value, splitPeople.length) : parseAmount(customShares[person] ?? ''),
+  }));
+  const othersTotal = Math.round(shares.reduce((sum, s) => sum + s.amount, 0) * 100) / 100;
+  const deductMyShare = settings?.splitBankDeduction === 'my_share';
 
   function toggleSplitPerson(person: string) {
     setSplitWith((current) => (current.includes(person) ? current.filter((p) => p !== person) : [...current, person]));
   }
 
+  function splitProblem(): string | null {
+    if (shares.length === 0 || splitMode === 'equal') return null;
+    const missing = shares.find((s) => s.amount <= 0);
+    if (missing) return `Enter ${missing.person}'s share`;
+    if (othersTotal > value) return 'Shares are more than the amount';
+    return null;
+  }
+
   function validationProblem(): string | null {
     if (value <= 0) return 'Enter an amount';
+    if (initial?.isSplit && value < (initial.splitAmount ?? 0)) {
+      return `Amount can't be less than others' shares`;
+    }
     if (type === 'transfer') {
       if (!accounts?.some((a) => a.id === resolvedFromId) || !accounts?.some((a) => a.id === resolvedToId)) {
         return 'Choose both accounts';
@@ -114,7 +138,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
     }
     if (!accounts?.some((a) => a.id === resolvedAccountId)) return 'Choose an account';
     if (!category) return 'Choose a category';
-    return null;
+    return splitProblem();
   }
   const problem = validationProblem();
 
@@ -147,12 +171,13 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
       time,
       isSplit: initial?.isSplit ?? false,
       splitAmount: initial?.splitAmount ?? null,
+      deductMyShare: initial?.deductMyShare ?? false,
       source: initial?.source ?? 'manual',
       sourceRef: initial?.sourceRef ?? null,
     };
     try {
       if (initial) await updateTransaction(db, initial.id, input);
-      else if (splitPeople.length > 0) await addSplitExpense(db, input, splitPeople);
+      else if (shares.length > 0) await addSplitExpense(db, { ...input, deductMyShare }, shares);
       else await addTransaction(db, input);
       router.back();
     } catch (error) {
@@ -276,7 +301,10 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
               label="Split with"
               hint={
                 splitPeople.length > 0 && value > 0
-                  ? `Split ${splitPeople.length + 1} ways: each owes you ${formatCurrency(equalShare(value, splitPeople.length), currency)}. The full amount leaves your account.`
+                  ? `Others owe you ${formatCurrency(othersTotal, currency)} · your share ${formatCurrency(
+                      Math.max(value - othersTotal, 0),
+                      currency
+                    )}. ${deductMyShare ? 'Only your share' : 'The full amount'} leaves your account.`
                   : 'Optional. Track who owes you their share.'
               }>
               <ChipGroup>
@@ -285,6 +313,28 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
                 ))}
                 <Chip label="Add person" emoji="➕" onPress={() => router.push('/splits/add-person')} />
               </ChipGroup>
+              {splitPeople.length > 0 ? (
+                <SegmentedControl options={SPLIT_MODE_OPTIONS} value={splitMode} onChange={setSplitMode} />
+              ) : null}
+              {splitPeople.length > 0 && splitMode === 'custom'
+                ? splitPeople.map((person) => (
+                    <View key={person} style={styles.shareRow}>
+                      <Text variant="bodyStrong" style={styles.shareName} numberOfLines={1}>
+                        {person}
+                      </Text>
+                      <Input
+                        style={styles.shareInput}
+                        value={customShares[person] ?? ''}
+                        onChangeText={(text) =>
+                          setCustomShares((current) => ({ ...current, [person]: sanitizeAmountInput(text) }))
+                        }
+                        placeholder={`${currencySymbol}0`}
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`${person}'s share`}
+                      />
+                    </View>
+                  ))
+                : null}
             </Field>
           ) : null}
         </>
@@ -340,5 +390,16 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
+  },
+  shareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  shareName: {
+    flex: 1,
+  },
+  shareInput: {
+    width: 140,
   },
 });

@@ -38,7 +38,13 @@ export interface Transaction {
   /** Local time, `HH:mm`. */
   time: string | null;
   isSplit: boolean;
+  /** Total of the other people's shares, for split expenses. */
   splitAmount: number | null;
+  /**
+   * Split expenses only: when true, only your share (`amount - splitAmount`) left the account. Stored per
+   * transaction so editing or deleting it later reverses exactly what was applied.
+   */
+  deductMyShare: boolean;
   source: TransactionSource;
   sourceRef: string | null;
   createdAt: string;
@@ -123,6 +129,9 @@ export interface PersonBalance {
   balance: number;
 }
 
+/** How much of a split expense counts: the whole bill or only your part of it. */
+export type SplitAmountMode = 'full' | 'my_share';
+
 export interface Settings {
   profileName: string | null;
   currency: string;
@@ -130,6 +139,10 @@ export interface Settings {
   onboarded: boolean;
   /** People available for splitting; the ledger may also mention people removed from this list. */
   splitPeople: string[];
+  /** What leaves your account when you pay a split expense. Applies to new expenses only. */
+  splitBankDeduction: SplitAmountMode;
+  /** What analytics and the Home card count as your spending for split expenses. */
+  splitExpenseRecord: SplitAmountMode;
   lockEnabled: boolean;
   lockBiometric: boolean;
   /** Seconds in the background before the app locks again. */

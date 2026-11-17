@@ -12,7 +12,14 @@ import { getSettings, writeSettings } from '@/db/settings';
 import { listAllSplitEntries } from '@/db/splits';
 import { applyBalance, insertTransaction, listTransactions, type NewTransaction } from '@/db/transactions';
 import { toDateKey } from '@/lib/format';
-import type { AccountType, PlannedFrequency, SplitEntryType, TransactionSource, TransactionType } from '@/types/models';
+import type {
+  AccountType,
+  PlannedFrequency,
+  SplitAmountMode,
+  SplitEntryType,
+  TransactionSource,
+  TransactionType,
+} from '@/types/models';
 
 export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
   const [settings, accounts, transactions, expense, income, planned, splits] = await Promise.all([
@@ -34,6 +41,8 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       currency: settings.currency,
       profileName: settings.profileName,
       splitPeople: settings.splitPeople,
+      splitBankDeduction: settings.splitBankDeduction,
+      splitExpenseRecord: settings.splitExpenseRecord,
       splitEnabled: true,
       plannedEnabled: true,
     },
@@ -62,6 +71,7 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       time: t.time,
       isSplit: t.isSplit,
       splitAmount: t.splitAmount ?? 0,
+      deductMyShare: t.deductMyShare,
       source: t.source,
       createdAt: t.createdAt,
     })),
@@ -131,6 +141,7 @@ const TXN_TYPES: TransactionType[] = ['expense', 'income', 'transfer'];
 const SOURCES: TransactionSource[] = ['manual', 'sms', 'import'];
 const FREQUENCIES: PlannedFrequency[] = ['once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
 const SPLIT_TYPES: SplitEntryType[] = ['split_paid', 'split_owed', 'settlement'];
+const SPLIT_MODES: SplitAmountMode[] = ['full', 'my_share'];
 
 const isObject = (v: unknown): v is Raw => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter(isObject) : []);
@@ -273,6 +284,7 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         time: typeof t.time === 'string' && TIME_RE.test(t.time) ? t.time : null,
         isSplit: t.isSplit === true,
         splitAmount: num(t.splitAmount) || null,
+        deductMyShare: t.isSplit === true && t.deductMyShare === true,
         source: oneOf(t.source, SOURCES) ?? 'import',
         sourceRef: text(t.sourceRef),
       };
@@ -361,6 +373,8 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         currency,
         profileName: text(settingsData.profileName) ?? current.profileName,
         splitPeople,
+        splitBankDeduction: oneOf(settingsData.splitBankDeduction, SPLIT_MODES) ?? current.splitBankDeduction,
+        splitExpenseRecord: oneOf(settingsData.splitExpenseRecord, SPLIT_MODES) ?? current.splitExpenseRecord,
       });
     } else {
       await writeSettings(db, { splitPeople });

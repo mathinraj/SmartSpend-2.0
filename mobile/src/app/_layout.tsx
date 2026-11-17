@@ -75,7 +75,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="splits/index" options={{ title: 'Split money' }} />
           <Stack.Screen name="splits/person/[name]" options={{ title: '' }} />
           <Stack.Screen name="splits/add-person" options={{ title: 'Add person', presentation: 'modal' }} />
-          <Stack.Screen name="splits/entry" options={{ title: 'Add entry', presentation: 'modal' }} />
+          <Stack.Screen name="splits/entry" options={{ title: 'Entry', presentation: 'modal' }} />
           <Stack.Screen name="splits/settle" options={{ title: 'Settle up', presentation: 'modal' }} />
           <Stack.Screen name="security" options={{ title: 'App lock' }} />
           <Stack.Screen name="pin-setup" options={{ title: 'Set PIN', presentation: 'modal' }} />

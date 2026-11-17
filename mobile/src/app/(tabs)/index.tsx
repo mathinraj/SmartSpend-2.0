@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const settings = useSettings();
   const accounts = useDbQuery(listAccounts, ['accounts']);
   const { from, to } = monthRange(new Date());
-  const month = useDbQuery(getPeriodSummary, ['transactions'], from, to);
+  const month = useDbQuery(getPeriodSummary, ['transactions'], from, to, settings?.splitExpenseRecord ?? 'my_share');
   const recent = useDbQuery(
     listTransactions,
     ['transactions', 'accounts', 'categories', 'subcategories'],

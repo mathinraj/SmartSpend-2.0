@@ -34,13 +34,15 @@ export default function AnalyticsScreen() {
 
   const monthDate = parseDateKey(`${month}-01`);
   const { from, to } = monthRange(monthDate);
-  const summary = useDbQuery(getPeriodSummary, ['transactions'], from, to);
-  const categories = useDbQuery(getCategoryTotals, ['transactions', 'categories'], kind, from, to);
+  const record = settings?.splitExpenseRecord ?? 'my_share';
+  const summary = useDbQuery(getPeriodSummary, ['transactions'], from, to, record);
+  const categories = useDbQuery(getCategoryTotals, ['transactions', 'categories'], kind, from, to, record);
   const trend = useDbQuery(
     getMonthlyTotals,
     ['transactions'],
     toMonthKey(shiftMonth(new Date(), -5)),
-    thisMonth
+    thisMonth,
+    record
   );
 
   const income = summary?.income ?? 0;

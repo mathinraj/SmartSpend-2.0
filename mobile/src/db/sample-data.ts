@@ -83,6 +83,7 @@ export async function loadSampleData(db: SQLiteDatabase) {
         time: t.time ?? null,
         isSplit: false,
         splitAmount: null,
+        deductMyShare: false,
         source: 'manual',
         sourceRef: null,
       });

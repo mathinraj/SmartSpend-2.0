@@ -10,12 +10,11 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
 import { Spacing } from '@/constants/theme';
 import { updateSettings } from '@/db/settings';
-import { deleteSplitEntry, getPersonBalance, listSplitEntries } from '@/db/splits';
+import { getPersonBalance, listSplitEntries } from '@/db/splits';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { formatCurrency, formatDayLabel } from '@/lib/format';
 import { balanceSummary, entryDisplay } from '@/lib/splits';
-import type { SplitEntry } from '@/types/models';
 
 export default function PersonScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
@@ -28,17 +27,6 @@ export default function PersonScreen() {
   if (entries === undefined || balance === undefined || !settings) return null;
 
   const inList = settings.splitPeople.includes(name);
-
-  function confirmDeleteEntry(entry: SplitEntry) {
-    Alert.alert(
-      'Delete this entry?',
-      entry.transactionId ? 'The linked transaction is not changed.' : undefined,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteSplitEntry(db, entry.id) },
-      ]
-    );
-  }
 
   function confirmRemove() {
     Alert.alert(`Remove ${name}?`, 'Their history is kept, but they will no longer be offered when splitting.', [
@@ -97,7 +85,7 @@ export default function PersonScreen() {
                 <ListRow
                   key={e.id}
                   divider={i > 0}
-                  onPress={() => confirmDeleteEntry(e)}
+                  onPress={() => router.push({ pathname: '/splits/entry', params: { id: e.id } })}
                   leading={<Avatar emoji={display.emoji} color={e.type === 'settlement' ? '#74B9FF' : '#A29BFE'} />}
                   title={e.note || display.label}
                   subtitle={`${display.label} · ${formatDayLabel(e.date)}`}
@@ -112,7 +100,7 @@ export default function PersonScreen() {
             })}
           </Card>
           <Text variant="caption" tone="muted">
-            Tap an entry to delete it.
+            Tap an entry to edit or delete it.
           </Text>
         </View>
       ) : null}
