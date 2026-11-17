@@ -69,7 +69,8 @@
             "useLegacyPackaging": true
           }
         }
-      ]
+      ],
+      "./plugins/with-release-signing"
     ],
     "experiments": {
       "typedRoutes": true,
