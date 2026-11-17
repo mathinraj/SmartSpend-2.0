@@ -11,9 +11,16 @@ import { updateSettings } from '@/db/settings';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { formatTime, fromDateTimeKeys, toDateKey, toTimeKey } from '@/lib/format';
-import { ensureNotificationPermission } from '@/lib/notifications';
+import { ensureNotificationPermission, nextBackupReminder } from '@/lib/notifications';
 import { pickTime } from '@/lib/pickers';
 import type { Settings } from '@/types/models';
+
+function backupHint(settings: Settings): string {
+  const next = nextBackupReminder(settings);
+  if (!next) return 'The backup reminder starts once you’ve added an account.';
+  const when = next.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return `Next backup reminder: ${when} at ${formatTime(toTimeKey(next))}.`;
+}
 
 export default function RemindersScreen() {
   const db = useSQLiteContext();
@@ -21,7 +28,7 @@ export default function RemindersScreen() {
   const settings = useSettings();
   if (!settings) return null;
 
-  async function toggle(key: 'dailyReminder' | 'dueReminders', enabled: boolean) {
+  async function toggle(key: 'dailyReminder' | 'dueReminders' | 'backupReminder', enabled: boolean) {
     if (enabled && !(await ensureNotificationPermission())) {
       Alert.alert('Notifications are off', 'Allow notifications for SpendTrak in system settings to get reminders.', [
         { text: 'Cancel', style: 'cancel' },
@@ -65,7 +72,20 @@ export default function RemindersScreen() {
           value={settings.dueReminders}
           onValueChange={(v) => toggle('dueReminders', v)}
         />
+        <SwitchRow
+          divider
+          leading={<Icon name="upload" color={colors.primary} />}
+          title="Backup reminder"
+          subtitle="Weekly until you export a backup from Settings"
+          value={settings.backupReminder}
+          onValueChange={(v) => toggle('backupReminder', v)}
+        />
       </Card>
+      {settings.backupReminder ? (
+        <Text variant="caption" tone="secondary">
+          {backupHint(settings)}
+        </Text>
+      ) : null}
       <Text variant="caption" tone="muted">
         Reminders are scheduled on this phone; nothing is sent to a server.
       </Text>

@@ -7,6 +7,7 @@ import { Alert } from 'react-native';
 
 import { buildBackup, buildTransactionsCsv, importBackup, InvalidBackupError, type ImportSummary } from '@/db/backup';
 import { buildReport } from '@/db/reports';
+import { updateSettings } from '@/db/settings';
 import { toDateKey } from '@/lib/format';
 import { withLockSuppressed } from '@/lib/lock';
 import { buildXlsx, renderReportHtml } from '@/lib/report-files';
@@ -35,6 +36,8 @@ export async function exportBackup(db: SQLiteDatabase) {
       'application/json',
       'Save or send your backup'
     );
+    // Only the JSON backup can restore data, so it alone resets the backup reminder.
+    await updateSettings(db, { lastBackupAt: toDateKey(new Date()) });
   } catch (error) {
     reportError('Export failed', error);
   }

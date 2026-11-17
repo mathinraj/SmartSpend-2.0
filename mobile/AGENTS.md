@@ -80,6 +80,7 @@ src/
 - Schema changes: append a new function to `MIGRATIONS` in `src/db/migrations.ts`. Never edit a shipped migration.
 - History's running balance (`getRunningBalances`) is derived the other way round: it starts from stored balances and undoes `balanceDeltas` newest-first, so it stays correct only while every balance change goes through those deltas.
 - Account balances are stored, not derived. Only `addTransaction` / `deleteTransaction` (or a new function that uses the same `applyBalance` logic inside `withTransactionAsync`) may change them. Editing a transaction = reverse the old effect, apply the new one, in one SQL transaction.
+- Never write `DELETE FROM table` without a `WHERE`: SQLite then truncates the table in one step and skips the change events `useDbQuery` relies on, so screens show stale data. Use `DELETE FROM table WHERE 1` to clear a table.
 - `withTransactionAsync` cannot be nested. Functions meant to be composed inside another transaction (like `insertTransaction`) must not open their own.
 - Dates are local `YYYY-MM-DD` strings; use `toDateKey` / `parseDateKey` from `src/lib/format.ts`, never `new Date('YYYY-MM-DD')` (parses as UTC).
 - Category IDs match the web app so web JSON backups can be imported later.
@@ -124,9 +125,9 @@ src/
    2. (done) Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.
    3. (done) Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
    4. (done) History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
-7. Phase 7 (v1.5.0, data and sync):
+7. Phase 7 (done except Drive sync, v1.5.0, data and sync):
    1. (done) Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
    2. (done) PDF export (`expo-print`) and Excel export (own minimal .xlsx writer on `fflate`; the npm `xlsx`/SheetJS build has known CVEs), shared through `withLockSuppressed`.
-   3. Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
-   4. Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".
+   3. (deferred, do not start without being asked) Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
+   4. (done) Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".
 8. Phase 8 (v1.6.0, polish): multiple custom reminders (daily / weekly / interval) with Do Not Disturb hours, profile photo (`expo-image-picker`), payment app / UPI field, bank logos (Brandfetch), feedback (email intent or EmailJS), optional password lock.

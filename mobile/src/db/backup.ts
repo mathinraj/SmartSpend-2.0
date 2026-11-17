@@ -212,11 +212,12 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
       new Set((await db.getAllAsync<{ id: string }>(`SELECT id FROM ${table}`)).map((r) => r.id));
 
     if (mode === 'replace') {
+      // `WHERE 1` avoids SQLite's truncate shortcut, which skips the change events screens refresh on.
       await db.execAsync(
-        'DELETE FROM transactions; DELETE FROM accounts; DELETE FROM planned_payments; DELETE FROM split_entries;'
+        'DELETE FROM transactions WHERE 1; DELETE FROM accounts WHERE 1; DELETE FROM planned_payments WHERE 1; DELETE FROM split_entries WHERE 1;'
       );
       if (expenseCats.length > 0 && incomeCats.length > 0) {
-        await db.execAsync('DELETE FROM subcategories; DELETE FROM categories;');
+        await db.execAsync('DELETE FROM subcategories WHERE 1; DELETE FROM categories WHERE 1;');
       }
     }
 

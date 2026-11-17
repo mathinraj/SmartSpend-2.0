@@ -151,6 +151,12 @@ async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', se
   }
 }
 
+/** Inserts the built-in categories; the caller owns the SQL transaction. */
+export async function seedDefaultCategories(db: SQLiteDatabase) {
+  await seedCategories(db, 'expense', DEFAULT_EXPENSE_CATEGORIES);
+  await seedCategories(db, 'income', DEFAULT_INCOME_CATEGORIES);
+}
+
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');

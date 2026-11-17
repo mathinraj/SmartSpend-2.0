@@ -10,13 +10,25 @@ import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
 import { getCurrency } from '@/constants/currencies';
+import { resetAllData } from '@/db/reset';
 import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-data';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { exportBackup, exportCsv, exportExcel, exportPdf, importBackupWithPrompt } from '@/lib/backup-actions';
+import { addDays, formatShortDate, toDateKey } from '@/lib/format';
+import { EMPTY_HISTORY_FILTERS, setHistoryFilters } from '@/lib/history-filters';
+import { clearPin } from '@/lib/lock';
 
 const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
+
+function lastBackupText(date: string | null): string {
+  if (!date) return 'Never backed up on this phone';
+  const today = new Date();
+  if (date === toDateKey(today)) return 'Last backup: today';
+  if (date === toDateKey(addDays(today, -1))) return 'Last backup: yesterday';
+  return `Last backup: ${formatShortDate(date)}`;
+}
 
 export default function SettingsScreen() {
   const db = useSQLiteContext();
@@ -30,6 +42,36 @@ export default function SettingsScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => removeSampleData(db) },
     ]);
+  }
+
+  function confirmReset() {
+    Alert.alert(
+      'Reset everything?',
+      'This deletes all accounts, transactions, categories, planned payments, splits, settings, and the app lock PIN on this phone. It can’t be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Export backup', onPress: () => exportBackup(db) },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert('Delete everything now?', 'You’ll go back to the first-run setup.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete everything', style: 'destructive', onPress: resetEverything },
+            ]),
+        },
+      ]
+    );
+  }
+
+  async function resetEverything() {
+    try {
+      await clearPin();
+      setHistoryFilters(EMPTY_HISTORY_FILTERS);
+      await resetAllData(db);
+    } catch (error) {
+      Alert.alert('Reset failed', error instanceof Error ? error.message : String(error));
+    }
   }
 
   return (
@@ -95,7 +137,11 @@ export default function SettingsScreen() {
           leading={<Icon name="bell" color={colors.primary} />}
           title="Reminders"
           subtitle={
-            [settings?.dailyReminder ? 'Daily' : null, settings?.dueReminders ? 'Payment due' : null]
+            [
+              settings?.dailyReminder ? 'Daily' : null,
+              settings?.dueReminders ? 'Payment due' : null,
+              settings?.backupReminder ? 'Backup' : null,
+            ]
               .filter(Boolean)
               .join(' · ') || 'Off'
           }
@@ -108,7 +154,7 @@ export default function SettingsScreen() {
         <ListRow
           leading={<Icon name="upload" color={colors.primary} />}
           title="Export backup"
-          subtitle="JSON file that also restores in the web app"
+          subtitle={lastBackupText(settings?.lastBackupAt ?? null)}
           onPress={() => exportBackup(db)}
         />
         <ListRow
@@ -141,7 +187,7 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      <SectionHeader title="Sample data" />
+      <SectionHeader title="Data" />
       <Card flush>
         {sampleLoaded ? (
           <ListRow
@@ -158,6 +204,13 @@ export default function SettingsScreen() {
             onPress={() => loadSampleData(db)}
           />
         )}
+        <ListRow
+          divider
+          leading={<Icon name="delete" color={colors.danger} />}
+          title="Reset everything"
+          subtitle="Delete all data on this phone and start over"
+          onPress={confirmReset}
+        />
       </Card>
 
       <SectionHeader title="About" />

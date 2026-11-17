@@ -184,4 +184,10 @@ export interface Settings {
   /** `HH:mm`. */
   dailyReminderTime: string;
   dueReminders: boolean;
+  /** Weekly notification to export a backup, until one is made. */
+  backupReminder: boolean;
+  /** `YYYY-MM-DD` of the last JSON backup exported on this phone. */
+  lastBackupAt: string | null;
+  /** `YYYY-MM-DD` the backup reminder started counting from, used until the first backup. */
+  backupClockStart: string | null;
 }

@@ -26,6 +26,9 @@ const DEFAULT_SETTINGS: Settings = {
   dailyReminder: false,
   dailyReminderTime: '21:00',
   dueReminders: true,
+  backupReminder: true,
+  lastBackupAt: null,
+  backupClockStart: null,
 };
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {

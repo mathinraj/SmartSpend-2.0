@@ -2,7 +2,7 @@
   "expo": {
     "name": "SpendTrak",
     "slug": "spendtrak",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "spendtrak",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.mathinraj.spendtrak",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#6C5CE7",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
