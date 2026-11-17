@@ -323,6 +323,32 @@ export async function applyBalance(db: SQLiteDatabase, t: BalanceInput, sign: 1 
   }
 }
 
+/**
+ * Each transaction's account balance right after it (for transfers, the receiving account's), found by
+ * undoing transactions newest-first from today's stored balances. Returns `{}` when not `enabled`, so
+ * screens can keep the query mounted while the feature is off.
+ */
+export async function getRunningBalances(db: SQLiteDatabase, enabled: boolean): Promise<Record<string, number>> {
+  if (!enabled) return {};
+  const [accounts, rows] = await Promise.all([
+    db.getAllAsync<{ id: string; balance: number }>('SELECT id, balance FROM accounts'),
+    db.getAllAsync<TransactionRow>('SELECT * FROM transactions ORDER BY date DESC, time DESC, created_at DESC'),
+  ]);
+  const balances = new Map(accounts.map((a) => [a.id, a.balance]));
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    const t = toTransaction(row);
+    const shown = t.type === 'transfer' ? t.toAccountId : t.accountId;
+    const balance = shown ? balances.get(shown) : undefined;
+    if (balance !== undefined) result[t.id] = Math.round(balance * 100) / 100;
+    for (const [accountId, delta] of balanceDeltas(t)) {
+      const current = balances.get(accountId);
+      if (current !== undefined) balances.set(accountId, current - delta);
+    }
+  }
+  return result;
+}
+
 export type NewTransaction = Omit<Transaction, 'id' | 'createdAt'> & { id?: string };
 
 /**

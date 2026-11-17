@@ -78,6 +78,7 @@ src/
 
 - All SQL lives in `src/db/`. Screens never call `db.runAsync` directly; they call a function from `src/db/*` and read with `useDbQuery(fn, watchedTables, ...args)`, which re-runs automatically when a watched table changes. Don't add global state stores for database data.
 - Schema changes: append a new function to `MIGRATIONS` in `src/db/migrations.ts`. Never edit a shipped migration.
+- History's running balance (`getRunningBalances`) is derived the other way round: it starts from stored balances and undoes `balanceDeltas` newest-first, so it stays correct only while every balance change goes through those deltas.
 - Account balances are stored, not derived. Only `addTransaction` / `deleteTransaction` (or a new function that uses the same `applyBalance` logic inside `withTransactionAsync`) may change them. Editing a transaction = reverse the old effect, apply the new one, in one SQL transaction.
 - `withTransactionAsync` cannot be nested. Functions meant to be composed inside another transaction (like `insertTransaction`) must not open their own.
 - Dates are local `YYYY-MM-DD` strings; use `toDateKey` / `parseDateKey` from `src/lib/format.ts`, never `new Date('YYYY-MM-DD')` (parses as UTC).
@@ -117,11 +118,11 @@ src/
    2. (done) Category management: add / edit / delete categories and subcategories (name, emoji, color), reorder with up/down arrows, reachable from Settings and from the transaction form's category chips. Keep web category IDs for defaults; new ones get generated IDs.
    3. (done) Splits: settings for bank deduction (full amount / only my share) and expense recording (my share / full amount, default my share like the web app) and make analytics respect it; uneven (custom per-person) splits in the expense form; edit split entries; optional account on "They paid for me".
    4. (done) Settings: theme (system / light / dark), hide balances with a temporary peek, dashboard toggles (balance vs monthly-expenses card, income/expense stats, accounts strip, split card), exclude credit cards from total, default transaction type.
-6. Phase 6 (v1.4.0, analytics and accounts):
+6. Phase 6 (done, v1.4.0, analytics and accounts):
    1. (done) Analytics period presets (this month, last month, this year, 30 days, 90 days, custom) and a multi-account filter; data functions take an account ID list.
    2. (done) Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.
    3. (done) Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
-   4. History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
+   4. (done) History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
 7. Phase 7 (v1.5.0, data and sync):
    1. Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
    2. PDF export (`expo-print`) and Excel export (SheetJS, pure JS), shared through `withLockSuppressed`.

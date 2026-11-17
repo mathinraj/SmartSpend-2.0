@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, SectionList, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HistoryCalendar } from '@/components/history-calendar';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button, IconButton } from '@/components/ui/button';
 import { Chip, ChipGroup } from '@/components/ui/chip';
@@ -15,10 +16,11 @@ import { Text } from '@/components/ui/text';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
-import { listTransactions, type SearchField } from '@/db/transactions';
+import { getRunningBalances, listTransactions, type SearchField } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { useBalancePrivacy } from '@/lib/balance-privacy';
 import { formatCurrency, formatDayLabel } from '@/lib/format';
 import {
   activeFilterCount,
@@ -88,7 +90,9 @@ function activeChips(f: HistoryFilters, names: Map<string, string>, currency: st
   }
   if (f.from || f.to) {
     const label =
-      f.from && f.to
+      f.from && f.from === f.to
+        ? formatDayLabel(f.from)
+        : f.from && f.to
         ? `${formatDayLabel(f.from)} – ${formatDayLabel(f.to)}`
         : f.from
           ? `From ${formatDayLabel(f.from)}`
@@ -115,6 +119,10 @@ export default function HistoryScreen() {
   const [search, setSearch] = useState('');
   const [searchField, setSearchField] = useState<SearchField>('all');
   const [type, setType] = useState<TypeFilter>('all');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showRunning, setShowRunning] = useState(false);
+  const privacy = useBalancePrivacy(settings?.hideBalances);
+  const runningBalances = useDbQuery(getRunningBalances, ['transactions', 'accounts'], showRunning);
 
   const transactions = useDbQuery(listTransactions, ['transactions', 'accounts', 'categories', 'subcategories'], {
     ...toTransactionFilter(filters),
@@ -137,6 +145,19 @@ export default function HistoryScreen() {
   ]);
   const chips = activeChips(filters, names, currency);
   const count = transactions?.length;
+  const selectedDay = filters.from && filters.from === filters.to ? filters.from : null;
+
+  function selectDay(date: string | null) {
+    setHistoryFilters({ ...filters, from: date, to: date });
+    if (date) setShowCalendar(false);
+  }
+
+  function balanceCaption(t: TransactionListItem): string | undefined {
+    const balance = showRunning ? runningBalances?.[t.id] : undefined;
+    if (balance === undefined) return undefined;
+    const label = t.type === 'transfer' ? (t.toAccountName ?? 'Balance') : 'Bal';
+    return `${label}: ${privacy.formatBalance(balance, currency)}`;
+  }
 
   function resetAll() {
     setSearch('');
@@ -165,22 +186,31 @@ export default function HistoryScreen() {
               title="History"
               subtitle={count === undefined ? undefined : `${count} transaction${count === 1 ? '' : 's'}`}
               right={
-                <View>
+                <View style={styles.headerButtons}>
                   <IconButton
-                    icon="filter"
-                    accessibilityLabel={filterCount > 0 ? `Filters, ${filterCount} active` : 'Filters'}
-                    onPress={() => router.push('/history-filters')}
+                    icon="calendar"
+                    accessibilityLabel={showCalendar ? 'Hide calendar' : 'Show calendar'}
+                    onPress={() => setShowCalendar(!showCalendar)}
                   />
-                  {filterCount > 0 ? (
-                    <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                      <Text variant="caption" tone="onPrimary" style={styles.badgeText}>
-                        {filterCount}
-                      </Text>
-                    </View>
-                  ) : null}
+                  <View>
+                    <IconButton
+                      icon="filter"
+                      accessibilityLabel={filterCount > 0 ? `Filters, ${filterCount} active` : 'Filters'}
+                      onPress={() => router.push('/history-filters')}
+                    />
+                    {filterCount > 0 ? (
+                      <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                        <Text variant="caption" tone="onPrimary" style={styles.badgeText}>
+                          {filterCount}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
               }
             />
+
+            {showCalendar ? <HistoryCalendar selected={selectedDay} onSelect={selectDay} /> : null}
 
             <View style={[styles.search, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Icon name="search" size={20} color={colors.textSecondary} />
@@ -221,13 +251,12 @@ export default function HistoryScreen() {
 
             <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} />
 
-            {chips.length > 0 ? (
-              <ChipGroup>
-                {chips.map((chip) => (
-                  <Chip key={chip.key} label={chip.label} selected removable onPress={() => setHistoryFilters(chip.cleared)} />
-                ))}
-              </ChipGroup>
-            ) : null}
+            <ChipGroup>
+              <Chip label="Running balance" selected={showRunning} onPress={() => setShowRunning(!showRunning)} />
+              {chips.map((chip) => (
+                <Chip key={chip.key} label={chip.label} selected removable onPress={() => setHistoryFilters(chip.cleared)} />
+              ))}
+            </ChipGroup>
           </View>
         }
         ListEmptyComponent={
@@ -265,7 +294,7 @@ export default function HistoryScreen() {
               index === 0 && styles.groupTop,
               index === section.data.length - 1 && styles.groupBottom,
             ]}>
-            <TransactionRow transaction={item} currency={currency} divider={index > 0} />
+            <TransactionRow transaction={item} currency={currency} divider={index > 0} balance={balanceCaption(item)} />
           </View>
         )}
       />
@@ -281,6 +310,10 @@ const styles = StyleSheet.create({
   listHeader: {
     gap: Spacing.md,
     marginBottom: Spacing.sm,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
   badge: {
     position: 'absolute',

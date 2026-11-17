@@ -86,6 +86,30 @@ export async function getAccountTotals(
   );
 }
 
+export interface DayActivity {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  /** All transactions that day, transfers included. */
+  count: number;
+  income: number;
+  expense: number;
+}
+
+/** Per-day counts and totals for the History calendar; days without transactions are left out. */
+export async function getDayActivity(db: SQLiteDatabase, from: string, to: string): Promise<DayActivity[]> {
+  return db.getAllAsync<DayActivity>(
+    `SELECT date,
+            COUNT(*) AS count,
+            COALESCE(SUM(CASE WHEN type = 'income' THEN amount END), 0)  AS income,
+            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount END), 0) AS expense
+       FROM transactions
+      WHERE date >= ? AND date < ?
+      GROUP BY date`,
+    from,
+    to
+  );
+}
+
 export interface AccountActivity {
   count: number;
   transfersIn: number;
