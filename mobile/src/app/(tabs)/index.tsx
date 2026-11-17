@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { PeekButton } from '@/components/peek-button';
 import { PlannedRow } from '@/components/planned-row';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button, IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Fab } from '@/components/ui/fab';
-import { Icon } from '@/components/ui/icon';
+import { Icon, type IconName } from '@/components/ui/icon';
+import { Avatar } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
@@ -21,8 +23,11 @@ import { getPeriodSummary, listTransactions } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { accountColor, accountEmoji, isCreditCard, totalBalance } from '@/lib/accounts';
+import { useBalancePrivacy } from '@/lib/balance-privacy';
 import { formatCurrency, formatMonth, greeting, monthRange } from '@/lib/format';
 import { daysUntil } from '@/lib/planned';
+import type { Account } from '@/types/models';
 
 export default function HomeScreen() {
   const db = useSQLiteContext();
@@ -40,8 +45,16 @@ export default function HomeScreen() {
   const planned = useDbQuery(listPlanned, ['planned_payments', 'accounts', 'categories']);
   const balances = useDbQuery(getPersonBalances, ['split_entries'], settings?.splitPeople ?? []);
 
+  const privacy = useBalancePrivacy(settings?.hideBalances);
+
   const currency = settings?.currency ?? 'INR';
-  const totalBalance = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
+  const excludeCards = (settings?.excludeCCFromBalance ?? false) && (accounts?.some(isCreditCard) ?? false);
+  const total = accounts ? totalBalance(accounts, excludeCards) : 0;
+  const leadWithBalance = (settings?.homeView ?? 'balance') === 'balance';
+  const showStats = settings?.showBalanceStats ?? true;
+  const balanceVisible = leadWithBalance || showStats;
+  const showAccounts = (settings?.showAccountsOnHome ?? true) && (accounts?.length ?? 0) > 0;
+  const showSplit = settings?.showSplitOnHome ?? true;
   const activePlanned = planned?.filter((p) => p.enabled) ?? [];
   const duePlanned = activePlanned.filter((p) => daysUntil(p.nextDate) <= 3);
   const overdueCount = activePlanned.filter((p) => daysUntil(p.nextDate) < 0).length;
@@ -72,20 +85,47 @@ export default function HomeScreen() {
           <IconButton icon="settings" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         }>
         <View style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
-          <Text tone="onPrimary" style={styles.dim}>
-            Total balance
-          </Text>
+          <View style={styles.cardHeader}>
+            <Text tone="onPrimary" style={[styles.dim, styles.flex]}>
+              {leadWithBalance ? 'Total balance' : 'Spent this month'}
+            </Text>
+            {privacy.canPeek && balanceVisible ? (
+              <PeekButton hidden={privacy.hidden} onPress={privacy.togglePeek} color={colors.onPrimary} />
+            ) : null}
+          </View>
           <Text variant="display" tone="onPrimary" numeric adjustsFontSizeToFit numberOfLines={1}>
-            {formatCurrency(totalBalance, currency)}
+            {leadWithBalance ? privacy.formatBalance(total, currency) : formatCurrency(month?.expense ?? 0, currency)}
           </Text>
           <Text variant="caption" tone="onPrimary" style={styles.dim}>
             {formatMonth(new Date())}
+            {excludeCards && balanceVisible ? ' · Balance excludes credit cards' : ''}
           </Text>
-          <View style={styles.statsRow}>
-            <Stat label="Income" icon="income" value={formatCurrency(month?.income ?? 0, currency)} />
-            <Stat label="Expenses" icon="expense" value={formatCurrency(month?.expense ?? 0, currency)} />
-          </View>
+          {showStats ? (
+            <View style={styles.statsRow}>
+              <Stat label="Income" icon="income" value={formatCurrency(month?.income ?? 0, currency)} />
+              {leadWithBalance ? (
+                <Stat label="Expenses" icon="expense" value={formatCurrency(month?.expense ?? 0, currency)} />
+              ) : (
+                <Stat label="Balance" icon="wallet" value={privacy.formatBalance(total, currency)} />
+              )}
+            </View>
+          ) : null}
         </View>
+
+        {showAccounts ? (
+          <>
+            <SectionHeader title="Accounts" actionLabel="See all" onAction={() => router.navigate('/accounts')} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.strip}
+              contentContainerStyle={styles.stripContent}>
+              {accounts!.map((a) => (
+                <AccountCard key={a.id} account={a} currency={currency} balance={privacy.formatBalance(a.balance, currency)} />
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
 
         <View style={styles.tiles}>
           <Tile
@@ -95,7 +135,9 @@ export default function HomeScreen() {
             alert={overdueCount > 0}
             onPress={() => router.push('/planned')}
           />
-          <Tile emoji="🤝" title="Split money" subtitle={splitSubtitle} onPress={() => router.push('/splits')} />
+          {showSplit ? (
+            <Tile emoji="🤝" title="Split money" subtitle={splitSubtitle} onPress={() => router.push('/splits')} />
+          ) : null}
         </View>
 
         {duePlanned.length > 0 ? (
@@ -173,7 +215,33 @@ function Tile({ emoji, title, subtitle, alert, onPress }: TileProps) {
   );
 }
 
-function Stat({ label, icon, value }: { label: string; icon: 'income' | 'expense'; value: string }) {
+function AccountCard({ account, currency, balance }: { account: Account; currency: string; balance: string }) {
+  const colors = useTheme();
+  return (
+    <Card flush style={styles.accountCard}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push(`/account/${account.id}`)}
+        android_ripple={{ color: colors.border }}
+        style={styles.accountInner}>
+        <Avatar emoji={accountEmoji(account, currency)} color={accountColor(account)} />
+        <Text variant="caption" tone="secondary" numberOfLines={1}>
+          {account.name}
+        </Text>
+        <Text
+          variant="bodyStrong"
+          tone={account.balance < 0 ? 'danger' : 'default'}
+          numeric
+          numberOfLines={1}
+          adjustsFontSizeToFit>
+          {balance}
+        </Text>
+      </Pressable>
+    </Card>
+  );
+}
+
+function Stat({ label, icon, value }: { label: string; icon: IconName; value: string }) {
   const colors = useTheme();
   return (
     <View style={styles.stat}>
@@ -205,6 +273,28 @@ const styles = StyleSheet.create({
   },
   dim: {
     opacity: 0.85,
+  },
+  flex: {
+    flex: 1,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 36,
+  },
+  strip: {
+    marginHorizontal: -Spacing.lg,
+  },
+  stripContent: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+  },
+  accountCard: {
+    width: 136,
+  },
+  accountInner: {
+    padding: Spacing.md,
+    gap: Spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',

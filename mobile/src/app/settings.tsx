@@ -16,6 +16,8 @@ import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { exportBackup, exportCsv, importBackupWithPrompt } from '@/lib/backup-actions';
 
+const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
+
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const colors = useTheme();
@@ -46,6 +48,13 @@ export default function SettingsScreen() {
           title="Currency"
           subtitle={currency ? `${currency.flag}  ${currency.name} (${currency.symbol})` : undefined}
           onPress={() => router.push('/currency')}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="palette" color={colors.primary} />}
+          title="Customize"
+          subtitle={settings ? `${THEME_LABELS[settings.theme]} theme · Home, balances, defaults` : undefined}
+          onPress={() => router.push('/customize')}
         />
         <ListRow
           divider

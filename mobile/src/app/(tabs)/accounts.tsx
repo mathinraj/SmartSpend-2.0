@@ -15,7 +15,10 @@ import { listAccounts } from '@/db/accounts';
 import { loadSampleData } from '@/db/sample-data';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
+import { PeekButton } from '@/components/peek-button';
+import { useTheme } from '@/hooks/use-theme';
 import { ACCOUNT_TYPE_LABELS, accountColor, accountEmoji, isCreditCard, subTypeLabel } from '@/lib/accounts';
+import { useBalancePrivacy } from '@/lib/balance-privacy';
 import { formatCurrency } from '@/lib/format';
 import type { Account, AccountType } from '@/types/models';
 
@@ -30,8 +33,10 @@ function describe(account: Account, currency: string): string | null {
 
 export default function AccountsScreen() {
   const db = useSQLiteContext();
+  const colors = useTheme();
   const settings = useSettings();
   const accounts = useDbQuery(listAccounts, ['accounts']);
+  const privacy = useBalancePrivacy(settings?.hideBalances);
   const currency = settings?.currency ?? 'INR';
 
   const assets = accounts?.filter((a) => a.balance >= 0).reduce((sum, a) => sum + a.balance, 0) ?? 0;
@@ -50,7 +55,7 @@ export default function AccountsScreen() {
               Assets
             </Text>
             <Text variant="heading" tone="success" numeric numberOfLines={1} adjustsFontSizeToFit>
-              {formatCurrency(assets, currency)}
+              {privacy.formatBalance(assets, currency)}
             </Text>
           </View>
           <View style={styles.summaryItem}>
@@ -58,9 +63,12 @@ export default function AccountsScreen() {
               Liabilities
             </Text>
             <Text variant="heading" tone="danger" numeric numberOfLines={1} adjustsFontSizeToFit>
-              {formatCurrency(Math.abs(liabilities), currency)}
+              {privacy.formatBalance(Math.abs(liabilities), currency)}
             </Text>
           </View>
+          {privacy.canPeek ? (
+            <PeekButton hidden={privacy.hidden} onPress={privacy.togglePeek} color={colors.textSecondary} />
+          ) : null}
         </Card>
 
         {accounts?.length === 0 ? (
@@ -96,7 +104,7 @@ export default function AccountsScreen() {
                   subtitle={describe(account, currency)}
                   trailing={
                     <Text variant="bodyStrong" tone={account.balance < 0 ? 'danger' : 'default'} numeric>
-                      {formatCurrency(account.balance, currency)}
+                      {privacy.formatBalance(account.balance, currency)}
                     </Text>
                   }
                 />
@@ -116,6 +124,7 @@ const styles = StyleSheet.create({
   },
   summary: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.lg,
   },
   summaryItem: {

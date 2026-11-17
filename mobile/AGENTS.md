@@ -58,7 +58,8 @@ src/
     account/           new (modal), [id] (edit modal)
     planned/           index (list), new, [id] (modals)
     splits/            index (people), person/[name], add-person, entry, settle (modals)
-    settings.tsx       Pushed screen; security, reminders likewise
+    settings.tsx       Pushed screen; customize (theme, Home layout, balances, default type), security, reminders likewise
+    categories/        index (list), new, [id] (modals)
     profile.tsx, currency.tsx, pin-setup.tsx  Modals
   components/
     ui/                Design-system primitives (Text, Card, Screen, FormScreen, Button, Chip, Field, SwitchRow, ...)
@@ -93,7 +94,8 @@ src/
 
 ## UI rules
 
-- Use theme tokens from `src/constants/theme.ts` via `useTheme()`; no hard-coded colors except brand-tinted shadows/overlays.
+- Use theme tokens from `src/constants/theme.ts` via `useTheme()`; no hard-coded colors except brand-tinted shadows/overlays. The `theme` setting is applied once in `_layout.tsx` with `Appearance.setColorScheme`, so `useColorScheme`/`useTheme` already reflect it.
+- Account balances (not transaction amounts) shown on screen go through `useBalancePrivacy(settings.hideBalances).formatBalance` so "Hide balances" masks them; offer a `PeekButton` where they appear.
 - Use `Text` (variants + tones) instead of raw `react-native` `Text`. Amounts use `numeric` and `formatCurrency`.
 - Icons go through `Icon` and its `ICONS` map (Material Symbols on Android). Category and account icons are emojis, as in the web app.
 - Tab screens use `<Screen>` (or a list with the same insets) and keep the ScrollView/list as the first child; wrap with `<View collapsable={false}>` when adding a `Fab`.
@@ -108,11 +110,11 @@ src/
 2. Phase 2 (done, v1.1.0): add/edit/delete transactions, transaction detail, account add/edit/delete, first-run onboarding, profile name. Not yet: category management, split expenses.
 3. Phase 3 (done, v1.2.0): analytics charts with month switching, planned payments (mark paid logs an expense), split tracker (people, entries, settle up, split from the expense form), app lock (PIN + biometrics), daily and due-date reminders, JSON backup export/import compatible with the web app, CSV export. Not yet: category management, uneven splits, PDF/Excel export, Google Drive sync.
 4. Phase 4 (deferred, do not start without being asked): SMS auto-capture of bank transactions. Needs a custom native module (Expo Modules API) for `READ_SMS`/`RECEIVE_SMS`, so the app must move from Expo Go to a development build. Google Play restricts SMS permissions and requires a permissions declaration; confirm current policy before building. Store parsed messages with `source = 'sms'` and a message fingerprint in `source_ref` (unique index already exists) to avoid duplicates, and always let the user confirm before saving.
-5. Phase 5 (v1.3.0, web parity: daily-use gaps). Each step is one task:
+5. Phase 5 (done, v1.3.0, web parity: daily-use gaps). Each step is one task:
    1. (done) History: search (all / note / category / amount / account), type tabs (all / expense / income / transfer), filter screen (multiple categories, multiple accounts, date range, amount range) with removable filter chips and a result count.
    2. (done) Category management: add / edit / delete categories and subcategories (name, emoji, color), reorder with up/down arrows, reachable from Settings and from the transaction form's category chips. Keep web category IDs for defaults; new ones get generated IDs.
    3. (done) Splits: settings for bank deduction (full amount / only my share) and expense recording (my share / full amount, default my share like the web app) and make analytics respect it; uneven (custom per-person) splits in the expense form; edit split entries; optional account on "They paid for me".
-   4. Settings: theme (system / light / dark), hide balances with a temporary peek, dashboard toggles (balance vs monthly-expenses card, income/expense stats, accounts strip, split card), exclude credit cards from total, default transaction type.
+   4. (done) Settings: theme (system / light / dark), hide balances with a temporary peek, dashboard toggles (balance vs monthly-expenses card, income/expense stats, accounts strip, split card), exclude credit cards from total, default transaction type.
 6. Phase 6 (v1.4.0, analytics and accounts):
    1. Analytics period presets (this month, last month, this year, 30 days, 90 days, custom) and a multi-account filter; data functions take an account ID list.
    2. Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.

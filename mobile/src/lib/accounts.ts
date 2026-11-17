@@ -72,3 +72,9 @@ export function accountColor(account: Pick<Account, 'type' | 'color'>): string {
 export function isCreditCard(account: Pick<Account, 'type' | 'subType'>): boolean {
   return account.type === 'card' && account.subType === 'credit';
 }
+
+export function totalBalance(accounts: Account[], excludeCreditCards: boolean): number {
+  return accounts
+    .filter((a) => !(excludeCreditCards && isCreditCard(a)))
+    .reduce((sum, a) => sum + a.balance, 0);
+}

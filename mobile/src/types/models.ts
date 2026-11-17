@@ -132,11 +132,27 @@ export interface PersonBalance {
 /** How much of a split expense counts: the whole bill or only your part of it. */
 export type SplitAmountMode = 'full' | 'my_share';
 
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+/** What the big card on Home leads with. */
+export type HomeView = 'balance' | 'expenses';
+
 export interface Settings {
   profileName: string | null;
   currency: string;
   /** False until the first-run name and currency setup is finished. */
   onboarded: boolean;
+  theme: ThemePreference;
+  homeView: HomeView;
+  /** Home card: the income/expense (or income/balance) pair under the headline amount. */
+  showBalanceStats: boolean;
+  showAccountsOnHome: boolean;
+  showSplitOnHome: boolean;
+  /** Leave credit card dues out of the total balance. */
+  excludeCCFromBalance: boolean;
+  /** Mask account balances until the user peeks. */
+  hideBalances: boolean;
+  defaultTxnType: TransactionType;
   /** People available for splitting; the ledger may also mention people removed from this list. */
   splitPeople: string[];
   /** What leaves your account when you pay a split expense. Applies to new expenses only. */

@@ -42,6 +42,9 @@ const ICONS = {
   arrowUp: { ios: 'arrow.up', android: 'arrow_upward', web: 'arrow_upward' },
   arrowDown: { ios: 'arrow.down', android: 'arrow_downward', web: 'arrow_downward' },
   reorder: { ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' },
+  eye: { ios: 'eye', android: 'visibility', web: 'visibility' },
+  eyeOff: { ios: 'eye.slash', android: 'visibility_off', web: 'visibility_off' },
+  palette: { ios: 'paintpalette', android: 'palette', web: 'palette' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

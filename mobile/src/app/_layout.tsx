@@ -1,6 +1,8 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { Appearance } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { LockGate } from '@/components/lock-gate';
@@ -52,6 +54,10 @@ function RootNavigator() {
 function AppStack({ settings }: { settings: Settings }) {
   useReminderSync(settings);
 
+  useEffect(() => {
+    Appearance.setColorScheme(settings.theme === 'system' ? 'auto' : settings.theme);
+  }, [settings.theme]);
+
   return (
     <LockGate settings={settings}>
       <Stack screenOptions={{ headerShadowVisible: false }}>
@@ -64,6 +70,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="account/new" options={{ title: 'Add account', presentation: 'modal' }} />
           <Stack.Screen name="account/[id]" options={{ title: 'Edit account', presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+          <Stack.Screen name="customize" options={{ title: 'Customize' }} />
           <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
           <Stack.Screen name="categories/new" options={{ title: 'Add category', presentation: 'modal' }} />
           <Stack.Screen name="categories/[id]" options={{ title: 'Edit category', presentation: 'modal' }} />

@@ -14,9 +14,11 @@ import { applyBalance, insertTransaction, listTransactions, type NewTransaction 
 import { toDateKey } from '@/lib/format';
 import type {
   AccountType,
+  HomeView,
   PlannedFrequency,
   SplitAmountMode,
   SplitEntryType,
+  ThemePreference,
   TransactionSource,
   TransactionType,
 } from '@/types/models';
@@ -43,6 +45,14 @@ export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
       splitPeople: settings.splitPeople,
       splitBankDeduction: settings.splitBankDeduction,
       splitExpenseRecord: settings.splitExpenseRecord,
+      theme: settings.theme,
+      homeView: settings.homeView,
+      showBalanceStats: settings.showBalanceStats,
+      showAccountsOnHome: settings.showAccountsOnHome,
+      showSplitOnHome: settings.showSplitOnHome,
+      excludeCCFromBalance: settings.excludeCCFromBalance,
+      hideBalances: settings.hideBalances,
+      defaultTxnType: settings.defaultTxnType,
       splitEnabled: true,
       plannedEnabled: true,
     },
@@ -142,6 +152,8 @@ const SOURCES: TransactionSource[] = ['manual', 'sms', 'import'];
 const FREQUENCIES: PlannedFrequency[] = ['once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
 const SPLIT_TYPES: SplitEntryType[] = ['split_paid', 'split_owed', 'settlement'];
 const SPLIT_MODES: SplitAmountMode[] = ['full', 'my_share'];
+const THEMES: ThemePreference[] = ['system', 'light', 'dark'];
+const HOME_VIEWS: HomeView[] = ['balance', 'expenses'];
 
 const isObject = (v: unknown): v is Raw => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter(isObject) : []);
@@ -162,6 +174,7 @@ const dateKey = (v: unknown): string | null => {
 };
 const oneOf = <T extends string>(v: unknown, options: T[]): T | null =>
   options.includes(v as T) ? (v as T) : null;
+const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null);
 
 export class InvalidBackupError extends Error {}
 
@@ -359,7 +372,7 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
       summary.splitEntries += 1;
     }
 
-    // Settings: only data-related ones; onboarding, lock, and reminders stay as they are on this phone.
+    // Settings: data and display ones; onboarding, lock, and reminders stay as they are on this phone.
     const current = await getSettings(db);
     const importedPeople = Array.isArray(settingsData.splitPeople)
       ? settingsData.splitPeople.filter((p): p is string => typeof p === 'string' && p.trim() !== '')
@@ -375,6 +388,14 @@ export async function importBackup(db: SQLiteDatabase, data: unknown, mode: 'rep
         splitPeople,
         splitBankDeduction: oneOf(settingsData.splitBankDeduction, SPLIT_MODES) ?? current.splitBankDeduction,
         splitExpenseRecord: oneOf(settingsData.splitExpenseRecord, SPLIT_MODES) ?? current.splitExpenseRecord,
+        theme: oneOf(settingsData.theme, THEMES) ?? current.theme,
+        homeView: oneOf(settingsData.homeView, HOME_VIEWS) ?? current.homeView,
+        showBalanceStats: bool(settingsData.showBalanceStats) ?? current.showBalanceStats,
+        showAccountsOnHome: bool(settingsData.showAccountsOnHome) ?? current.showAccountsOnHome,
+        showSplitOnHome: bool(settingsData.showSplitOnHome) ?? current.showSplitOnHome,
+        excludeCCFromBalance: bool(settingsData.excludeCCFromBalance) ?? current.excludeCCFromBalance,
+        hideBalances: bool(settingsData.hideBalances) ?? current.hideBalances,
+        defaultTxnType: oneOf(settingsData.defaultTxnType, TXN_TYPES) ?? current.defaultTxnType,
       });
     } else {
       await writeSettings(db, { splitPeople });
