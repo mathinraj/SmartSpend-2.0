@@ -102,10 +102,12 @@ export const metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: '#6C5CE7',
 };
+
+// Runs before first paint: marks people who have started using the app, so the server-rendered landing
+// page stays hidden for them (see `.lp-prerender` and AppShell in ClientApp.js).
+const RETURNING_VISITOR_SCRIPT = `try{var s=JSON.parse(localStorage.getItem('spendtraq_settings')||'null');if((s&&s.onboardStep>0)||localStorage.getItem('spendtraq_app_lock'))document.documentElement.setAttribute('data-returning','')}catch(e){}`;
 
 const jsonLd = [
   {
@@ -190,8 +192,9 @@ const jsonLd = [
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: RETURNING_VISITOR_SCRIPT }} />
         <link rel="preconnect" href="https://kit.fontawesome.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ka-f.fontawesome.com" crossOrigin="anonymous" />
         <Script

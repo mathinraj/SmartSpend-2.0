@@ -97,6 +97,18 @@ input, select, textarea {
   outline: none;
 }
 
+/* iOS Safari zooms into any field with text smaller than 16px on focus. */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* Server-rendered landing page, hidden for returning visitors until the app renders (see app/layout.js). */
+html[data-returning] .lp-prerender {
+  display: none;
+}
+
 a {
   text-decoration: none;
   color: inherit;

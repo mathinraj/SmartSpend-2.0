@@ -548,12 +548,32 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    opacity: 0.35;
-    transition: opacity 400ms var(--st-ease);
   }
 
-  .lp-step.is-active {
-    opacity: 1;
+  /* Inactive chapters are dimmed with a lighter (still readable) colour rather than opacity, to keep contrast. */
+  .lp-step h3,
+  .lp-step p,
+  .lp-step li {
+    color: var(--st-ink-faint);
+    transition: color 400ms var(--st-ease);
+  }
+
+  .lp-step li i {
+    color: var(--st-ink-faint);
+    transition: color 400ms var(--st-ease);
+  }
+
+  .lp-step.is-active h3,
+  .lp-step.is-active li {
+    color: var(--st-ink);
+  }
+
+  .lp-step.is-active p {
+    color: var(--st-ink-soft);
+  }
+
+  .lp-step.is-active li i {
+    color: var(--st-accent);
   }
 
   .lp-step-shot {
@@ -606,7 +626,10 @@
 
   .lp-hero-front,
   .lp-hero-back,
-  .lp-step,
+  .lp-step h3,
+  .lp-step p,
+  .lp-step li,
+  .lp-step li i,
   .lp-tour-phone img {
     transition: none;
   }

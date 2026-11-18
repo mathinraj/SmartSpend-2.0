@@ -90,6 +90,7 @@ function AppShell({ children }) {
   }, [state.settings.theme]);
 
   useEffect(() => {
+    if (state.settings.onboardStep < 3) return;
     const symbol = getCurrencySymbol(state.settings.currency);
     const size = 64;
     const canvas = document.createElement('canvas');
@@ -99,8 +100,8 @@ function AppShell({ children }) {
 
     const r = 14;
     const gradient = ctx.createLinearGradient(0, 0, size, size);
-    gradient.addColorStop(0, '#6C5CE7');
-    gradient.addColorStop(1, '#A29BFE');
+    gradient.addColorStop(0, '#33227A');
+    gradient.addColorStop(1, '#120A2E');
     ctx.beginPath();
     ctx.moveTo(r, 0);
     ctx.lineTo(size - r, 0);
@@ -115,7 +116,7 @@ function AppShell({ children }) {
     ctx.fillStyle = gradient;
     ctx.fill();
 
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = '#52F5CB';
     ctx.font = `bold ${Math.round(size * 0.52)}px system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -128,7 +129,7 @@ function AppShell({ children }) {
       document.head.appendChild(link);
     }
     link.href = canvas.toDataURL('image/png');
-  }, [state.settings.currency]);
+  }, [state.settings.currency, state.settings.onboardStep]);
 
   useEffect(() => {
     if (!state.settings.appLockEnabled || !hasLock) return;
@@ -237,16 +238,15 @@ function AppShell({ children }) {
   const handleUnlock = useCallback(() => setLocked(false), []);
   useDriveAutoSync();
 
-  if (!mounted) {
-    return null;
+  // Before mount (and on the server) the landing page is rendered so first-time visitors and crawlers get
+  // real HTML. The inline script in the root layout marks returning visitors, and `.lp-prerender` hides it
+  // for them until the app takes over. Both branches render the same tree so React keeps it on mount.
+  if (!mounted || (state.settings.onboardStep === 0 && !(locked && hasLock))) {
+    return <main className={mounted ? undefined : 'lp-prerender'}><Welcome /></main>;
   }
 
   if (locked && hasLock) {
     return <LockScreen onUnlock={handleUnlock} />;
-  }
-
-  if (state.settings.onboardStep === 0) {
-    return <main><Welcome /></main>;
   }
 
   if (state.settings.onboardStep === 1) {

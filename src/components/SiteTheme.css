@@ -7,7 +7,7 @@
   --st-surface: #FFFFFF;
   --st-ink: #121614;
   --st-ink-soft: #545D58;
-  --st-ink-faint: #8A938E;
+  --st-ink-faint: #68716C;
   --st-line: rgba(18, 22, 20, 0.1);
   --st-accent: #087A5C;
   --st-accent-hover: #066A4F;
@@ -46,6 +46,13 @@
 }
 
 /* ─── Buttons ─── */
+/* Font Awesome loads after the page, so reserve the icon's width or the button grows (and can wrap) when it arrives. */
+.st-btn > i {
+  flex: none;
+  width: 1.25em;
+  text-align: center;
+}
+
 .st-btn {
   display: inline-flex;
   align-items: center;

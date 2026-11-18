@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import MarketingNav from '../components/MarketingNav';
@@ -189,10 +190,10 @@ export default function Welcome() {
             <div className="lp-hero-stage" ref={stageRef} aria-hidden="true">
               <div className="lp-hero-glow" />
               <div className="st-phone lp-hero-back">
-                <img src="/screens/android-categories.jpg" alt="" width="540" height="1200" />
+                <Image src="/screens/android-categories.jpg" alt="" width={576} height={1280} sizes="250px" />
               </div>
               <div className="st-phone lp-hero-front">
-                <img src="/screens/android-home.jpg" alt="" width="540" height="1200" fetchPriority="high" />
+                <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} sizes="280px" priority fetchPriority="high" />
               </div>
             </div>
           </div>
@@ -237,7 +238,7 @@ export default function Welcome() {
                     ))}
                   </ul>
                   <div className="st-phone lp-step-shot">
-                    <img src={step.shot} alt={step.alt} width="540" height="1200" loading="lazy" />
+                    <Image src={step.shot} alt={step.alt} width={576} height={1280} sizes="240px" />
                   </div>
                 </article>
               ))}
@@ -245,7 +246,15 @@ export default function Welcome() {
             <div className="lp-tour-stage" aria-hidden="true">
               <div className="st-phone lp-tour-phone">
                 {TOUR.map((step, i) => (
-                  <img key={step.shot} src={step.shot} alt="" width="540" height="1200" loading="lazy" className={activeStep === i ? 'is-on' : ''} />
+                  <Image
+                    key={step.shot}
+                    src={step.shot}
+                    alt=""
+                    width={576}
+                    height={1280}
+                    sizes="260px"
+                    className={activeStep === i ? 'is-on' : ''}
+                  />
                 ))}
               </div>
             </div>
@@ -289,13 +298,13 @@ export default function Welcome() {
                   <i /><i /><i />
                   <span className="st-browser-url">spendtrak.vercel.app</span>
                 </div>
-                <img src="/screens/web-analytics.jpg" alt="" width="1600" height="1000" loading="lazy" />
+                <Image src="/screens/web-analytics.jpg" alt="" width={1600} height={1000} sizes="(min-width: 960px) 640px, 92vw" />
               </div>
               <span className="lp-sync-badge">
                 <i className="fa-solid fa-cloud" /> Synced just now
               </span>
               <div className="st-phone lp-sync-phone">
-                <img src="/screens/android-home.jpg" alt="" width="540" height="1200" loading="lazy" />
+                <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} sizes="190px" />
               </div>
             </div>
           </div>
