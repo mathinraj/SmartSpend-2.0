@@ -7,6 +7,7 @@ import './MarketingNav.css';
 
 const navLinks = [
   { href: '/features', label: 'Features' },
+  { href: '/android', label: 'Android' },
   { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About' },
 ];

@@ -13,6 +13,7 @@ import { useDriveSync } from '@/hooks/use-drive-sync';
 import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { useUpdateCheck } from '@/hooks/use-update-check';
 import type { Settings } from '@/types/models';
 
 export default function RootLayout() {
@@ -57,6 +58,7 @@ function RootNavigator() {
 function AppStack({ settings }: { settings: Settings }) {
   useReminderSync(settings);
   useDriveSync();
+  useUpdateCheck();
 
   useEffect(() => {
     Appearance.setColorScheme(settings.theme === 'system' ? 'auto' : settings.theme);
@@ -77,6 +79,7 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />
           <Stack.Screen name="customize" options={{ title: 'Customize' }} />
           <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
+          <Stack.Screen name="developer" options={{ title: 'Meet the developer' }} />
           <Stack.Screen name="export" options={{ title: 'Export', presentation: 'modal' }} />
           <Stack.Screen name="drive" options={{ title: 'Google Drive sync' }} />
           <Stack.Screen name="drive-restore" options={{ title: 'Restore an earlier version', presentation: 'modal' }} />

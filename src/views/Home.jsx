@@ -13,6 +13,8 @@ import * as gDrive from '../utils/googleDrive';
 import { isAutoSync, syncNow, useDriveSyncStatus } from '../utils/driveSync';
 import './Home.css';
 
+const ANDROID_PROMO_KEY = 'spendtraq_android_promo_dismissed';
+
 const BACKUP_MESSAGES = [
   { icon: 'fa-solid fa-shield-halved', text: 'Your data is stored locally. Back it up to stay safe!', action: 'backup' },
   { icon: 'fa-brands fa-google-drive', text: 'Sync to Google Drive so you never lose your data', action: 'gdrive' },
@@ -66,6 +68,16 @@ export default function Home() {
     }
     await syncNow({ manual: true });
     dismissBackupHint();
+  }
+
+  const [showAndroidPromo, setShowAndroidPromo] = useState(false);
+  useEffect(() => {
+    if (!localStorage.getItem(ANDROID_PROMO_KEY)) setShowAndroidPromo(true);
+  }, []);
+
+  function dismissAndroidPromo() {
+    setShowAndroidPromo(false);
+    localStorage.setItem(ANDROID_PROMO_KEY, '1');
   }
 
   const [showReminderHint, setShowReminderHint] = useState(false);
@@ -267,6 +279,22 @@ export default function Home() {
               <i className="fa-solid fa-xmark" />
             </button>
           </div>
+        </div>
+      )}
+
+      {showAndroidPromo && (
+        <div className="android-promo">
+          <span className="android-promo-icon" aria-hidden="true">
+            <i className="fa-brands fa-android" />
+          </span>
+          <div className="android-promo-text">
+            <strong>SpendTrak is on Android</strong>
+            <span>Fingerprint lock, real notifications, and automatic sync with this web app.</span>
+          </div>
+          <Link href="/android" className="android-promo-btn">Get the app</Link>
+          <button className="android-promo-dismiss" onClick={dismissAndroidPromo} aria-label="Hide the Android app card">
+            <i className="fa-solid fa-xmark" />
+          </button>
         </div>
       )}
 

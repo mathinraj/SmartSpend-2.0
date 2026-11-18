@@ -1,9 +1,9 @@
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Linking } from 'react-native';
+import { ActivityIndicator, Image, Linking, StyleSheet, View } from 'react-native';
 
 import { ProfileAvatar } from '@/components/profile-avatar';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { ListRow } from '@/components/ui/list-row';
@@ -11,6 +11,8 @@ import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
 import { getCurrency } from '@/constants/currencies';
+import { CONTRIBUTE_URL, DEVELOPER } from '@/constants/developer';
+import { Radius, Spacing } from '@/constants/theme';
 import { resetAllData } from '@/db/reset';
 import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-data';
 import { getSyncState } from '@/db/sync';
@@ -24,9 +26,12 @@ import { addDays, formatShortDate, toDateKey } from '@/lib/format';
 import { EMPTY_HISTORY_FILTERS, setHistoryFilters } from '@/lib/history-filters';
 import { clearPin } from '@/lib/lock';
 import { deleteProfilePhoto } from '@/lib/profile-photo';
-import { describeSync } from '@/lib/sync-status';
+import { describeSync, formatSyncTime } from '@/lib/sync-status';
+import { checkForUpdatesWithDialog, downloadUpdate } from '@/lib/update-prompts';
+import { APP_VERSION, useUpdateState, type UpdateState } from '@/lib/updates';
 
 const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
+const APP_ICON = require('@/assets/images/app-icon-small.png');
 const WEB_APP_HOST = 'spendtrak.vercel.app';
 const WEB_APP_URL = `https://${WEB_APP_HOST}`;
 
@@ -47,6 +52,7 @@ export default function SettingsScreen() {
   const syncStatus = useSyncStatus();
   const currency = settings ? getCurrency(settings.currency) : undefined;
   const drive = syncState?.account ? describeSync(syncState, syncStatus) : null;
+  const update = useUpdateState();
 
   function confirmRemoveSample() {
     showDialog('Remove sample data?', 'The demo accounts, transactions, planned payments, and split entries will be deleted. Your own data stays.', [
@@ -231,12 +237,72 @@ export default function SettingsScreen() {
       </Card>
 
       <SectionHeader title="About" />
+      <Card style={styles.appCard}>
+        <Image source={APP_ICON} style={styles.appIcon} accessibilityIgnoresInvertColors />
+        <View style={styles.flex}>
+          <Text variant="heading">SpendTrak</Text>
+          <Text variant="caption" tone="secondary">
+            Version {APP_VERSION} · Private, offline expense tracker
+          </Text>
+        </View>
+      </Card>
+      {update.phase === 'available' ? (
+        <Card style={[styles.updateCard, { borderColor: colors.primary }]}>
+          <View style={styles.updateHeader}>
+            <View style={[styles.updateIcon, { backgroundColor: `${colors.primary}1F` }]}>
+              <Icon name="systemUpdate" color={colors.primary} />
+            </View>
+            <View style={styles.flex}>
+              <Text variant="bodyStrong">Version {update.update.version} is available</Text>
+              {update.update.note ? (
+                <Text variant="caption" tone="secondary" numberOfLines={3}>
+                  {update.update.note}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          <View style={styles.updateButtons}>
+            <View style={styles.flex}>
+              <Button
+                label={update.update.apk ? `Download · ${update.update.apk.sizeMb} MB` : 'Download'}
+                icon="download"
+                onPress={() => downloadUpdate(update.update)}
+              />
+            </View>
+            <Button label="What's new" variant="secondary" onPress={() => void Linking.openURL(update.update.pageUrl)} />
+          </View>
+        </Card>
+      ) : null}
       <Card flush>
         <ListRow
-          leading={<Icon name="info" color={colors.textSecondary} />}
-          title="SpendTrak"
-          subtitle="All data stays on this device"
-          trailing={<Text tone="secondary">v{Constants.expoConfig?.version ?? '—'}</Text>}
+          leading={<Icon name="systemUpdate" color={colors.primary} />}
+          title="Check for updates"
+          subtitle={updateSubtitle(update)}
+          trailing={update.phase === 'checking' ? <ActivityIndicator color={colors.primary} /> : undefined}
+          onPress={update.phase === 'checking' ? undefined : checkForUpdatesWithDialog}
+        />
+        <ListRow
+          divider
+          leading={<Image source={DEVELOPER.photo} style={styles.devPhoto} accessibilityIgnoresInvertColors />}
+          title="Meet the developer"
+          subtitle={`${DEVELOPER.name} · other apps and links`}
+          onPress={() => router.push('/developer')}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="coffee" color="#F59E0B" />}
+          title="Contribute"
+          subtitle="Help keep SpendTrak free and ad-free"
+          trailing={<Icon name="openInNew" size={20} color={colors.textMuted} />}
+          onPress={() => void Linking.openURL(CONTRIBUTE_URL)}
+        />
+        <ListRow
+          divider
+          leading={<Icon name="globe" color={colors.primary} />}
+          title="Use on the web"
+          subtitle={WEB_APP_HOST}
+          trailing={<Icon name="openInNew" size={20} color={colors.textMuted} />}
+          onPress={confirmOpenWeb}
         />
         <ListRow
           divider
@@ -257,3 +323,58 @@ export default function SettingsScreen() {
     </Screen>
   );
 }
+
+function updateSubtitle(update: UpdateState): string {
+  switch (update.phase) {
+    case 'checking':
+      return 'Checking…';
+    case 'current':
+      return `You're on the latest version · checked ${formatSyncTime(new Date(update.checkedAt).toISOString())}`;
+    case 'available':
+      return `Version ${update.update.version} is ready to download`;
+    case 'error':
+      return update.message;
+    case 'idle':
+      return `You have version ${APP_VERSION}`;
+  }
+}
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  appCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  appIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+  },
+  updateCard: {
+    borderWidth: 1.5,
+    gap: Spacing.md,
+  },
+  updateHeader: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  updateIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  updateButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  devPhoto: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+});

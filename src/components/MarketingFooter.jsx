@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ANDROID_RELEASES_URL } from '../utils/androidApp';
 import './MarketingFooter.css';
 
 export default function MarketingFooter({ showCoindropButton }) {
@@ -15,12 +16,14 @@ export default function MarketingFooter({ showCoindropButton }) {
           <div className="mkt-footer-col">
             <p className="mkt-footer-col-title">Product</p>
             <Link href="/features">Features</Link>
+            <Link href="/android">Android app</Link>
             <Link href="/faq">FAQ</Link>
             <Link href="/about">About</Link>
           </div>
           <div className="mkt-footer-col">
             <p className="mkt-footer-col-title">Get Started</p>
             <Link href="/">Open App</Link>
+            <a href={ANDROID_RELEASES_URL} target="_blank" rel="noopener noreferrer">Download for Android</a>
           </div>
         </div>
       </div>

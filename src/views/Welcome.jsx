@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useApp } from '../context/AppContext';
+import AndroidShowcase from '../components/AndroidShowcase';
 import MarketingNav from '../components/MarketingNav';
 import MarketingFooter from '../components/MarketingFooter';
 import './Welcome.css';
 
 const heroHighlights = [
   { icon: '⚡', text: 'Instant setup — no sign-up needed' },
-  { icon: '☁️', text: 'Sync across devices with Google Drive' },
+  { icon: '📱', text: 'Web + Android, synced via Google Drive' },
   { icon: '📴', text: 'Works 100% offline, always' },
   { icon: '🔐', text: 'Your data never leaves your device' },
 ];
@@ -22,7 +24,7 @@ const features = [
   {
     icon: '☁️',
     title: 'Google Drive Sync',
-    desc: 'Push and pull your data to your own Google Drive. Access your finances across devices — private, encrypted, under your control.',
+    desc: 'Every change syncs automatically to your own Google Drive and to the Android app. Prefer control? Switch to manual backup. Private, under your control.',
   },
   {
     icon: '🏦',
@@ -60,14 +62,14 @@ const howItWorks = [
   { step: '1', title: 'Add your accounts', desc: 'Set up your bank, cards, cash, or wallets in seconds.' },
   { step: '2', title: 'Log as you spend', desc: 'Quick-add expenses and income — takes under 5 seconds.' },
   { step: '3', title: 'Watch the insights', desc: 'Analytics, trends, and balances update automatically.' },
-  { step: '4', title: 'Sync & back up', desc: 'Push to Google Drive or export as PDF, Excel, or JSON anytime.' },
+  { step: '4', title: 'Sync & back up', desc: 'Turn on Google Drive sync to use it on your phone too, or export as PDF, Excel, or JSON anytime.' },
 ];
 
 const whyPoints = [
   { icon: '💸', title: 'Completely Free', desc: 'No premium tier, no ads, no hidden costs. Ever.' },
   { icon: '🌐', title: 'Works Offline', desc: 'No internet? No problem. Everything runs locally in your browser.' },
   { icon: '🛡️', title: 'No Sign-up', desc: 'Open it and start tracking. No email, no password, no accounts to create.' },
-  { icon: '📲', title: 'Install as App', desc: 'Add to your home screen for a native app experience — fast, fullscreen, always ready.' },
+  { icon: '📲', title: 'Android App', desc: 'A native Android app with fingerprint lock and notifications, synced with the web. Or add this site to your home screen.' },
   { icon: '☁️', title: 'Sync with Drive', desc: 'Optionally back up to your Google Drive. Your data, your cloud, your choice.' },
   { icon: '📦', title: 'Export Anytime', desc: 'JSON, CSV, PDF, or Excel — your data belongs to you, in the format you want.' },
 ];
@@ -143,6 +145,10 @@ export default function Welcome() {
             <span className="cta-arrow">→</span>
           </button>
 
+          <Link href="/android" className="landing-android-link">
+            <i className="fa-brands fa-android" /> Get the Android app
+          </Link>
+
           <p className="landing-hero-note">No sign-up required. Your data stays on your device.</p>
         </div>
 
@@ -213,6 +219,15 @@ export default function Welcome() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Android app ── */}
+      <section className="landing-section landing-android-section" id="android">
+        <div className="landing-section-inner">
+          <Reveal>
+            <AndroidShowcase showDetailsLink />
+          </Reveal>
         </div>
       </section>
 

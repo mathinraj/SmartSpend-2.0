@@ -394,6 +394,36 @@
   line-height: 1.5;
 }
 
+/* ─── Android app ──────────────────────────── */
+.landing-android-section {
+  background: radial-gradient(circle at 20% 30%, rgba(61, 220, 132, 0.1), transparent 45%), var(--landing-dark);
+  overflow: hidden;
+}
+
+.landing-android-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.landing-android-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.landing-android-link i {
+  color: #3ddc84;
+  font-size: 1.05rem;
+}
+
 /* ─── Final CTA ────────────────────────────── */
 .landing-final-section {
   background: linear-gradient(160deg, #2d1b69 0%, var(--landing-purple) 50%, var(--landing-purple-light) 100%);
