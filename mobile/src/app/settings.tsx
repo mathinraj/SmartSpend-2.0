@@ -306,6 +306,14 @@ export default function SettingsScreen() {
         />
         <ListRow
           divider
+          leading={<Icon name="globe" color={colors.primary} />}
+          title="Use on the web"
+          subtitle={WEB_APP_HOST}
+          trailing={<Icon name="openInNew" size={20} color={colors.textMuted} />}
+          onPress={confirmOpenWeb}
+        />
+        <ListRow
+          divider
           leading={<Icon name="feedback" color={colors.primary} />}
           title="Send feedback"
           subtitle="Report a bug or suggest a feature"
