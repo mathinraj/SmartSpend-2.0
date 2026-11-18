@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!-- Renders one SVG from this folder to fill the window, for exporting PNGs with headless Chrome:
-     chrome --headless=new --default-background-color=00000000 --window-size=W,H --screenshot=out.png "export.html?src=file.svg" -->
+     chrome --headless=new --default-background-color=00000000 --window-size=W,H --screenshot=out.png "export.html?src=file.svg"
+     Headless Chrome won't make a window narrower than about 500px, so export small sizes at 1024
+     and scale down (sips -Z 128 big.png --out small.png); a small window captures an empty corner. -->
 <html>
 <head>
 <style>
