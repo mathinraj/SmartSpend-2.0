@@ -9,6 +9,16 @@ import { generateId } from '../utils/helpers';
 import { formatCurrencyPlain } from '../utils/currencies';
 import { exportToPDF, exportToXLSX } from '../utils/exportUtils';
 import * as gDrive from '../utils/googleDrive';
+import {
+  clearSyncProgress,
+  deleteDriveData,
+  isAutoSync,
+  listDailyCopies,
+  restoreDailyCopy,
+  stopSyncTimers,
+  syncNow,
+  useDriveSyncStatus,
+} from '../utils/driveSync';
 import './Preferences.css';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -344,7 +354,10 @@ export default function Preferences() {
 
   // Google Drive Sync
   const [gdriveLoading, setGdriveLoading] = useState(false);
-  const [gdriveSyncing, setGdriveSyncing] = useState(false);
+  const [dailyCopies, setDailyCopies] = useState(null);
+  const syncStatus = useDriveSyncStatus();
+  const gdriveSyncing = syncStatus.phase === 'syncing';
+  const autoSync = isAutoSync(settings);
   const [gdriveUser, setGdriveUser] = useState(null);
   const gdriveConfigured = gDrive.isConfigured();
   const gdriveConnected = !!settings.gdriveEmail;
@@ -374,10 +387,20 @@ export default function Preferences() {
       const userInfo = await gDrive.getUserInfo();
       if (userInfo) {
         setGdriveUser(userInfo);
-        updatePref('gdriveEmail', userInfo.email);
-        updatePref('gdriveName', userInfo.name);
-        updatePref('gdrivePhoto', userInfo.picture);
+        const sameAccount = userInfo.email === settings.gdriveEmail;
+        if (!sameAccount) clearSyncProgress();
+        dispatch({
+          type: 'UPDATE_SETTINGS',
+          payload: {
+            gdriveEmail: userInfo.email,
+            gdriveName: userInfo.name,
+            gdrivePhoto: userInfo.picture,
+            ...(sameAccount ? {} : { gdriveLastSync: null, gdriveAutoSync: true }),
+          },
+        });
         toast(`Connected as ${userInfo.email}`, 'success');
+        // Once the connection is in state; a new connection also starts syncing on its own.
+        setTimeout(() => syncNow({ manual: true }), 500);
       }
     } catch (err) {
       console.error('GDrive connect error:', err);
@@ -387,8 +410,15 @@ export default function Preferences() {
   }
 
   function handleGdriveDisconnect() {
-    if (!window.confirm('Disconnect Google Drive? Your cloud backup will remain in your Drive.')) return;
+    if (!window.confirm('Disconnect Google Drive? Syncing stops; your data stays here and in your Drive.')) return;
+    disconnectGdrive();
+    toast('Google Drive disconnected', 'info');
+  }
+
+  function disconnectGdrive() {
     gDrive.revokeToken();
+    stopSyncTimers();
+    clearSyncProgress();
     setGdriveUser(null);
     dispatch({
       type: 'UPDATE_SETTINGS',
@@ -400,114 +430,53 @@ export default function Preferences() {
         gdriveAutoSync: false,
       },
     });
-    toast('Google Drive disconnected', 'info');
   }
 
-  function buildSyncPayload() {
-    const payload = {
-      settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined, balancePeekUntil: undefined },
-      accounts,
-      transactions,
-      categories: state.categories,
-      plannedPayments: state.plannedPayments,
-      splitLedger: state.splitLedger,
-    };
-    if (settings.syncProfilePhoto) {
-      const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
-      if (photo) payload.profilePhoto = photo;
+  function setSyncMode(auto) {
+    updatePref('gdriveAutoSync', auto);
+    if (auto) syncNow();
+    else stopSyncTimers();
+  }
+
+  async function handleShowRestore() {
+    if (dailyCopies) {
+      setDailyCopies(null);
+      return;
     }
-    return payload;
-  }
-
-  async function ensureToken() {
-    const token = await gDrive.ensureTokenSilently();
-    return !!token;
-  }
-
-  async function handleGdrivePush() {
-    setGdriveSyncing(true);
+    setGdriveLoading(true);
     try {
-      if (!(await ensureToken())) {
-        toast('Please reconnect Google Drive — session expired', 'warning');
-        setGdriveSyncing(false);
-        return;
-      }
-      await gDrive.uploadSyncData(buildSyncPayload());
-      const now = new Date().toISOString();
-      updatePref('gdriveLastSync', now);
-      toast('Data pushed to Google Drive', 'success');
+      setDailyCopies(await listDailyCopies());
     } catch (err) {
-      if (err.message === 'AUTH_EXPIRED') {
-        toast('Session expired. Please reconnect Google Drive.', 'warning');
-        handleGdriveDisconnect();
-      } else {
-        console.error('GDrive push error:', err);
-        toast('Failed to push data to Google Drive', 'error');
-      }
+      toast(err.message || 'Could not load the daily copies', 'error');
     }
-    setGdriveSyncing(false);
+    setGdriveLoading(false);
   }
 
-  async function handleGdrivePull() {
-    setGdriveSyncing(true);
+  async function handleRestore(copy) {
+    const when = new Date(`${copy.date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!window.confirm(`Restore your data from ${when}?\n\nYour data here is replaced by this copy, and Google Drive and your other devices are updated to match.`)) return;
+    setGdriveLoading(true);
     try {
-      if (!(await ensureToken())) {
-        toast('Please reconnect Google Drive — session expired', 'warning');
-        setGdriveSyncing(false);
-        return;
-      }
-      const data = await gDrive.downloadSyncData();
-      if (!data) {
-        toast('No backup found in your Google Drive', 'info');
-        setGdriveSyncing(false);
-        return;
-      }
-      if (data.settings) {
-        const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
-        dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
-      }
-      if (data.profilePhoto) {
-        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
-        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
-      }
-      dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
-      const now = new Date().toISOString();
-      updatePref('gdriveLastSync', now);
-      toast('Data and settings restored from Google Drive', 'success');
+      await restoreDailyCopy(copy.id);
+      setDailyCopies(null);
+      toast(`Restored the copy from ${when}`, 'success');
     } catch (err) {
-      if (err.message === 'AUTH_EXPIRED') {
-        toast('Session expired. Please reconnect Google Drive.', 'warning');
-        handleGdriveDisconnect();
-      } else {
-        console.error('GDrive pull error:', err);
-        toast('Failed to pull data from Google Drive', 'error');
-      }
+      toast(err.message || 'Restore failed', 'error');
     }
-    setGdriveSyncing(false);
+    setGdriveLoading(false);
   }
 
   async function handleGdriveDelete() {
-    if (!window.confirm('Delete the backup from your Google Drive? This cannot be undone.')) return;
-    setGdriveSyncing(true);
+    if (!window.confirm("Delete SpendTrak's data from your Google Drive, including the daily copies? Syncing stops and the Android app loses access to this copy. Your data in this browser stays.")) return;
+    setGdriveLoading(true);
     try {
-      if (!(await ensureToken())) {
-        toast('Please reconnect Google Drive — session expired', 'warning');
-        setGdriveSyncing(false);
-        return;
-      }
-      await gDrive.deleteSyncFile();
-      updatePref('gdriveLastSync', null);
-      toast('Backup deleted from Google Drive', 'info');
+      await deleteDriveData();
+      disconnectGdrive();
+      toast('Deleted from Google Drive', 'info');
     } catch (err) {
-      if (err.message === 'AUTH_EXPIRED') {
-        toast('Session expired. Please reconnect Google Drive.', 'warning');
-        handleGdriveDisconnect();
-      } else {
-        console.error('GDrive delete error:', err);
-        toast('Failed to delete backup', 'error');
-      }
+      toast(err.message || 'Failed to delete from Google Drive', 'error');
     }
-    setGdriveSyncing(false);
+    setGdriveLoading(false);
   }
 
   function formatSyncTime(iso) {
@@ -1185,32 +1154,44 @@ export default function Preferences() {
                 </div>
               )}
 
-              <div className="gdrive-sync-actions">
-                <button
-                  className="gdrive-action-btn push"
-                  onClick={handleGdrivePush}
-                  disabled={gdriveSyncing}
-                >
-                  {gdriveSyncing ? (
-                    <i className="fa-solid fa-spinner fa-spin" />
-                  ) : (
-                    <i className="fa-solid fa-cloud-arrow-up" />
-                  )}
-                  <span>Push to Drive</span>
-                  <small>Upload your local data</small>
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className={`pref-row-label ${syncStatus.phase === 'signin' || syncStatus.phase === 'error' ? 'danger-text' : ''}`}>
+                    {gdriveSyncing
+                      ? autoSync ? 'Syncing…' : 'Backing up…'
+                      : syncStatus.phase === 'offline'
+                        ? 'Waiting for a connection'
+                        : syncStatus.phase === 'signin'
+                          ? 'Sign in again'
+                          : syncStatus.phase === 'error'
+                            ? 'Sync problem'
+                            : settings.gdriveLastSync
+                              ? `${autoSync ? 'Synced' : 'Backed up'} ${formatSyncTime(settings.gdriveLastSync).toLowerCase()}`
+                              : 'Not synced yet'}
+                  </p>
+                  <p className="pref-row-desc">
+                    {syncStatus.message ||
+                      (autoSync
+                        ? 'Every change is saved to Drive within seconds. Changes from your phone come in when you open SpendTrak.'
+                        : 'Back up now also brings in changes made on your phone.')}
+                  </p>
+                </div>
+                <button className="pref-btn" onClick={() => syncNow({ manual: true })} disabled={gdriveSyncing}>
+                  {gdriveSyncing ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-rotate" />}{' '}
+                  {autoSync ? 'Sync now' : 'Back up now'}
                 </button>
-                <button
-                  className="gdrive-action-btn pull"
-                  onClick={handleGdrivePull}
-                  disabled={gdriveSyncing}
-                >
-                  {gdriveSyncing ? (
-                    <i className="fa-solid fa-spinner fa-spin" />
-                  ) : (
-                    <i className="fa-solid fa-cloud-arrow-down" />
-                  )}
-                  <span>Pull from Drive</span>
-                  <small>Merge cloud data here</small>
+              </div>
+
+              <div className="gdrive-sync-actions">
+                <button className={`gdrive-action-btn ${autoSync ? 'active' : ''}`} onClick={() => setSyncMode(true)} aria-pressed={autoSync}>
+                  <i className="fa-solid fa-arrows-rotate" />
+                  <span>Sync automatically</span>
+                  <small>Recommended</small>
+                </button>
+                <button className={`gdrive-action-btn ${autoSync ? '' : 'active'}`} onClick={() => setSyncMode(false)} aria-pressed={!autoSync}>
+                  <i className="fa-solid fa-cloud-arrow-up" />
+                  <span>Manual backup</span>
+                  <small>Only when you click</small>
                 </button>
               </div>
 
@@ -1218,13 +1199,44 @@ export default function Preferences() {
 
               <div className="pref-row">
                 <div className="pref-row-info">
-                  <p className="pref-row-label danger-text">Delete cloud backup</p>
-                  <p className="pref-row-desc">Permanently remove the backup file from your Google Drive</p>
+                  <p className="pref-row-label">Restore an earlier version</p>
+                  <p className="pref-row-desc">Daily copies from the last 7 days</p>
+                </div>
+                <button className="pref-btn" onClick={handleShowRestore} disabled={gdriveLoading || gdriveSyncing}>
+                  <i className={`fa-solid ${dailyCopies ? 'fa-chevron-up' : 'fa-clock-rotate-left'}`} /> {dailyCopies ? 'Hide' : 'Choose'}
+                </button>
+              </div>
+              {dailyCopies && (
+                <div className="backup-options">
+                  {dailyCopies.length === 0 ? (
+                    <p className="pref-row-desc" style={{ padding: '8px 12px' }}>No daily copies yet.</p>
+                  ) : (
+                    dailyCopies.map((copy) => (
+                      <button key={copy.id} className="backup-option" onClick={() => handleRestore(copy)} disabled={gdriveLoading}>
+                        <i className="fa-solid fa-clock-rotate-left" />
+                        <div>
+                          <p className="backup-option-title">
+                            {new Date(`${copy.date}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </p>
+                          <p className="backup-option-desc">Replace the data here with this copy</p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <div className="pref-divider" />
+
+              <div className="pref-row">
+                <div className="pref-row-info">
+                  <p className="pref-row-label danger-text">Delete data from Google Drive</p>
+                  <p className="pref-row-desc">Removes SpendTrak&apos;s copies, including daily ones, and disconnects</p>
                 </div>
                 <button
                   className="pref-btn danger"
                   onClick={handleGdriveDelete}
-                  disabled={gdriveSyncing}
+                  disabled={gdriveSyncing || gdriveLoading}
                 >
                   <i className="fa-solid fa-trash-can" /> Delete
                 </button>

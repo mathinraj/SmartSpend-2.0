@@ -9,6 +9,7 @@ import { DialogHost } from '@/components/dialog-host';
 import { LockGate } from '@/components/lock-gate';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useDriveSync } from '@/hooks/use-drive-sync';
 import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -55,6 +56,7 @@ function RootNavigator() {
 
 function AppStack({ settings }: { settings: Settings }) {
   useReminderSync(settings);
+  useDriveSync();
 
   useEffect(() => {
     Appearance.setColorScheme(settings.theme === 'system' ? 'auto' : settings.theme);
@@ -76,6 +78,8 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="customize" options={{ title: 'Customize' }} />
           <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
           <Stack.Screen name="export" options={{ title: 'Export', presentation: 'modal' }} />
+          <Stack.Screen name="drive" options={{ title: 'Google Drive sync' }} />
+          <Stack.Screen name="drive-restore" options={{ title: 'Restore an earlier version', presentation: 'modal' }} />
           <Stack.Screen name="categories/index" options={{ title: 'Categories' }} />
           <Stack.Screen name="categories/new" options={{ title: 'Add category', presentation: 'modal' }} />
           <Stack.Screen name="categories/[id]" options={{ title: 'Edit category', presentation: 'modal' }} />

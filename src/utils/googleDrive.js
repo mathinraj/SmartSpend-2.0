@@ -73,6 +73,10 @@ export async function initTokenClient() {
         persistToken(response.access_token, response.expires_in || 3600);
         if (resolveTokenPromise) resolveTokenPromise(response.access_token);
       },
+      // Popup closed or blocked: settle the pending request instead of leaving it open forever.
+      error_callback: () => {
+        if (resolveTokenPromise) resolveTokenPromise(null);
+      },
     });
     resolve(tokenClient);
   });
@@ -119,6 +123,55 @@ export function revokeToken() {
 
 export function getAccessToken() {
   return accessToken;
+}
+
+/** The current token if it hasn't expired; automatic syncs can't open Google's popup to get a new one. */
+export function getValidToken() {
+  if (!accessToken || typeof window === 'undefined') return null;
+  const expiry = parseInt(sessionStorage.getItem(TOKEN_EXPIRY_KEY) || '0', 10);
+  if (expiry > Date.now()) return accessToken;
+  clearPersistedToken();
+  return null;
+}
+
+// ---- Binary files in the app folder (sync format 3) ------------------------------------------------
+
+const FILE_FIELDS = 'id,name,version,modifiedTime,size';
+
+export async function listAppFiles() {
+  const params = new URLSearchParams({ spaces: 'appDataFolder', fields: `files(${FILE_FIELDS})`, pageSize: '200' });
+  const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?${params}`);
+  return (await res.json()).files || [];
+}
+
+export async function downloadFileBytes(id) {
+  const res = await driveRequest(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+export async function createFileBytes(name, bytes, mimeType) {
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify({ name, parents: ['appDataFolder'], mimeType })], { type: 'application/json' }));
+  form.append('file', new Blob([bytes], { type: mimeType }));
+  const res = await driveRequest(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=${FILE_FIELDS}`, {
+    method: 'POST',
+    body: form,
+  });
+  return res.json();
+}
+
+/** Replaces a file's content; Drive swaps it in one step, so a failed upload leaves the old content. */
+export async function updateFileBytes(id, bytes, mimeType) {
+  const res = await driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media&fields=${FILE_FIELDS}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': mimeType },
+    body: bytes,
+  });
+  return res.json();
+}
+
+export async function deleteAppFile(id) {
+  await driveRequest(`https://www.googleapis.com/drive/v3/files/${id}`, { method: 'DELETE' });
 }
 
 async function driveRequest(url, options = {}) {

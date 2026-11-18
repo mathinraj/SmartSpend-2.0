@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { CategoryBreakdown } from '@/components/charts/category-breakdown';
+import { MonthPicker } from '@/components/month-picker';
 import { IconButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Icon } from '@/components/ui/icon';
 import { SectionHeader } from '@/components/ui/section-header';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Text } from '@/components/ui/text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { getCategoryTotals, type CategoryTotal } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useTheme } from '@/hooks/use-theme';
@@ -92,8 +94,8 @@ function MonthComparison({ scope }: { scope: AnalyticsScope }) {
 
   return (
     <Card style={styles.compare}>
-      <MonthStepper label="Month" month={monthA} onChange={setMonthA} />
-      <MonthStepper label="Against" month={monthB} onChange={setMonthB} />
+      <MonthStepper label="Month" pickerTitle="Choose a month" month={monthA} onChange={setMonthA} />
+      <MonthStepper label="Against" pickerTitle="Compare against" month={monthB} onChange={setMonthB} />
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
       {rows.length === 0 ? (
         <Text tone="secondary" style={styles.center}>
@@ -120,7 +122,19 @@ function MonthComparison({ scope }: { scope: AnalyticsScope }) {
   );
 }
 
-function MonthStepper({ label, month, onChange }: { label: string; month: string; onChange: (month: string) => void }) {
+function MonthStepper({
+  label,
+  pickerTitle,
+  month,
+  onChange,
+}: {
+  label: string;
+  pickerTitle: string;
+  month: string;
+  onChange: (month: string) => void;
+}) {
+  const colors = useTheme();
+  const [picking, setPicking] = useState(false);
   const date = parseDateKey(`${month}-01`);
   const isCurrent = month >= toMonthKey(new Date());
   return (
@@ -133,9 +147,17 @@ function MonthStepper({ label, month, onChange }: { label: string; month: string
         accessibilityLabel={`${label}: previous month`}
         onPress={() => onChange(toMonthKey(shiftMonth(date, -1)))}
       />
-      <Text variant="bodyStrong" style={styles.stepperMonth}>
-        {formatMonth(date)}
-      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${formatMonth(date)}. Choose a month`}
+        onPress={() => setPicking(true)}
+        style={({ pressed }) => [styles.monthButton, { backgroundColor: colors.cardMuted }, pressed && styles.pressed]}>
+        <Text variant="bodyStrong" numberOfLines={1}>
+          {formatMonth(date)}
+        </Text>
+        <Icon name="dropdown" size={20} color={colors.textSecondary} />
+      </Pressable>
+      {picking ? <MonthPicker title={pickerTitle} month={month} onSelect={onChange} onClose={() => setPicking(false)} /> : null}
       {isCurrent ? (
         <View style={styles.iconPlaceholder} />
       ) : (
@@ -209,9 +231,20 @@ const styles = StyleSheet.create({
   stepperLabel: {
     width: 52,
   },
-  stepperMonth: {
+  monthButton: {
     flex: 1,
-    textAlign: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    minHeight: 44,
+    paddingLeft: Spacing.sm,
+    paddingRight: Spacing.xs,
+    borderRadius: Radius.md,
+    borderCurve: 'continuous',
+  },
+  pressed: {
+    opacity: 0.7,
   },
   iconPlaceholder: {
     width: 44,

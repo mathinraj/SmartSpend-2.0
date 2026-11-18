@@ -1,17 +1,37 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
+import { Icon, type IconName } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/** A labeled form section. */
-export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export interface FieldAction {
+  icon: IconName;
+  accessibilityLabel: string;
+  onPress: () => void;
+}
+
+/** A labeled form section, with an optional icon action at the end of the label row. */
+export function Field({ label, hint, action, children }: { label: string; hint?: string; action?: FieldAction; children: ReactNode }) {
+  const colors = useTheme();
   return (
     <View style={styles.field}>
-      <Text variant="label" tone="secondary">
-        {label}
-      </Text>
+      <View style={styles.labelRow}>
+        <Text variant="label" tone="secondary" style={styles.label}>
+          {label}
+        </Text>
+        {action ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={action.accessibilityLabel}
+            onPress={action.onPress}
+            hitSlop={8}
+            style={({ pressed }) => [styles.action, { backgroundColor: `${colors.primary}1A` }, pressed && styles.pressed]}>
+            <Icon name={action.icon} size={18} color={colors.primary} />
+          </Pressable>
+        ) : null}
+      </View>
       {children}
       {hint ? (
         <Text variant="caption" tone="muted">
@@ -56,6 +76,26 @@ export function Input({ style, ...rest }: TextInputProps) {
 const styles = StyleSheet.create({
   field: {
     gap: Spacing.sm,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  label: {
+    flex: 1,
+  },
+  // Negative margins keep the 36pt button from making the label row taller than the label text.
+  action: {
+    width: 36,
+    height: 36,
+    marginVertical: -8,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.6,
   },
   input: {
     minHeight: 50,

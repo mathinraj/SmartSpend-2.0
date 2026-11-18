@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   CATEGORIES: 'spendtraq_categories',
   PLANNED_PAYMENTS: 'spendtraq_planned_payments',
   SPLIT_LEDGER: 'spendtraq_split_ledger',
+  SYNC_META: 'spendtraq_sync_meta',
 };
 
 const isBrowser = typeof window !== 'undefined';

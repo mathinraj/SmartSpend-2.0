@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES, type CategorySeed } from '@/constants/categories';
+import { EPOCH } from '@/lib/sync-format';
 
 /**
  * Append-only list. Migration N moves the database from `user_version` N to N + 1.
@@ -126,6 +127,59 @@ const MIGRATIONS: ((db: SQLiteDatabase) => Promise<void>)[] = [
       ALTER TABLE accounts ADD COLUMN logo_url TEXT;
     `);
   },
+
+  // Change tracking for Google Drive sync: rows get `updated_at` when their content changes, and
+  // deletions leave a row in `deleted_records`. Rows from before this migration keep NULL (oldest).
+  async (db) => {
+    const now = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
+    // Columns whose change counts as an edit. An account's balance is left out: transactions move it,
+    // and sync recomputes it from transactions; `updateAccount` stamps manual corrections itself.
+    const tracked: Record<string, string[]> = {
+      accounts: ['name', 'type', 'sub_type', 'icon', 'color', 'credit_limit', 'billing_day', 'due_day', 'custom_type_id', 'logo_url', 'sort_order'],
+      categories: ['kind', 'name', 'icon', 'color', 'sort_order'],
+      subcategories: ['category_id', 'name', 'sort_order'],
+      transactions: [
+        'type', 'amount', 'account_id', 'from_account_id', 'to_account_id', 'category_id', 'subcategory_id', 'note',
+        'date', 'time', 'is_split', 'split_amount', 'deduct_my_share', 'source', 'source_ref', 'payment_app',
+      ],
+      planned_payments: ['name', 'amount', 'account_id', 'category_id', 'frequency', 'next_date', 'note', 'enabled', 'last_paid_date'],
+      split_entries: ['type', 'person', 'amount', 'direction', 'note', 'date', 'transaction_id'],
+    };
+    let sql = `
+      CREATE TABLE deleted_records (
+        tbl        TEXT NOT NULL,
+        id         TEXT NOT NULL,
+        deleted_at TEXT NOT NULL,
+        PRIMARY KEY (tbl, id)
+      );
+      CREATE TABLE sync_state (
+        key   TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL
+      );
+      ALTER TABLE settings ADD COLUMN updated_at TEXT;
+      CREATE TRIGGER settings_stamp_insert AFTER INSERT ON settings WHEN NEW.updated_at IS NULL
+        BEGIN UPDATE settings SET updated_at = ${now} WHERE key = NEW.key; END;
+      CREATE TRIGGER settings_stamp_update AFTER UPDATE ON settings
+        WHEN NEW.updated_at IS OLD.updated_at AND NEW.value IS NOT OLD.value
+        BEGIN UPDATE settings SET updated_at = ${now} WHERE key = NEW.key; END;
+    `;
+    for (const [table, columns] of Object.entries(tracked)) {
+      const changed = columns.map((c) => `NEW.${c} IS NOT OLD.${c}`).join(' OR ');
+      sql += `
+        ALTER TABLE ${table} ADD COLUMN updated_at TEXT;
+        CREATE TRIGGER ${table}_stamp_insert AFTER INSERT ON ${table} WHEN NEW.updated_at IS NULL
+          BEGIN UPDATE ${table} SET updated_at = ${now} WHERE id = NEW.id; END;
+        CREATE TRIGGER ${table}_stamp_update AFTER UPDATE ON ${table}
+          WHEN NEW.updated_at IS OLD.updated_at AND (${changed})
+          BEGIN UPDATE ${table} SET updated_at = ${now} WHERE id = NEW.id; END;
+        CREATE TRIGGER ${table}_revive AFTER INSERT ON ${table}
+          BEGIN DELETE FROM deleted_records WHERE tbl = '${table}' AND id = NEW.id; END;
+        CREATE TRIGGER ${table}_tombstone AFTER DELETE ON ${table}
+          BEGIN INSERT OR REPLACE INTO deleted_records (tbl, id, deleted_at) VALUES ('${table}', OLD.id, ${now}); END;
+      `;
+    }
+    await db.execAsync(sql);
+  },
 ];
 
 async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', seeds: CategorySeed[]) {
@@ -151,14 +205,20 @@ async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', se
   }
 }
 
-/** Inserts the built-in categories; the caller owns the SQL transaction. */
+/**
+ * Inserts the built-in categories into empty category tables; the caller owns the SQL transaction.
+ * They're dated `EPOCH` so a Drive copy of the user's own edits always wins over the defaults.
+ */
 export async function seedDefaultCategories(db: SQLiteDatabase) {
   await seedCategories(db, 'expense', DEFAULT_EXPENSE_CATEGORIES);
   await seedCategories(db, 'income', DEFAULT_INCOME_CATEGORIES);
+  await db.runAsync('UPDATE categories SET updated_at = ? WHERE 1', EPOCH);
+  await db.runAsync('UPDATE subcategories SET updated_at = ? WHERE 1', EPOCH);
 }
 
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
-  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+  // Sync applies merges on a second connection; writes from either side wait for the other instead of failing.
+  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
 

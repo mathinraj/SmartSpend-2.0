@@ -5,6 +5,7 @@ import { STORAGE_KEYS, loadFromStorage, saveToStorage } from '../utils/storage';
 import { DEFAULT_CATEGORIES, INCOME_CATEGORIES } from '../utils/categories';
 import { generateId } from '../utils/helpers';
 import { generateSampleData, SAMPLE_ACCOUNT_IDS } from '../utils/sampleData';
+import { EPOCH, applyBalance, applySnapshot, trackChanges } from '../utils/syncFormat';
 
 const AppContext = createContext(null);
 
@@ -12,6 +13,8 @@ const initialSettings = {
   currency: null,
   onboardStep: 0, // 0=welcome, 1=name, 2=currency, 3=done
 };
+
+const initialSyncMeta = { deleted: [], settingsUpdatedAt: EPOCH };
 
 function loadInitialState() {
   const settings = loadFromStorage(STORAGE_KEYS.SETTINGS) || initialSettings;
@@ -23,8 +26,9 @@ function loadInitialState() {
   };
   const plannedPayments = loadFromStorage(STORAGE_KEYS.PLANNED_PAYMENTS) || [];
   const splitLedger = loadFromStorage(STORAGE_KEYS.SPLIT_LEDGER) || [];
+  const syncMeta = loadFromStorage(STORAGE_KEYS.SYNC_META) || initialSyncMeta;
 
-  return { settings, accounts, transactions, categories, plannedPayments, splitLedger };
+  return { settings, accounts, transactions, categories, plannedPayments, splitLedger, syncMeta };
 }
 
 function appReducer(state, action) {
@@ -74,98 +78,34 @@ function appReducer(state, action) {
       };
 
     case 'ADD_TRANSACTION': {
-      const txn = { ...action.payload, id: generateId(), createdAt: new Date().toISOString() };
-      let updatedAccounts = [...state.accounts];
-
-      if (txn.type === 'income') {
-        updatedAccounts = updatedAccounts.map((a) =>
-          a.id === txn.accountId ? { ...a, balance: a.balance + txn.amount } : a
-        );
-      } else if (txn.type === 'expense') {
-        const deductMyShareOnly = state.settings.splitBankDeduction === 'my_share' && txn.isSplit && txn.splitAmount > 0;
-        const deductAmount = deductMyShareOnly ? (txn.amount - txn.splitAmount) : txn.amount;
-        updatedAccounts = updatedAccounts.map((a) =>
-          a.id === txn.accountId ? { ...a, balance: a.balance - deductAmount } : a
-        );
-      } else if (txn.type === 'transfer') {
-        updatedAccounts = updatedAccounts.map((a) => {
-          if (a.id === txn.fromAccountId) return { ...a, balance: a.balance - txn.amount };
-          if (a.id === txn.toAccountId) return { ...a, balance: a.balance + txn.amount };
-          return a;
-        });
-      }
-
+      // Remember whether only my share left the account, so edits and deletes reverse exactly that.
+      const deductMyShare = state.settings.splitBankDeduction === 'my_share' && !!action.payload.isSplit && action.payload.splitAmount > 0;
+      const txn = { ...action.payload, deductMyShare, id: generateId(), createdAt: new Date().toISOString() };
       return {
         ...state,
         transactions: [txn, ...state.transactions],
-        accounts: updatedAccounts,
+        accounts: applyBalance(state.accounts, txn, 1),
       };
     }
 
     case 'UPDATE_TRANSACTION': {
       const old = state.transactions.find((t) => t.id === action.payload.id);
       if (!old) return state;
-      const upd = action.payload;
-      let accs = [...state.accounts];
-
-      // Reverse old transaction effect
-      if (old.type === 'income') {
-        accs = accs.map((a) => a.id === old.accountId ? { ...a, balance: a.balance - old.amount } : a);
-      } else if (old.type === 'expense') {
-        accs = accs.map((a) => a.id === old.accountId ? { ...a, balance: a.balance + old.amount } : a);
-      } else if (old.type === 'transfer') {
-        accs = accs.map((a) => {
-          if (a.id === old.fromAccountId) return { ...a, balance: a.balance + old.amount };
-          if (a.id === old.toAccountId) return { ...a, balance: a.balance - old.amount };
-          return a;
-        });
-      }
-
-      // Apply new transaction effect
-      if (upd.type === 'income') {
-        accs = accs.map((a) => a.id === upd.accountId ? { ...a, balance: a.balance + upd.amount } : a);
-      } else if (upd.type === 'expense') {
-        accs = accs.map((a) => a.id === upd.accountId ? { ...a, balance: a.balance - upd.amount } : a);
-      } else if (upd.type === 'transfer') {
-        accs = accs.map((a) => {
-          if (a.id === upd.fromAccountId) return { ...a, balance: a.balance - upd.amount };
-          if (a.id === upd.toAccountId) return { ...a, balance: a.balance + upd.amount };
-          return a;
-        });
-      }
-
+      const upd = { ...old, ...action.payload, deductMyShare: !!old.deductMyShare };
       return {
         ...state,
-        transactions: state.transactions.map((t) => t.id === upd.id ? { ...t, ...upd } : t),
-        accounts: accs,
+        transactions: state.transactions.map((t) => (t.id === upd.id ? upd : t)),
+        accounts: applyBalance(applyBalance(state.accounts, old, -1), upd, 1),
       };
     }
 
     case 'DELETE_TRANSACTION': {
       const txn = state.transactions.find((t) => t.id === action.payload);
       if (!txn) return state;
-
-      let updatedAccounts = [...state.accounts];
-      if (txn.type === 'income') {
-        updatedAccounts = updatedAccounts.map((a) =>
-          a.id === txn.accountId ? { ...a, balance: a.balance - txn.amount } : a
-        );
-      } else if (txn.type === 'expense') {
-        updatedAccounts = updatedAccounts.map((a) =>
-          a.id === txn.accountId ? { ...a, balance: a.balance + txn.amount } : a
-        );
-      } else if (txn.type === 'transfer') {
-        updatedAccounts = updatedAccounts.map((a) => {
-          if (a.id === txn.fromAccountId) return { ...a, balance: a.balance + txn.amount };
-          if (a.id === txn.toAccountId) return { ...a, balance: a.balance - txn.amount };
-          return a;
-        });
-      }
-
       return {
         ...state,
         transactions: state.transactions.filter((t) => t.id !== action.payload),
-        accounts: updatedAccounts,
+        accounts: applyBalance(state.accounts, txn, -1),
       };
     }
 
@@ -513,6 +453,7 @@ function appReducer(state, action) {
         categories: d.categories || state.categories,
         plannedPayments: d.plannedPayments || state.plannedPayments,
         splitLedger: d.splitLedger || state.splitLedger,
+        syncMeta: state.syncMeta,
       };
     }
 
@@ -535,21 +476,15 @@ function appReducer(state, action) {
 
       const newTxns = (imp.transactions || []).filter((t) => !existingTxnIds.has(t.id));
 
+      // Backed-up balances of newly imported accounts already include their transactions.
+      const localAccIds = new Set(state.accounts.map((a) => a.id));
       newTxns.forEach((txn) => {
-        mergedAccounts = mergedAccounts.map((a) => {
-          if (txn.type === 'income' && a.id === txn.accountId) {
-            return { ...a, balance: a.balance + txn.amount };
-          }
-          if (txn.type === 'expense' && a.id === txn.accountId) {
-            const deductAmount = (txn.isSplit && txn.splitAmount > 0) ? (txn.amount - txn.splitAmount) : txn.amount;
-            return { ...a, balance: a.balance - deductAmount };
-          }
-          if (txn.type === 'transfer') {
-            if (a.id === txn.fromAccountId) return { ...a, balance: a.balance - txn.amount };
-            if (a.id === txn.toAccountId) return { ...a, balance: a.balance + txn.amount };
-          }
-          return a;
-        });
+        const local = (id) => (id && localAccIds.has(id) ? id : null);
+        mergedAccounts = applyBalance(
+          mergedAccounts,
+          { ...txn, accountId: local(txn.accountId), fromAccountId: local(txn.fromAccountId), toAccountId: local(txn.toAccountId) },
+          1
+        );
       });
 
       const newPp = (imp.plannedPayments || []).filter((p) => !existingPpIds.has(p.id));
@@ -590,6 +525,9 @@ function appReducer(state, action) {
       };
     }
 
+    case 'SYNC_APPLY':
+      return applySnapshot(state, action.payload);
+
     case 'RESET_DATA':
       return {
         settings: initialSettings,
@@ -598,6 +536,7 @@ function appReducer(state, action) {
         categories: { expense: DEFAULT_CATEGORIES, income: INCOME_CATEGORIES },
         plannedPayments: [],
         splitLedger: [],
+        syncMeta: initialSyncMeta,
       };
 
     default:
@@ -605,8 +544,17 @@ function appReducer(state, action) {
   }
 }
 
+/** Sync merges and resets carry their own timestamps; every other change is stamped for sync. */
+const UNTRACKED = new Set(['SYNC_APPLY', 'RESET_DATA']);
+
+function trackedReducer(state, action) {
+  const next = appReducer(state, action);
+  if (next === state || UNTRACKED.has(action.type)) return next;
+  return trackChanges(state, next);
+}
+
 export function AppProvider({ children }) {
-  const [state, dispatch] = useReducer(appReducer, null, loadInitialState);
+  const [state, dispatch] = useReducer(trackedReducer, null, loadInitialState);
 
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.SETTINGS, state.settings);
@@ -631,6 +579,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.SPLIT_LEDGER, state.splitLedger);
   }, [state.splitLedger]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SYNC_META, state.syncMeta);
+  }, [state.syncMeta]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

@@ -7,7 +7,8 @@ import { insertSplitEntry, type NewSplitEntry } from '@/db/splits';
 import { insertTransaction, type NewTransaction } from '@/db/transactions';
 import { addDays, toDateKey } from '@/lib/format';
 
-const SAMPLE_PREFIX = 'sample_';
+/** IDs of sample rows start with this; sync leaves them out so demo data stays on this phone. */
+export const SAMPLE_PREFIX = 'sample_';
 
 function account(a: Pick<NewAccount, 'id' | 'name' | 'type' | 'balance'> & Partial<NewAccount>): NewAccount {
   return { subType: null, icon: null, color: null, creditLimit: null, billingDay: null, dueDay: null, customTypeId: null, logoUrl: null, ...a };
@@ -65,7 +66,7 @@ const SPLIT_DINNER = {
   othersShare: 1600,
 };
 
-const SAMPLE_PEOPLE = ['Asha', 'Ravi', 'Priya'];
+export const SAMPLE_PEOPLE = ['Asha', 'Ravi', 'Priya'];
 
 type SampleSplit = Omit<NewSplitEntry, 'date' | 'id'> & { key: string; daysAgo: number };
 
