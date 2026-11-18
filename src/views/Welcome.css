@@ -114,7 +114,8 @@
 }
 
 .landing-logo {
-  font-size: 3rem;
+  height: 52px;
+  width: auto;
 }
 
 .landing-title {

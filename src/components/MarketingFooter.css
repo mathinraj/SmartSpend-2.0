@@ -19,7 +19,9 @@
 }
 
 .mkt-footer-logo {
-  font-size: 1.5rem;
+  height: 30px;
+  width: auto;
+  align-self: flex-start;
 }
 
 .mkt-footer-name {

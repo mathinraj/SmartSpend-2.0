@@ -7,7 +7,7 @@ export default function MarketingFooter({ showCoindropButton }) {
     <footer className="mkt-footer">
       <div className="mkt-footer-inner">
         <div className="mkt-footer-brand">
-          <span className="mkt-footer-logo">🪙</span>
+          <img src="/logo-mark.svg" alt="" className="mkt-footer-logo" />
           <span className="mkt-footer-name">SpendTrak</span>
           <p className="mkt-footer-tagline">Your money, your rules.</p>
         </div>

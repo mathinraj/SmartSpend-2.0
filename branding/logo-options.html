@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SpendTrak logo options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #120c2c; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; padding: 36px 40px 48px; }
+  header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 26px; }
+  header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.4px; }
+  header p { color: rgba(255,255,255,.55); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+  .card { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .top { display: flex; align-items: center; gap: 10px; }
+  .num { width: 28px; height: 28px; border-radius: 9px; background: rgba(162,155,254,.18); color: #c8c3ff; font-weight: 800; font-size: 13px; display: grid; place-items: center; flex-shrink: 0; }
+  .name { font-weight: 700; font-size: 15px; }
+  .hero { width: 100%; aspect-ratio: 1; display: grid; place-items: center; background: rgba(255,255,255,.03); border-radius: 14px; }
+  .hero svg { width: 74%; height: 74%; }
+  .idea { font-size: 12px; line-height: 1.45; color: rgba(255,255,255,.6); min-height: 34px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row svg { width: 44px; height: 44px; }
+  .circle { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; }
+  .circle svg { width: 60px; height: 60px; margin: -8px; }
+  .light { background: #f3f2fb; border-radius: 10px; padding: 6px; display: flex; gap: 6px; }
+  .light svg { width: 32px; height: 32px; }
+  .tag { margin-left: auto; font-size: 10.5px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8475F3"/><stop offset="1" stop-color="#5442D0"/></linearGradient>
+    <linearGradient id="gP2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B9B3FF"/><stop offset="1" stop-color="#6C5CE7"/></linearGradient>
+    <linearGradient id="gDark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#33226F"/><stop offset="1" stop-color="#150D36"/></linearGradient>
+    <linearGradient id="gGreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1FE0B3"/><stop offset="1" stop-color="#009D7E"/></linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE08A"/><stop offset="1" stop-color="#F0A92E"/></linearGradient>
+    <linearGradient id="gCoral" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF9E8F"/><stop offset="1" stop-color="#F45D6E"/></linearGradient>
+    <linearGradient id="gWarm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD36E"/><stop offset="1" stop-color="#FF9F43"/></linearGradient>
+    <linearGradient id="gLine" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#A29BFE"/><stop offset="1" stop-color="#1FE0B3"/></linearGradient>
+
+    <!-- shared S stroke, centred on 256,256 -->
+    <path id="sPath" d="M312 186 C296 164 262 156 236 160 C204 165 186 188 190 214 C194 244 226 252 256 258 C288 264 322 274 322 304 C322 334 292 352 258 352 C226 352 204 340 194 318"/>
+
+    <!-- 1 Classic coin -->
+    <symbol id="L1" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <circle cx="256" cy="256" r="156" fill="url(#gGold)"/>
+      <circle cx="256" cy="256" r="126" fill="none" stroke="#C9821A" stroke-opacity=".45" stroke-width="10"/>
+      <use href="#sPath" fill="none" stroke="#8A5410" stroke-width="36" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 2 Wallet check -->
+    <symbol id="L2" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <rect x="140" y="134" width="214" height="70" rx="22" fill="#B9B3FF"/>
+      <rect x="112" y="168" width="288" height="210" rx="40" fill="#fff"/>
+      <rect x="326" y="236" width="94" height="72" rx="24" fill="#E8E5FF"/>
+      <circle cx="360" cy="272" r="12" fill="#6C5CE7"/>
+      <path d="M166 272 L202 308 L272 236" fill="none" stroke="#6C5CE7" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- 3 Rising bars -->
+    <symbol id="L3" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <rect x="132" y="300" width="62" height="96" rx="18" fill="#fff" fill-opacity=".55"/>
+      <rect x="225" y="250" width="62" height="146" rx="18" fill="#fff" fill-opacity=".8"/>
+      <rect x="318" y="196" width="62" height="200" rx="18" fill="#fff"/>
+      <path d="M124 226 L208 160 L262 190 L362 112" fill="none" stroke="#1FE0B3" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M330 106 L372 104 L370 146" fill="none" stroke="#1FE0B3" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- 4 Donut slice -->
+    <symbol id="L4" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="#FFFFFF"/>
+      <g transform="rotate(-90 256 256)">
+        <circle cx="256" cy="256" r="120" fill="none" stroke="#6C5CE7" stroke-width="72" stroke-dasharray="555 754"/>
+        <circle cx="256" cy="256" r="120" fill="none" stroke="#00B894" stroke-width="72" stroke-dasharray="168 754" stroke-dashoffset="-576" transform="translate(-16 16)"/>
+      </g>
+    </symbol>
+
+    <!-- 5 Privacy shield -->
+    <symbol id="L5" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <path d="M256 92 L396 144 V250 C396 342 334 398 256 426 C178 398 116 342 116 250 V144 Z" fill="url(#gP2)"/>
+      <circle cx="256" cy="252" r="78" fill="url(#gGold)"/>
+      <circle cx="256" cy="236" r="20" fill="#3A2580"/>
+      <rect x="246" y="244" width="20" height="50" rx="10" fill="#3A2580"/>
+    </symbol>
+
+    <!-- 6 Block S -->
+    <symbol id="L6" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <path d="M338 176 H214 A46 46 0 0 0 214 268 H298 A46 46 0 0 1 298 360 H168" fill="none" stroke="#fff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="394" cy="176" r="22" fill="#1FE0B3"/>
+    </symbol>
+
+    <!-- 7 Trend trail -->
+    <symbol id="L7" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <g stroke="#fff" stroke-opacity=".07" stroke-width="4">
+        <line x1="96" y1="168" x2="416" y2="168"/><line x1="96" y1="256" x2="416" y2="256"/><line x1="96" y1="344" x2="416" y2="344"/>
+      </g>
+      <polyline points="108,362 186,300 252,330 324,214 404,152" fill="none" stroke="url(#gLine)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="186" cy="300" r="15" fill="#fff"/>
+      <circle cx="252" cy="330" r="15" fill="#fff"/>
+      <circle cx="324" cy="214" r="15" fill="#fff"/>
+      <circle cx="404" cy="152" r="34" fill="#1FE0B3" fill-opacity=".25"/>
+      <circle cx="404" cy="152" r="20" fill="#1FE0B3"/>
+    </symbol>
+
+    <!-- 8 Coin stack -->
+    <symbol id="L8" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <g>
+        <rect x="140" y="316" width="232" height="44" fill="#D9921F"/><ellipse cx="256" cy="360" rx="116" ry="38" fill="#D9921F"/><ellipse cx="256" cy="316" rx="116" ry="38" fill="#FFD465"/>
+        <rect x="140" y="256" width="232" height="44" fill="#D9921F"/><ellipse cx="256" cy="300" rx="116" ry="38" fill="#D9921F"/><ellipse cx="256" cy="256" rx="116" ry="38" fill="#FFD465"/>
+        <rect x="140" y="196" width="232" height="44" fill="#D9921F"/><ellipse cx="256" cy="240" rx="116" ry="38" fill="#D9921F"/><ellipse cx="256" cy="196" rx="116" ry="38" fill="#FFE08A"/>
+        <ellipse cx="256" cy="196" rx="76" ry="22" fill="none" stroke="#D9921F" stroke-opacity=".5" stroke-width="8"/>
+      </g>
+      <path d="M392 104 L402 130 L428 140 L402 150 L392 176 L382 150 L356 140 L382 130 Z" fill="#fff"/>
+    </symbol>
+
+    <!-- 9 Receipt -->
+    <symbol id="L9" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP2)"/>
+      <path d="M150 104 H362 V404 L335.5 386 L309 404 L282.5 386 L256 404 L229.5 386 L203 404 L176.5 386 L150 404 Z" fill="#fff"/>
+      <rect x="186" y="150" width="140" height="20" rx="10" fill="#D9D5FF"/>
+      <rect x="186" y="194" width="104" height="20" rx="10" fill="#D9D5FF"/>
+      <rect x="186" y="238" width="122" height="20" rx="10" fill="#D9D5FF"/>
+      <circle cx="306" cy="320" r="38" fill="#00B894"/>
+      <path d="M288 320 L301 333 L326 306" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- 10 Grow coin -->
+    <symbol id="L10" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gGreen)"/>
+      <path d="M256 212 V150" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+      <path d="M256 166 C216 166 186 136 182 96 C222 96 254 122 256 166 Z" fill="#fff" fill-opacity=".85"/>
+      <path d="M256 150 C262 104 298 76 342 78 C340 124 304 152 256 150 Z" fill="#fff"/>
+      <circle cx="256" cy="316" r="114" fill="url(#gGold)"/>
+      <circle cx="256" cy="316" r="88" fill="none" stroke="#C9821A" stroke-opacity=".45" stroke-width="9"/>
+    </symbol>
+
+    <!-- 11 Budget target -->
+    <symbol id="L11" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <circle cx="240" cy="272" r="150" fill="#fff"/>
+      <circle cx="240" cy="272" r="108" fill="#B9B3FF"/>
+      <circle cx="240" cy="272" r="66" fill="#fff"/>
+      <circle cx="240" cy="272" r="28" fill="#FF6B6B"/>
+      <path d="M248 264 L392 120" stroke="#2D1B69" stroke-width="18" stroke-linecap="round"/>
+      <path d="M380 92 L392 120 L420 132 L404 148 L376 136 L364 108 Z" fill="#FF6B6B"/>
+    </symbol>
+
+    <!-- 12 Savings jar -->
+    <symbol id="L12" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <ellipse cx="256" cy="100" rx="34" ry="13" fill="#FFD465"/>
+      <rect x="186" y="150" width="140" height="44" rx="14" fill="#D9D5FF"/>
+      <rect x="146" y="184" width="220" height="226" rx="56" fill="#fff"/>
+      <circle cx="214" cy="356" r="30" fill="url(#gGold)"/>
+      <circle cx="286" cy="352" r="34" fill="url(#gGold)"/>
+      <circle cx="250" cy="304" r="30" fill="url(#gGold)"/>
+      <rect x="178" y="226" width="16" height="64" rx="8" fill="#E8E5FF"/>
+    </symbol>
+
+    <!-- 13 Sync loop -->
+    <symbol id="L13" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <path d="M115 205 A150 150 0 0 1 397 205" fill="none" stroke="#A29BFE" stroke-width="28" stroke-linecap="round"/>
+      <path d="M397 307 A150 150 0 0 1 115 307" fill="none" stroke="#1FE0B3" stroke-width="28" stroke-linecap="round"/>
+      <path d="M368 188 L404 232 L424 178 Z" fill="#A29BFE" stroke="#A29BFE" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M144 324 L108 280 L88 334 Z" fill="#1FE0B3" stroke="#1FE0B3" stroke-width="10" stroke-linejoin="round"/>
+      <circle cx="256" cy="256" r="74" fill="url(#gGold)"/>
+      <use href="#sPath" transform="translate(256 256) scale(.36) translate(-256 -256)" fill="none" stroke="#8A5410" stroke-width="44" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 14 Private vault -->
+    <symbol id="L14" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <path d="M190 238 V186 A66 66 0 0 1 322 186 V238" fill="none" stroke="#fff" stroke-width="36" stroke-linecap="round"/>
+      <rect x="140" y="226" width="232" height="182" rx="40" fill="#fff"/>
+      <circle cx="256" cy="304" r="30" fill="url(#gGold)"/>
+      <rect x="246" y="316" width="20" height="46" rx="10" fill="#F0A92E"/>
+    </symbol>
+
+    <!-- 15 Card stack -->
+    <symbol id="L15" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <rect x="112" y="150" width="288" height="184" rx="28" fill="#1FE0B3" transform="rotate(-12 256 242)"/>
+      <rect x="112" y="194" width="288" height="184" rx="28" fill="url(#gP2)" transform="rotate(4 256 286)"/>
+      <rect x="148" y="238" width="58" height="44" rx="10" fill="url(#gGold)" transform="rotate(4 256 286)"/>
+      <rect x="148" y="326" width="150" height="16" rx="8" fill="#fff" fill-opacity=".7" transform="rotate(4 256 286)"/>
+    </symbol>
+
+    <!-- 16 Split -->
+    <symbol id="L16" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <path d="M242 132 A126 126 0 0 0 242 384 Z" fill="url(#gP2)"/>
+      <path d="M270 112 A126 126 0 0 1 270 364 Z" fill="url(#gGreen)"/>
+    </symbol>
+
+    <!-- 17 Planned -->
+    <symbol id="L17" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <rect x="124" y="140" width="264" height="252" rx="38" fill="#fff"/>
+      <path d="M124 178 A38 38 0 0 1 162 140 H350 A38 38 0 0 1 388 178 V214 H124 Z" fill="#FF6B6B"/>
+      <rect x="180" y="112" width="24" height="64" rx="12" fill="#2D1B69"/>
+      <rect x="308" y="112" width="24" height="64" rx="12" fill="#2D1B69"/>
+      <path d="M200 300 L238 338 L314 262" fill="none" stroke="#6C5CE7" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- 18 Monoline S -->
+    <symbol id="L18" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="#FFFFFF"/>
+      <use href="#sPath" fill="none" stroke="url(#gP)" stroke-width="54" stroke-linecap="round"/>
+      <circle cx="194" cy="318" r="0"/>
+      <circle cx="344" cy="150" r="20" fill="#00B894"/>
+    </symbol>
+
+    <!-- 19 Friendly wallet -->
+    <symbol id="L19" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gWarm)"/>
+      <rect x="112" y="152" width="288" height="226" rx="48" fill="#6C5CE7"/>
+      <path d="M112 214 H400" stroke="#5442D0" stroke-width="14"/>
+      <circle cx="210" cy="276" r="18" fill="#fff"/>
+      <circle cx="302" cy="276" r="18" fill="#fff"/>
+      <path d="M220 320 Q256 350 292 320" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round"/>
+      <circle cx="176" cy="312" r="14" fill="#FF8FA3" fill-opacity=".8"/>
+      <circle cx="336" cy="312" r="14" fill="#FF8FA3" fill-opacity=".8"/>
+    </symbol>
+
+    <!-- 20 Step up -->
+    <symbol id="L20" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <path d="M116 396 V330 H190 V264 H264 V198 H338 V132 H396 V396 Z" fill="#fff"/>
+      <path d="M116 396 V330 H190 V264 H264 V198 H338 V132 H396" fill="none" stroke="#E8E5FF" stroke-width="0"/>
+      <circle cx="367" cy="94" r="30" fill="url(#gGold)"/>
+    </symbol>
+
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+
+    <!-- 21 S coin (cut-out) -->
+    <symbol id="L21" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="#FFFFFF"/>
+      <circle cx="256" cy="256" r="164" fill="url(#gP)"/>
+      <circle cx="256" cy="256" r="140" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="7"/>
+      <use href="#sPath" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 22 Ribbon S -->
+    <symbol id="L22" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <path d="M332 176 C304 142 228 142 202 182 C178 220 212 252 256 258" fill="none" stroke="#A29BFE" stroke-width="58" stroke-linecap="round"/>
+      <path d="M256 258 C300 264 334 294 310 332 C284 372 208 370 180 336" fill="none" stroke="#1FE0B3" stroke-width="58" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 23 S arrow -->
+    <symbol id="L23" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <path d="M344 176 H214 A46 46 0 0 0 214 268 H298 A46 46 0 0 1 298 360 H168" fill="none" stroke="#fff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M318 134 L366 176 L318 218" fill="none" stroke="#1FE0B3" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- 24 Coin pulse -->
+    <symbol id="L24" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <circle cx="256" cy="256" r="150" fill="url(#gP2)"/>
+      <polyline points="120,262 190,262 222,194 266,330 300,228 326,262 392,262" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- 25 Orbit coin -->
+    <symbol id="L25" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <ellipse cx="256" cy="256" rx="190" ry="62" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="16" transform="rotate(-22 256 256)"/>
+      <circle cx="256" cy="256" r="98" fill="url(#gGold)"/>
+      <circle cx="256" cy="256" r="74" fill="none" stroke="#C9821A" stroke-opacity=".45" stroke-width="8"/>
+      <ellipse cx="256" cy="256" rx="190" ry="62" fill="none" stroke="#fff" stroke-width="16" stroke-dasharray="424 848" transform="rotate(-22 256 256)"/>
+      <circle cx="432" cy="185" r="20" fill="#1FE0B3"/>
+    </symbol>
+
+    <!-- 26 Hex S -->
+    <symbol id="L26" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <polygon points="256,100 391,178 391,334 256,412 121,334 121,178" fill="url(#gP2)" stroke="url(#gP2)" stroke-width="24" stroke-linejoin="round"/>
+      <use href="#sPath" transform="translate(256 256) scale(.82) translate(-256 -256)" fill="none" stroke="#fff" stroke-width="42" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 27 Tally -->
+    <symbol id="L27" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <g stroke="#fff" stroke-width="28" stroke-linecap="round">
+        <line x1="176" y1="156" x2="176" y2="356"/><line x1="226" y1="156" x2="226" y2="356"/>
+        <line x1="276" y1="156" x2="276" y2="356"/><line x1="326" y1="156" x2="326" y2="356"/>
+      </g>
+      <line x1="138" y1="330" x2="372" y2="182" stroke="#1FE0B3" stroke-width="28" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 28 Ledger book -->
+    <symbol id="L28" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <path d="M256 176 C220 152 166 144 118 154 V364 C166 354 220 360 256 384 Z" fill="#fff"/>
+      <path d="M256 176 C292 152 346 144 394 154 V364 C346 354 292 360 256 384 Z" fill="#E8E5FF"/>
+      <g stroke="#D9D5FF" stroke-width="12" stroke-linecap="round">
+        <line x1="150" y1="210" x2="224" y2="222"/><line x1="150" y1="252" x2="224" y2="264"/><line x1="150" y1="294" x2="204" y2="302"/>
+      </g>
+      <circle cx="326" cy="270" r="40" fill="url(#gGold)"/>
+    </symbol>
+
+    <!-- 29 Gem -->
+    <symbol id="L29" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <polygon points="176,164 336,164 396,226 116,226" fill="#C9C4FF"/>
+      <polygon points="116,226 396,226 256,398" fill="url(#gP)"/>
+      <g stroke="#fff" stroke-opacity=".4" stroke-width="6" fill="none" stroke-linejoin="round">
+        <polyline points="176,164 212,226 256,398"/><polyline points="336,164 300,226 256,398"/>
+        <polyline points="256,164 212,226"/><polyline points="256,164 300,226"/>
+      </g>
+      <circle cx="372" cy="128" r="10" fill="#fff"/><circle cx="136" cy="372" r="7" fill="#fff" fill-opacity=".6"/>
+    </symbol>
+
+    <!-- 30 Magnifier -->
+    <symbol id="L30" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <line x1="300" y1="300" x2="390" y2="390" stroke="#2D1B69" stroke-width="40" stroke-linecap="round"/>
+      <circle cx="226" cy="226" r="112" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width="28"/>
+      <circle cx="226" cy="226" r="70" fill="url(#gGold)"/>
+      <circle cx="226" cy="226" r="50" fill="none" stroke="#C9821A" stroke-opacity=".45" stroke-width="7"/>
+    </symbol>
+
+    <!-- 31 Compass up -->
+    <symbol id="L31" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <circle cx="256" cy="256" r="156" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="12"/>
+      <g fill="#fff" fill-opacity=".45"><circle cx="256" cy="116" r="7"/><circle cx="396" cy="256" r="7"/><circle cx="256" cy="396" r="7"/><circle cx="116" cy="256" r="7"/></g>
+      <polygon points="256,128 294,256 218,256" fill="#1FE0B3"/>
+      <polygon points="218,256 294,256 256,384" fill="#A29BFE"/>
+      <circle cx="256" cy="256" r="16" fill="#fff"/>
+    </symbol>
+
+    <!-- 32 Linked rings -->
+    <symbol id="L32" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <circle cx="206" cy="256" r="96" fill="none" stroke="#fff" stroke-width="36"/>
+      <circle cx="306" cy="256" r="96" fill="none" stroke="#1FE0B3" stroke-width="36"/>
+      <path d="M256 174 A96 96 0 0 1 302 256" fill="none" stroke="#fff" stroke-width="36"/>
+    </symbol>
+
+    <!-- 33 Money pin -->
+    <symbol id="L33" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <ellipse cx="256" cy="414" rx="70" ry="14" fill="#2D1B69" fill-opacity=".35"/>
+      <path d="M256 412 C256 412 138 300 138 216 A118 118 0 0 1 374 216 C374 300 256 412 256 412 Z" fill="#fff"/>
+      <circle cx="256" cy="216" r="66" fill="url(#gGold)"/>
+      <circle cx="256" cy="216" r="46" fill="none" stroke="#C9821A" stroke-opacity=".45" stroke-width="7"/>
+    </symbol>
+
+    <!-- 34 Piggy bank -->
+    <symbol id="L34" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <circle cx="252" cy="128" r="28" fill="url(#gGold)"/>
+      <path d="M118 262 C96 254 92 230 108 224" fill="none" stroke="#FF9FB3" stroke-width="12" stroke-linecap="round"/>
+      <rect x="176" y="340" width="40" height="62" rx="16" fill="#FF8FA3"/>
+      <rect x="292" y="340" width="40" height="62" rx="16" fill="#FF8FA3"/>
+      <path d="M190 196 L210 150 L246 186 Z" fill="#FF8FA3"/>
+      <ellipse cx="252" cy="276" rx="142" ry="108" fill="#FFB3C3"/>
+      <ellipse cx="390" cy="284" rx="34" ry="30" fill="#FF8FA3"/>
+      <circle cx="380" cy="284" r="6" fill="#B04A63"/><circle cx="400" cy="284" r="6" fill="#B04A63"/>
+      <circle cx="330" cy="246" r="10" fill="#3A2033"/>
+      <rect x="218" y="186" width="70" height="14" rx="7" fill="#B04A63"/>
+    </symbol>
+
+    <!-- 35 Envelope -->
+    <symbol id="L35" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <rect x="124" y="214" width="264" height="176" rx="26" fill="#C9C4FF"/>
+      <circle cx="256" cy="216" r="72" fill="url(#gGold)"/>
+      <circle cx="256" cy="216" r="52" fill="none" stroke="#C9821A" stroke-opacity=".45" stroke-width="7"/>
+      <path d="M124 246 L256 320 L388 246 V364 A26 26 0 0 1 362 390 H150 A26 26 0 0 1 124 364 Z" fill="#fff"/>
+    </symbol>
+
+    <!-- 36 Abacus -->
+    <symbol id="L36" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <rect x="128" y="128" width="256" height="256" rx="30" fill="none" stroke="#A29BFE" stroke-width="20"/>
+      <g stroke="#fff" stroke-opacity=".35" stroke-width="6"><line x1="146" y1="196" x2="366" y2="196"/><line x1="146" y1="256" x2="366" y2="256"/><line x1="146" y1="316" x2="366" y2="316"/></g>
+      <g fill="url(#gGold)"><circle cx="176" cy="196" r="20"/><circle cx="218" cy="196" r="20"/><circle cx="176" cy="256" r="20"/><circle cx="176" cy="316" r="20"/><circle cx="218" cy="316" r="20"/><circle cx="260" cy="316" r="20"/></g>
+      <g fill="#1FE0B3"><circle cx="336" cy="196" r="20"/><circle cx="294" cy="256" r="20"/><circle cx="336" cy="256" r="20"/><circle cx="336" cy="316" r="20"/></g>
+    </symbol>
+
+    <!-- 37 Rocket -->
+    <symbol id="L37" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gDark)"/>
+      <g fill="#fff"><circle cx="140" cy="150" r="6"/><circle cx="380" cy="120" r="5"/><circle cx="400" cy="300" r="6"/><circle cx="118" cy="320" r="4"/></g>
+      <path d="M230 344 Q256 440 282 344 Z" fill="url(#gWarm)"/>
+      <path d="M212 286 L158 352 L216 342 Z" fill="#A29BFE"/>
+      <path d="M300 286 L354 352 L296 342 Z" fill="#A29BFE"/>
+      <path d="M256 92 C322 136 334 240 302 346 H210 C178 240 190 136 256 92 Z" fill="#fff"/>
+      <circle cx="256" cy="208" r="34" fill="url(#gP2)" stroke="#E8E5FF" stroke-width="9"/>
+    </symbol>
+
+    <!-- 38 Quad tiles -->
+    <symbol id="L38" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="#FFFFFF"/>
+      <rect x="132" y="132" width="114" height="114" rx="30" fill="url(#gP)"/>
+      <rect x="266" y="132" width="114" height="114" rx="30" fill="#C9C4FF"/>
+      <rect x="132" y="266" width="114" height="114" rx="30" fill="#E8E5FF"/>
+      <rect x="266" y="266" width="114" height="114" rx="57" fill="url(#gGreen)"/>
+    </symbol>
+
+    <!-- 39 st monogram -->
+    <symbol id="L39" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="url(#gP)"/>
+      <use href="#sPath" transform="translate(200 284) scale(.64) translate(-256 -256)" fill="none" stroke="#fff" stroke-width="60" stroke-linecap="round"/>
+      <path d="M332 150 V318 Q332 356 372 356" fill="none" stroke="#fff" stroke-width="38" stroke-linecap="round"/>
+      <path d="M296 218 H376" stroke="#1FE0B3" stroke-width="38" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- 40 Neon S -->
+    <symbol id="L40" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="116" fill="#0B0820"/>
+      <use href="#sPath" fill="none" stroke="url(#gLine)" stroke-width="58" stroke-linecap="round" filter="url(#glow)" opacity=".7"/>
+      <use href="#sPath" fill="none" stroke="url(#gLine)" stroke-width="40" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header>
+  <h1>SpendTrak · logo options</h1>
+  <p>Each shown large, at launcher size (44&nbsp;px), in Android's circle mask, and on a light background.</p>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<script>
+  const logos = [
+    ['Classic Coin', 'Refines today’s 🪙 identity: a gold coin with an S, on deep purple.'],
+    ['Wallet Check', 'A wallet with a tick: money tracked and under control.'],
+    ['Rising Bars', 'Growing bars with an upward trend line: progress and insight.'],
+    ['Donut Slice', 'An analytics donut with one category pulled out. Light and clean.'],
+    ['Privacy Shield', 'A shield holding a locked coin: private, on-device money.'],
+    ['Block S', 'A bold geometric S with a green start dot. Simple, ownable mark.'],
+    ['Trend Trail', 'A rising spending line ending in a glowing dot: “track”.'],
+    ['Coin Stack', 'Stacked gold coins with a sparkle: savings adding up.'],
+    ['Receipt', 'A receipt with a check: every expense logged.'],
+    ['Grow Coin', 'A sprouting coin on green: save and grow.'],
+    ['Budget Target', 'A bullseye with an arrow: hitting your budget goals.'],
+    ['Savings Jar', 'A jar filling with coins, one dropping in.'],
+    ['Sync Loop', 'Two arrows circling a coin: synced across phone and web.'],
+    ['Private Vault', 'A padlock with a coin keyhole: your data, locked down.'],
+    ['Card Stack', 'Fanned cards with a chip: all your accounts in one place.'],
+    ['Split', 'One circle split in two halves: splitting expenses fairly.'],
+    ['Planned', 'A calendar with a tick: never miss a bill.'],
+    ['Monoline S', 'A single flowing purple S on white. Minimal and modern.'],
+    ['Friendly Wallet', 'A smiling wallet on warm amber: approachable and fun.'],
+    ['Step Up', 'Steps climbing to a coin: building your finances step by step.'],
+    ['S Coin', 'A purple coin with the S cut out, on white. Coin and letter in one.'],
+    ['Ribbon S', 'An S made of two ribbons, lilac and mint: money in and out.'],
+    ['S Arrow', 'The Block S with an arrow tip: money moving forward.'],
+    ['Coin Pulse', 'A heartbeat across a coin: the pulse of your finances.'],
+    ['Orbit Coin', 'A gold coin with a ring and a small moon: everything around your money.'],
+    ['Hex S', 'A soft hexagon badge with an S. Feels solid and trustworthy.'],
+    ['Tally', 'Four tally marks and a strike: counting every expense.'],
+    ['Ledger Book', 'An open ledger with a coin: the classic money diary.'],
+    ['Gem', 'A faceted gem: what your money is worth to you.'],
+    ['Magnifier', 'A lens over a coin: see exactly where money goes.'],
+    ['Compass Up', 'A compass needle pointing up: direction for your money.'],
+    ['Linked Rings', 'Two interlocking rings: phone and web, always in sync.'],
+    ['Money Pin', 'A map pin with a coin: where your money went.'],
+    ['Piggy Bank', 'A friendly piggy bank with a coin dropping in.'],
+    ['Envelope', 'The envelope budgeting method: a coin tucked in.'],
+    ['Abacus', 'Beads on rods: calm, careful counting.'],
+    ['Rocket', 'A rocket taking off: savings that climb.'],
+    ['Quad Tiles', 'Four tiles, one round: dashboards and categories, abstracted.'],
+    ['st Monogram', 'Lowercase “st” with a mint crossbar. Friendly wordmark-style.'],
+    ['Neon S', 'A glowing lilac-to-mint S on near-black. Bold for dark mode.'],
+  ];
+  const from = Number(new URLSearchParams(location.search).get('from') || 1);
+  const svg = (id, cls = '') => `<svg class="${cls}" viewBox="0 0 512 512"><use href="#L${id}"/></svg>`;
+  document.getElementById('grid').innerHTML = logos.map(([name, idea], i) => i + 1 < from ? '' : `
+    <div class="card">
+      <div class="top"><span class="num">${i + 1}</span><span class="name">${name}</span></div>
+      <div class="hero">${svg(i + 1)}</div>
+      <p class="idea">${idea}</p>
+      <div class="row">${svg(i + 1)}<div class="circle">${svg(i + 1)}</div><div class="light">${svg(i + 1)}${svg(i + 1)}</div></div>
+    </div>`).join('');
+</script>
+</body>
+</html>

@@ -20,7 +20,7 @@ export default function MarketingNav({ onGetStarted }) {
     <nav className="marketing-nav" aria-label="Main navigation">
       <div className="marketing-nav-inner">
         <Link href="/" className="marketing-nav-brand">
-          <span className="marketing-nav-logo">🪙</span>
+          <img src="/logo-mark.svg" alt="" className="marketing-nav-logo" />
           <span className="marketing-nav-name">SpendTrak</span>
         </Link>
 

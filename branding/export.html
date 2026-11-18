@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- Renders one SVG from this folder to fill the window, for exporting PNGs with headless Chrome:
+     chrome --headless=new --default-background-color=00000000 --window-size=W,H --screenshot=out.png "export.html?src=file.svg" -->
+<html>
+<head>
+<style>
+  html, body { margin: 0; width: 100vw; height: 100vh; background: transparent; overflow: hidden; }
+  img { width: 100vw; height: 100vh; object-fit: contain; display: block; }
+</style>
+</head>
+<body>
+  <img id="art" alt="">
+  <script>document.getElementById('art').src = new URLSearchParams(location.search).get('src');</script>
+</body>
+</html>

@@ -123,7 +123,7 @@ export default function Welcome() {
 
         <div className="landing-hero-content">
           <div className="landing-logo-ring">
-            <span className="landing-logo">🪙</span>
+            <img src="/logo-mark.svg" alt="SpendTrak logo" className="landing-logo" />
           </div>
           <h1 className="landing-title">SpendTrak</h1>
           <p className="landing-tagline">Your money, your rules.</p>

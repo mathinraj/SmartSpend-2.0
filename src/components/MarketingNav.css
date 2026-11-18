@@ -28,7 +28,8 @@
 }
 
 .marketing-nav-logo {
-  font-size: 1.5rem;
+  height: 28px;
+  width: auto;
 }
 
 .marketing-nav-name {
