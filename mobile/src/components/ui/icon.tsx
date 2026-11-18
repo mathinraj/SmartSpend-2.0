@@ -62,6 +62,9 @@ const ICONS = {
   sync: { ios: 'arrow.triangle.2.circlepath', android: 'sync', web: 'sync' },
   history: { ios: 'clock.arrow.circlepath', android: 'history', web: 'history' },
   logout: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' },
+  systemUpdate: { ios: 'arrow.down.app', android: 'system_update', web: 'system_update' },
+  coffee: { ios: 'cup.and.saucer', android: 'coffee', web: 'coffee' },
+  arrowForward: { ios: 'arrow.right', android: 'arrow_forward', web: 'arrow_forward' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

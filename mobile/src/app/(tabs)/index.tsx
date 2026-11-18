@@ -29,6 +29,7 @@ import { isCreditCard, totalBalance } from '@/lib/accounts';
 import { useBalancePrivacy } from '@/lib/balance-privacy';
 import { formatCurrency, formatMonth, greeting, monthRange } from '@/lib/format';
 import { daysUntil } from '@/lib/planned';
+import { useUpdateState } from '@/lib/updates';
 import type { Account } from '@/types/models';
 
 export default function HomeScreen() {
@@ -47,6 +48,7 @@ export default function HomeScreen() {
   const planned = useDbQuery(listPlanned, ['planned_payments', 'accounts', 'categories']);
   const balances = useDbQuery(getPersonBalances, ['split_entries'], settings?.splitPeople ?? []);
   const syncState = useDbQuery(getSyncState, ['sync_state']);
+  const updateAvailable = useUpdateState().phase === 'available';
 
   const privacy = useBalancePrivacy(settings?.hideBalances);
 
@@ -90,7 +92,14 @@ export default function HomeScreen() {
           </Pressable>
         }
         headerRight={
-          <IconButton icon="settings" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+          <View>
+            <IconButton
+              icon="settings"
+              accessibilityLabel={updateAvailable ? 'Settings, update available' : 'Settings'}
+              onPress={() => router.push('/settings')}
+            />
+            {updateAvailable ? <View style={[styles.updateDot, { backgroundColor: colors.danger, borderColor: colors.background }]} /> : null}
+          </View>
         }>
         <View style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
           <View style={styles.cardHeader}>
@@ -269,6 +278,15 @@ function Stat({ label, icon, value }: { label: string; icon: IconName; value: st
 }
 
 const styles = StyleSheet.create({
+  updateDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+  },
   root: {
     flex: 1,
   },
