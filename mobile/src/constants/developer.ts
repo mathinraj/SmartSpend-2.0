@@ -10,10 +10,10 @@ export const DEVELOPER = {
   bio: 'I turn coffee into code and bugs into features (on a good day). In my free time I build free, privacy-first tools like SpendTrak.',
   stats: [
     { value: '6', label: 'projects shipped' },
-    { value: '1,000+', label: 'extension users' },
-    { value: '7 days', label: 'to fix bugs' },
+    { value: '1K+', label: 'users' },
+    { value: '<3 days', label: 'to fix bugs' },
   ],
-  note: "Almost every feature in my apps has come from people like you. If something doesn't work, or you wish it did something more, tell me. I fix every reported bug within 7 days.",
+  note: "Almost every feature in my apps has come from people like you. If something doesn't work, or you wish it did something more, tell me. I fix every reported bug within 3 days.",
 };
 
 export interface Project {
@@ -71,12 +71,10 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-export type SocialIcon = 'globe' | 'github' | 'linkedin' | 'medium' | 'mail';
+export type SocialIcon = 'github' | 'linkedin' | 'medium';
 
 export const SOCIAL_LINKS: { label: string; url: string; icon: SocialIcon }[] = [
-  { label: 'Portfolio', url: 'https://mathinraj.is-a.dev/', icon: 'globe' },
   { label: 'GitHub', url: 'https://github.com/mathinraj', icon: 'github' },
   { label: 'LinkedIn', url: 'https://www.linkedin.com/in/mathinraj', icon: 'linkedin' },
   { label: 'Medium', url: 'https://medium.com/@mathinraj', icon: 'medium' },
-  { label: 'Email', url: 'mailto:mathinraj7@gmail.com', icon: 'mail' },
 ];

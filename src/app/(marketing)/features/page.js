@@ -32,7 +32,12 @@ const features = [
   {
     icon: '☁️',
     title: 'Google Drive Sync',
-    desc: 'Push and pull your financial data to your own Google Drive account. Access your finances across multiple devices while keeping everything private, encrypted, and completely under your control.',
+    desc: 'Turn on Google Drive sync and every change is saved to your own Drive within seconds, then picked up by your other browsers and the Android app. Edits and deletions merge record by record, daily copies let you restore an earlier version, and you can switch to manual backup anytime.',
+  },
+  {
+    icon: '📱',
+    title: 'Android App',
+    desc: 'Use SpendTrak as a native Android app with fingerprint or face unlock, reminders and bill alerts as real notifications, and exports saved straight to your phone. It syncs with the web app automatically through your Google Drive.',
   },
   {
     icon: '🏦',
@@ -121,6 +126,7 @@ export default function FeaturesPage() {
           <span>→</span>
         </Link>
         <div className="mkt-cross-links">
+          <Link href="/android" className="mkt-cross-link">Get the Android app</Link>
           <Link href="/faq" className="mkt-cross-link">Have questions? Read the FAQ</Link>
           <Link href="/about" className="mkt-cross-link">Learn more about SpendTrak</Link>
         </div>

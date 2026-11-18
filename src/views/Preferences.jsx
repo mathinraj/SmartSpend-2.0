@@ -1476,6 +1476,17 @@ export default function Preferences() {
           <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
         </a>
 
+        <a href="/android" className="pref-developer-card" style={{ marginBottom: 8 }}>
+          <div className="pref-dev-avatar" style={{ background: '#3DDC84' }}>
+            <i className="fa-brands fa-android" style={{ fontSize: '1.1rem' }} />
+          </div>
+          <div className="pref-dev-info">
+            <p className="pref-dev-name">SpendTrak for Android</p>
+            <p className="pref-dev-role">Free app that syncs with this one through Google Drive</p>
+          </div>
+          <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-light)', fontSize: '0.75rem' }} />
+        </a>
+
         {!isDesktop && (
           <a href="/feedback" className="pref-developer-card" style={{ marginBottom: 8 }}>
             <div className="pref-dev-avatar" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)' }}>

@@ -43,7 +43,11 @@ const faqs = [
   },
   {
     q: 'Can I sync my data across devices?',
-    a: 'Yes! SpendTrak supports Google Drive sync. You can push your data to your own Google Drive account and pull it on another device. Your data goes directly between your browser and your Google Drive — no middleman servers.',
+    a: 'Yes! Connect Google Drive in Preferences and SpendTrak syncs automatically: each change is saved to your own Drive within seconds and picked up by your other browsers and the Android app. Prefer to decide when? Switch to manual backup. Your data goes directly between your device and your Google Drive — no middleman servers.',
+  },
+  {
+    q: 'Is there an Android app?',
+    a: 'Yes. SpendTrak for Android is free and has every web feature plus fingerprint unlock, real notifications, and exports to your phone. Download the APK from the Android page; it syncs with the web app through your Google Drive.',
   },
   {
     q: 'What happens if I clear my browser data?',
@@ -51,7 +55,7 @@ const faqs = [
   },
   {
     q: 'Can I install SpendTrak as an app?',
-    a: 'Yes! SpendTrak is a Progressive Web App (PWA). On mobile, tap "Add to Home Screen" in your browser menu. On desktop Chrome, click the install icon in the address bar. You\'ll get a native app experience — fast, fullscreen, and always ready.',
+    a: 'Yes! On Android, get the native SpendTrak app from the Android page. SpendTrak is also a Progressive Web App (PWA): on mobile, tap "Add to Home Screen" in your browser menu; on desktop Chrome, click the install icon in the address bar.',
   },
   {
     q: 'What types of accounts can I track?',
@@ -121,6 +125,7 @@ export default function FAQPage() {
         </Link>
         <div className="mkt-cross-links">
           <Link href="/features" className="mkt-cross-link">See all features</Link>
+          <Link href="/android" className="mkt-cross-link">Get the Android app</Link>
           <Link href="/about" className="mkt-cross-link">Learn more about SpendTrak</Link>
         </div>
       </section>
