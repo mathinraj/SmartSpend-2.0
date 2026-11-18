@@ -5,6 +5,7 @@ export default function sitemap() {
     { path: '/', priority: 1.0, changeFrequency: 'daily' },
     { path: '/features', priority: 0.8, changeFrequency: 'monthly' },
     { path: '/android', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/changelog', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/faq', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/add', priority: 0.9, changeFrequency: 'daily' },

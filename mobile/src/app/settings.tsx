@@ -84,7 +84,7 @@ export default function SettingsScreen() {
   function confirmOpenWeb() {
     showDialog(
       'SpendTrak on the web',
-      `Use SpendTrak in any browser at ${WEB_APP_HOST}, on your computer or phone. Data isn't synced automatically: to use the same data there, export a data backup here and import it on the web (and the other way round).`,
+      `Use SpendTrak in any browser at ${WEB_APP_HOST}, on your computer or phone. To see the same data there, turn on Google Drive sync here and on the web with the same Google account.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {

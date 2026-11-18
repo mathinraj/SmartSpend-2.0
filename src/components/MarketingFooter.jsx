@@ -18,6 +18,7 @@ export default function MarketingFooter({ showCoindropButton }) {
             <p className="mkt-footer-col-title">Product</p>
             <Link href="/features">Features</Link>
             <Link href="/android">Android app</Link>
+            <Link href="/changelog">What&apos;s new</Link>
             <Link href="/faq">FAQ</Link>
             <Link href="/about">About</Link>
           </div>
