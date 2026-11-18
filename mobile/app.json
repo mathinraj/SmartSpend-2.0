@@ -8,14 +8,14 @@
     "scheme": "spendtrak",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.mathinraj.spendtrak"
     },
     "android": {
       "package": "com.mathinraj.spendtrak",
       "versionCode": 9,
       "adaptiveIcon": {
-        "backgroundColor": "#6C5CE7",
+        "backgroundColor": "#1C1245",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -31,9 +31,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#6C5CE7",
+          "backgroundColor": "#1C1245",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 72
         }
       ],
       "expo-sqlite",
@@ -43,7 +43,8 @@
       [
         "expo-notifications",
         {
-          "color": "#6C5CE7"
+          "color": "#6C5CE7",
+          "icon": "./assets/images/notification-icon.png"
         }
       ],
       [

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { hasSampleData } from '../utils/sampleData';
-import { getCurrencySymbol } from '../utils/currencies';
 import './Sidebar.css';
 
 const FEEDBACK_LABELS = [
@@ -72,7 +71,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <Link href="/" className="sidebar-brand">
-        <span className="sidebar-logo">{getCurrencySymbol(state.settings.currency)}</span>
+        <img src="/logo-icon.svg" alt="" className="sidebar-logo" />
         <h2 className="sidebar-title">SpendTrak</h2>
       </Link>
 

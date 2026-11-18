@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   flex-wrap: wrap;
 }
 
@@ -19,22 +19,23 @@
 }
 
 .breadcrumbs-link {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--st-ink-faint, #8A938E);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color 150ms ease-out;
 }
 
 .breadcrumbs-link:hover {
-  color: #A29BFE;
+  color: var(--st-accent, #087A5C);
 }
 
 .breadcrumbs-sep {
   margin: 0 8px;
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 0.75rem;
+  color: var(--st-ink-faint, #8A938E);
+  opacity: 0.6;
+  font-size: 0.78rem;
 }
 
 .breadcrumbs-current {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--st-ink, #121614);
   font-weight: 600;
 }

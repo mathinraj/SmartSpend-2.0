@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Android 13+ themed icon: one colour; the launcher tints it. A gap keeps the two ribbons readable. -->
+  <defs>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <path d="M256 260 C300 266 336 296 312 336" fill="none" stroke="#000" stroke-width="84" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <g transform="translate(256 257) scale(.6) translate(-256 -257)" fill="none" stroke="#fff" stroke-width="60" stroke-linecap="round">
+    <path d="M334 178 C306 140 222 140 198 184 C176 224 212 254 256 260" mask="url(#cut)"/>
+    <path d="M256 260 C300 266 336 296 312 336 C288 376 204 374 178 334"/>
+  </g>
+</svg>

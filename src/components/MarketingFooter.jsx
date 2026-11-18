@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ANDROID_RELEASES_URL } from '../utils/androidApp';
+import './SiteTheme.css';
 import './MarketingFooter.css';
 
 export default function MarketingFooter({ showCoindropButton }) {
@@ -7,7 +8,7 @@ export default function MarketingFooter({ showCoindropButton }) {
     <footer className="mkt-footer">
       <div className="mkt-footer-inner">
         <div className="mkt-footer-brand">
-          <span className="mkt-footer-logo">🪙</span>
+          <img src="/logo-icon.svg" alt="" className="mkt-footer-logo" />
           <span className="mkt-footer-name">SpendTrak</span>
           <p className="mkt-footer-tagline">Your money, your rules.</p>
         </div>
@@ -21,8 +22,8 @@ export default function MarketingFooter({ showCoindropButton }) {
             <Link href="/about">About</Link>
           </div>
           <div className="mkt-footer-col">
-            <p className="mkt-footer-col-title">Get Started</p>
-            <Link href="/">Open App</Link>
+            <p className="mkt-footer-col-title">Use SpendTrak</p>
+            <Link href="/">Open the web app</Link>
             <a href={ANDROID_RELEASES_URL} target="_blank" rel="noopener noreferrer">Download for Android</a>
           </div>
         </div>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SpendTrak logo options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; background: #F3F2FA; color: #2D3436; padding: 36px; }
+  h1 { font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+  .sub { color: #636E72; margin-bottom: 28px; font-size: 14px; }
+  .strip { display: flex; justify-content: space-between; margin-bottom: 28px; }
+  .strip figure { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .strip img { width: 190px; height: 190px; filter: drop-shadow(0 12px 24px rgba(90, 75, 209, 0.3)); }
+  .strip figcaption { font-weight: 900; color: #6C5CE7; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .card { background: #fff; border-radius: 22px; padding: 22px; box-shadow: 0 4px 18px rgba(108, 92, 231, 0.08); }
+  .head { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+  .big { width: 120px; height: 120px; filter: drop-shadow(0 8px 18px rgba(90, 75, 209, 0.3)); }
+  .tag { font-size: 12px; font-weight: 800; color: #6C5CE7; letter-spacing: 1px; }
+  .name { font-size: 18px; font-weight: 800; margin: 2px 0 4px; }
+  .idea { font-size: 12.5px; color: #636E72; line-height: 1.45; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; background: #F8F9FE; margin-top: 10px; }
+  .row.dark { background: #1A1040; color: #fff; }
+  .s48 { width: 48px; height: 48px; }
+  .s32 { width: 32px; height: 32px; }
+  .s16 { width: 16px; height: 16px; }
+  .round { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; }
+  .round img { width: 64px; height: 64px; margin: -8px; }
+  .label { font-size: 11px; color: #95A0A6; margin-left: auto; }
+  .row.dark .label { color: rgba(255,255,255,0.45); }
+  .word { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+  .word img { width: 40px; height: 40px; }
+  .word span { color: #6C5CE7; }
+  .row.dark .word span { color: #A29BFE; }
+</style>
+</head>
+<body>
+  <h1>SpendTrak — logo options</h1>
+  <p class="sub">App icon, small sizes, Android round mask, dark background, and wordmark lockup.</p>
+  <div class="strip" id="strip"></div>
+  <div class="grid" id="grid"></div>
+  <script>
+    const options = [
+      ['A', 'a-trend-coin', 'Trend Coin', 'A coin with a rising line: money that you track and grow. Clear at any size.'],
+      ['B', 'b-s-route', 'S Route', 'An "S" drawn as a route with a gold coin at the start: tracking where money goes.'],
+      ['C', 'c-private-wallet', 'Private Wallet', 'A wallet with a keyhole and a gold card: your money, locked to you.'],
+      ['D', 'd-donut', 'Spend Donut', 'A category donut chart: analytics at a glance, abstract and modern.'],
+      ['E', 'e-coin-stacks', 'Coin Stacks', 'Coins stacked into rising bars with a trend line: savings that grow.'],
+      ['F', 'f-checked-tag', 'Checked Tag', 'A price tag with a tick: every expense logged and accounted for.'],
+    ];
+    document.getElementById('strip').innerHTML = options
+      .map(([letter, file]) => `<figure><img src="${file}.svg" alt=""><figcaption>${letter}</figcaption></figure>`)
+      .join('');
+    document.getElementById('grid').innerHTML = options.map(([letter, file, name, idea]) => `
+      <div class="card">
+        <div class="head">
+          <img class="big" src="${file}.svg" alt="">
+          <div><div class="tag">OPTION ${letter}</div><div class="name">${name}</div><div class="idea">${idea}</div></div>
+        </div>
+        <div class="row">
+          <img class="s48" src="${file}.svg" alt=""><img class="s32" src="${file}.svg" alt=""><img class="s16" src="${file}.svg" alt="">
+          <div class="round"><img src="${file}.svg" alt=""></div>
+          <span class="label">48 · 32 · 16 · round</span>
+        </div>
+        <div class="row dark">
+          <div class="word"><img src="${file}.svg" alt=""><b>Spend<span>Trak</span></b></div>
+          <span class="label">on dark</span>
+        </div>
+        <div class="row">
+          <div class="word"><img src="${file}.svg" alt=""><b>Spend<span>Trak</span></b></div>
+          <span class="label">on light</span>
+        </div>
+      </div>`).join('');
+  </script>
+</body>
+</html>

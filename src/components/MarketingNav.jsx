@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import './SiteTheme.css';
 import './MarketingNav.css';
 
 const navLinks = [
@@ -20,7 +21,7 @@ export default function MarketingNav({ onGetStarted }) {
     <nav className="marketing-nav" aria-label="Main navigation">
       <div className="marketing-nav-inner">
         <Link href="/" className="marketing-nav-brand">
-          <span className="marketing-nav-logo">🪙</span>
+          <img src="/logo-icon.svg" alt="" className="marketing-nav-logo" />
           <span className="marketing-nav-name">SpendTrak</span>
         </Link>
 
@@ -48,11 +49,11 @@ export default function MarketingNav({ onGetStarted }) {
           ))}
           {onGetStarted ? (
             <button className="marketing-nav-cta" onClick={() => { setMenuOpen(false); onGetStarted(); }}>
-              Get Started
+              Start tracking
             </button>
           ) : (
             <Link href="/" className="marketing-nav-cta" onClick={() => setMenuOpen(false)}>
-              Get Started
+              Start tracking
             </Link>
           )}
         </div>

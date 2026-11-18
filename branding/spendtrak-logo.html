@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SpendTrak logo · Ribbon S</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0e0924; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; padding: 40px; width: 1580px; }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.4px; }
+  .sub { color: rgba(255,255,255,.55); font-size: 14px; margin: 6px 0 28px; }
+  .grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 20px; }
+  .panel { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 24px; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,.5); margin-bottom: 18px; font-weight: 700; }
+  .hero { display: flex; align-items: center; gap: 28px; }
+  .hero > img { width: 220px; height: 220px; }
+  .lockups { display: flex; flex-direction: column; gap: 16px; flex: 1; }
+  .lockup { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-radius: 16px; }
+  .lockup img { height: 44px; }
+  .lockup span { font-size: 30px; font-weight: 900; letter-spacing: -1px; }
+  .lockup.dark { background: #1a1040; }
+  .lockup.light { background: #f6f5fd; color: #2d1b69; }
+  .ladder { display: flex; align-items: flex-end; gap: 18px; }
+  .ladder div { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,.45); }
+  .wall { border-radius: 18px; padding: 22px; display: flex; gap: 22px; align-items: center; justify-content: center; }
+  .wall.dark { background: linear-gradient(160deg, #2b3a55, #121826); }
+  .wall.light { background: linear-gradient(160deg, #f2e6d9, #d8e4f2); margin-top: 14px; }
+  .adaptive { width: 64px; height: 64px; overflow: hidden; position: relative; }
+  .adaptive img { position: absolute; width: 96px; height: 96px; left: -16px; top: -16px; }
+  .circle { border-radius: 50%; }
+  .squircle { border-radius: 30%; }
+  .rounded { border-radius: 18%; }
+  .drop { border-radius: 50% 50% 50% 14%; }
+  .label { text-align: center; font-size: 11px; margin-top: 6px; color: rgba(255,255,255,.6); }
+  .wall.light .label { color: #555; }
+  .themed { width: 64px; height: 64px; border-radius: 50%; background: #e7defc; display: grid; place-items: center; position: relative; overflow: hidden; }
+  .themed i { position: absolute; inset: -16px; background: #4a3a8a; -webkit-mask: url(spendtrak-adaptive-monochrome.svg) center / 100% 100% no-repeat; mask: url(spendtrak-adaptive-monochrome.svg) center / 100% 100% no-repeat; }
+  .themed.dark { background: #2b2445; }
+  .themed.dark i { background: #d3c9ff; }
+  .phones { display: flex; gap: 18px; }
+  .phone { width: 150px; height: 300px; border-radius: 26px; padding: 7px; background: #05030f; border: 2px solid rgba(255,255,255,.12); }
+  .screen { width: 100%; height: 100%; border-radius: 20px; position: relative; overflow: hidden; }
+  .splash { background: #150d36; display: grid; place-items: center; }
+  .splash img { width: 54px; }
+  .notif { background: linear-gradient(170deg, #3e4b6b, #1b2232); padding: 10px 8px; }
+  .status { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #fff; margin-bottom: 14px; }
+  .status img { width: 10px; }
+  .card { background: rgba(255,255,255,.92); color: #222; border-radius: 12px; padding: 8px; font-size: 8.5px; line-height: 1.35; }
+  .card .head { display: flex; align-items: center; gap: 5px; color: #6c5ce7; font-weight: 700; margin-bottom: 3px; }
+  .card .head i { width: 12px; height: 12px; border-radius: 50%; background: #6c5ce7; display: grid; place-items: center; }
+  .card .head i img { width: 7px; }
+  .browser { background: #dee1e6; border-radius: 12px; overflow: hidden; }
+  .tabs { display: flex; padding: 8px 8px 0; gap: 6px; }
+  .tab { background: #fff; border-radius: 9px 9px 0 0; padding: 8px 12px; font-size: 12px; color: #333; display: flex; align-items: center; gap: 8px; width: 210px; }
+  .tab img { width: 16px; height: 16px; }
+  .tab.off { background: transparent; color: #666; }
+  .page { background: #1a1040; padding: 16px 18px; display: flex; align-items: center; gap: 10px; }
+  .page img { height: 28px; }
+  .page span { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  .swatches { display: flex; gap: 10px; margin-top: 16px; }
+  .sw { flex: 1; border-radius: 12px; padding: 34px 10px 8px; font-size: 10.5px; font-family: ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+  <h1>SpendTrak · Ribbon S</h1>
+  <p class="sub">Two ribbons — lilac for money going out, mint for money coming in — forming one S. Final artwork and how it appears across Android and the web.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>App icon and lockups</h2>
+      <div class="hero">
+        <img src="spendtrak-icon.svg" alt="">
+        <div class="lockups">
+          <div class="lockup dark"><img src="spendtrak-mark.svg" alt=""><span>SpendTrak</span></div>
+          <div class="lockup light"><img src="spendtrak-mark.svg" alt=""><span>SpendTrak</span></div>
+        </div>
+      </div>
+      <div class="swatches">
+        <div class="sw" style="background:#33227A">#33227A</div>
+        <div class="sw" style="background:#120A2E">#120A2E</div>
+        <div class="sw" style="background:#8F81FF">#8F81FF</div>
+        <div class="sw" style="background:#DCD8FF;color:#2d1b69">#DCD8FF</div>
+        <div class="sw" style="background:#0FB38B">#0FB38B</div>
+        <div class="sw" style="background:#52F5CB;color:#063">#52F5CB</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Sizes</h2>
+      <div class="ladder">
+        <div><img src="spendtrak-icon.svg" width="128" alt="">128</div>
+        <div><img src="spendtrak-icon.svg" width="72" alt="">72</div>
+        <div><img src="spendtrak-icon.svg" width="48" alt="">48</div>
+        <div><img src="spendtrak-icon.svg" width="32" alt="">32</div>
+        <div><img src="spendtrak-icon.svg" width="20" alt="">20</div>
+      </div>
+      <h2 style="margin-top:26px">Browser tab and web header</h2>
+      <div class="browser">
+        <div class="tabs"><div class="tab"><img src="spendtrak-icon.svg" alt="">SpendTrak — Expense…</div><div class="tab off">New tab</div></div>
+        <div class="page"><img src="spendtrak-mark.svg" alt=""><span>SpendTrak</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Android launcher shapes</h2>
+      <div class="wall dark">
+        <div><div class="adaptive circle"><img src="spendtrak-adaptive-background.svg" alt=""><img src="spendtrak-adaptive-foreground.svg" alt=""></div><p class="label">Circle</p></div>
+        <div><div class="adaptive squircle"><img src="spendtrak-adaptive-background.svg" alt=""><img src="spendtrak-adaptive-foreground.svg" alt=""></div><p class="label">Squircle</p></div>
+        <div><div class="adaptive rounded"><img src="spendtrak-adaptive-background.svg" alt=""><img src="spendtrak-adaptive-foreground.svg" alt=""></div><p class="label">Rounded</p></div>
+        <div><div class="adaptive drop"><img src="spendtrak-adaptive-background.svg" alt=""><img src="spendtrak-adaptive-foreground.svg" alt=""></div><p class="label">Teardrop</p></div>
+      </div>
+      <div class="wall light">
+        <div><div class="themed"><i></i></div><p class="label">Themed (light)</p></div>
+        <div><div class="themed dark"><i></i></div><p class="label">Themed (dark)</p></div>
+        <div><div class="adaptive circle"><img src="spendtrak-adaptive-background.svg" alt=""><img src="spendtrak-adaptive-foreground.svg" alt=""></div><p class="label">Default</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:20px; grid-template-columns: 1fr 2.15fr;">
+    <div class="panel">
+      <h2>Splash and notifications</h2>
+      <div class="phones">
+        <div class="phone"><div class="screen splash"><img src="spendtrak-mark.svg" alt=""></div></div>
+        <div class="phone"><div class="screen notif">
+          <div class="status">9:41 <img src="spendtrak-notification.svg" alt=""></div>
+          <div class="card"><div class="head"><i><img src="spendtrak-notification.svg" alt=""></i>SpendTrak · now</div><b>Rent is due tomorrow</b><br>₹18,000 from HDFC Savings</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="panel" style="display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at 50% 50%, rgba(124,108,245,.25), transparent 60%), rgba(255,255,255,.04);">
+      <img src="spendtrak-mark.svg" style="height: 270px" alt="">
+    </div>
+  </div>
+</body>
+</html>

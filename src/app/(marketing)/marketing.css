@@ -1,127 +1,133 @@
-/* ─── Marketing page shell ────────────────── */
+/* ─── Marketing pages (features, FAQ, about, Android) ─────────────────
+   Same tokens as the landing page (components/SiteTheme.css). */
 .marketing-page {
-  --landing-purple: #6C5CE7;
-  --landing-purple-light: #A29BFE;
-  --landing-dark: #1a1040;
-  color: white;
   min-height: 100vh;
-  background: var(--landing-dark);
 }
 
 .marketing-content {
-  max-width: 800px;
+  max-width: 880px;
   margin: 0 auto;
-  padding: 80px 24px 64px; /* top accounts for fixed nav */
+  padding: 84px var(--st-gutter) 72px;
 }
 
-/* ─── Page header ─────────────────────────── */
+/* ─── Page header ─── */
 .mkt-page-header {
-  text-align: center;
-  margin-bottom: 48px;
+  margin: 40px 0 48px;
 }
 
 .mkt-page-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--landing-purple-light);
-  margin-bottom: 10px;
-}
-
-.mkt-page-title {
-  font-size: 2.2rem;
-  font-weight: 900;
-  letter-spacing: -0.5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--st-accent);
   margin-bottom: 12px;
 }
 
-.mkt-page-subtitle {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.55);
-  line-height: 1.6;
-  max-width: 560px;
-  margin: 0 auto;
+.mkt-page-title {
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  margin-bottom: 14px;
+  text-wrap: balance;
 }
 
-/* ─── Feature cards (features page) ───────── */
+.mkt-page-subtitle {
+  font-size: 1.06rem;
+  color: var(--st-ink-soft);
+  line-height: 1.65;
+  max-width: 58ch;
+  text-wrap: pretty;
+}
+
+/* ─── Feature list (features and Android pages) ─── */
 .mkt-features-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
-  margin-bottom: 56px;
+  margin-bottom: 64px;
+  border-top: 1px solid var(--st-line);
 }
 
 .mkt-feature-card {
-  padding: 28px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  transition: background 0.2s;
-}
-
-.mkt-feature-card:hover {
-  background: rgba(255, 255, 255, 0.07);
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-rows: auto 1fr;
+  column-gap: 18px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--st-line);
 }
 
 .mkt-feature-icon {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 14px;
+  grid-row: span 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--st-accent-soft);
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
 }
 
 .mkt-feature-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  margin-bottom: 8px;
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
 }
 
 .mkt-feature-desc {
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.7;
+  font-size: 0.98rem;
+  color: var(--st-ink-soft);
+  line-height: 1.65;
+  max-width: 64ch;
 }
 
-/* ─── FAQ accordion ───────────────────────── */
+/* ─── FAQ accordion ─── */
 .mkt-faq-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 56px;
+  margin-bottom: 64px;
+  border-top: 1px solid var(--st-line);
 }
 
 .mkt-faq-item {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  overflow: hidden;
+  border-bottom: 1px solid var(--st-line);
 }
 
 .mkt-faq-question {
   width: 100%;
   background: none;
   border: none;
-  color: white;
-  padding: 20px 24px;
-  font-size: 0.95rem;
-  font-weight: 700;
+  color: var(--st-ink);
+  padding: 22px 0;
+  font: inherit;
+  font-size: 1.04rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   text-align: left;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  transition: background 0.2s;
 }
 
 .mkt-faq-question:hover {
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--st-accent);
+}
+
+.mkt-faq-question:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 .mkt-faq-chevron {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-  transition: transform 0.3s;
+  font-size: 0.75rem;
+  color: var(--st-ink-faint);
+  transition: transform 250ms var(--st-ease);
   flex-shrink: 0;
 }
 
@@ -132,182 +138,173 @@
 .mkt-faq-answer {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.35s ease, padding 0.35s ease;
+  transition: max-height 350ms var(--st-ease);
 }
 
 .mkt-faq-item.open .mkt-faq-answer {
-  max-height: 300px;
+  max-height: 320px;
 }
 
 .mkt-faq-answer-inner {
-  padding: 0 24px 20px;
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.5);
+  padding: 0 0 22px;
+  font-size: 0.98rem;
+  color: var(--st-ink-soft);
   line-height: 1.7;
+  max-width: 68ch;
 }
 
-/* ─── About sections ──────────────────────── */
+/* ─── About ─── */
 .mkt-about-section {
-  margin-bottom: 48px;
+  margin-bottom: 56px;
 }
 
 .mkt-about-section h2 {
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin-bottom: 16px;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.025em;
 }
 
 .mkt-about-text {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.55);
-  line-height: 1.8;
-  margin-bottom: 12px;
+  font-size: 1.02rem;
+  color: var(--st-ink-soft);
+  line-height: 1.75;
+  margin-bottom: 14px;
+  max-width: 66ch;
 }
 
 .mkt-about-values {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
   margin-top: 24px;
+  border-top: 1px solid var(--st-line);
 }
 
 .mkt-about-value {
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--st-line);
 }
 
 .mkt-about-value h3 {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 650;
   margin-bottom: 6px;
 }
 
 .mkt-about-value p {
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.95rem;
+  color: var(--st-ink-soft);
   line-height: 1.6;
 }
 
 .mkt-about-creator {
   padding: 28px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  background: var(--st-surface);
+  border: 1px solid var(--st-line);
+  border-radius: var(--st-radius);
 }
 
 .mkt-about-creator h3 {
   font-size: 1.1rem;
-  font-weight: 800;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 
 .mkt-about-creator p {
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.98rem;
+  color: var(--st-ink-soft);
   line-height: 1.7;
   margin-bottom: 8px;
 }
 
 .mkt-about-creator a {
-  color: var(--landing-purple-light);
+  color: var(--st-accent);
   text-decoration: none;
   font-weight: 600;
 }
 
 .mkt-about-creator a:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-/* ─── Shared CTA section ──────────────────── */
+/* ─── Closing call to action ─── */
 .mkt-cta-section {
   text-align: center;
-  padding: 48px 0;
+  padding: 56px 0 16px;
   margin-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--st-line);
 }
 
 .mkt-cta-title {
-  font-size: 1.5rem;
-  font-weight: 900;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   margin-bottom: 10px;
 }
 
 .mkt-cta-desc {
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 24px;
+  font-size: 1.02rem;
+  color: var(--st-ink-soft);
+  margin-bottom: 28px;
 }
 
 .mkt-cta-btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 36px;
-  background: white;
-  color: var(--landing-purple);
-  border: none;
-  border-radius: 14px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  cursor: pointer;
+  min-height: 48px;
+  padding: 0 24px;
+  background: var(--st-accent);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
   text-decoration: none;
-  transition: transform 0.2s;
+  transition: background-color 150ms var(--st-ease), transform 120ms var(--st-ease);
 }
 
 .mkt-cta-btn:hover {
-  transform: translateY(-2px);
+  background: var(--st-accent-hover);
 }
 
-/* ─── Cross-links ─────────────────────────── */
+.mkt-cta-btn:active {
+  transform: translateY(1px);
+}
+
+/* ─── Cross-links ─── */
 .mkt-cross-links {
   display: flex;
   justify-content: center;
-  gap: 24px;
+  gap: 28px;
   flex-wrap: wrap;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .mkt-cross-link {
-  font-size: 0.85rem;
-  color: var(--landing-purple-light);
+  font-size: 0.92rem;
+  color: var(--st-accent);
   text-decoration: none;
   font-weight: 600;
-  transition: opacity 0.2s;
 }
 
 .mkt-cross-link:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-/* ─── Desktop ─────────────────────────────── */
 @media (min-width: 768px) {
   .marketing-content {
-    padding: 100px 40px 80px;
-  }
-
-  .mkt-page-title {
-    font-size: 2.6rem;
+    padding-top: 100px;
   }
 
   .mkt-features-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    column-gap: 48px;
   }
 
   .mkt-about-values {
     grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mkt-features-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-
-  .mkt-about-values {
-    grid-template-columns: 1fr 1fr 1fr;
+    column-gap: 40px;
   }
 }
