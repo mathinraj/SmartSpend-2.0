@@ -5,127 +5,38 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { CURRENCIES } from '@/constants/currencies';
-import { createAccount, listAccounts } from '@/db/accounts';
-import { listCategories } from '@/db/categories';
-import { listPlanned } from '@/db/planned';
+import { createAccount } from '@/db/accounts';
 import { getSettings, writeSettings } from '@/db/settings';
-import { listAllSplitEntries } from '@/db/splits';
+import { readSnapshot } from '@/db/sync';
 import { applyBalance, insertTransaction, listTransactions, type NewTransaction } from '@/db/transactions';
 import { toDateKey } from '@/lib/format';
-import type {
-  AccountType,
-  HomeView,
-  PlannedFrequency,
-  SplitAmountMode,
-  SplitEntryType,
-  ThemePreference,
-  TransactionSource,
-  TransactionType,
-} from '@/types/models';
+import {
+  ACCOUNT_TYPES,
+  FREQUENCIES,
+  HOME_VIEWS,
+  InvalidBackupError,
+  SOURCES,
+  SPLIT_MODES,
+  SPLIT_TYPES,
+  THEMES,
+  TXN_TYPES,
+  bool,
+  dateKey,
+  day,
+  isObject,
+  list,
+  num,
+  oneOf,
+  snapshotToFile,
+  text,
+} from '@/lib/sync-format';
 
+export { InvalidBackupError };
+
+/** The whole database as a backup file (sample data included, as the user sees it). */
 export async function buildBackup(db: SQLiteDatabase, appVersion: string) {
-  const [settings, accounts, transactions, expense, income, planned, splits] = await Promise.all([
-    getSettings(db),
-    listAccounts(db),
-    listTransactions(db),
-    listCategories(db, 'expense'),
-    listCategories(db, 'income'),
-    listPlanned(db),
-    listAllSplitEntries(db),
-  ]);
-
-  return {
-    _app: 'SpendTrak',
-    _version: appVersion,
-    _source: 'android',
-    _exportedAt: new Date().toISOString(),
-    settings: {
-      currency: settings.currency,
-      profileName: settings.profileName,
-      splitPeople: settings.splitPeople,
-      splitBankDeduction: settings.splitBankDeduction,
-      splitExpenseRecord: settings.splitExpenseRecord,
-      theme: settings.theme,
-      homeView: settings.homeView,
-      showBalanceStats: settings.showBalanceStats,
-      showAccountsOnHome: settings.showAccountsOnHome,
-      showSplitOnHome: settings.showSplitOnHome,
-      excludeCCFromBalance: settings.excludeCCFromBalance,
-      hideBalances: settings.hideBalances,
-      defaultTxnType: settings.defaultTxnType,
-      customAccountTypes: settings.customAccountTypes,
-      paymentApps: settings.paymentApps,
-      trackPaymentApp: settings.trackPaymentApp,
-      splitEnabled: true,
-      plannedEnabled: true,
-    },
-    accounts: accounts.map((a) => ({
-      id: a.id,
-      name: a.name,
-      type: a.type,
-      subType: a.subType,
-      balance: a.balance,
-      icon: a.icon,
-      billingDate: a.billingDay,
-      dueDate: a.dueDay,
-      creditLimit: a.creditLimit,
-      customTypeId: a.customTypeId,
-      logoUrl: a.logoUrl,
-    })),
-    transactions: transactions.map((t) => ({
-      id: t.id,
-      type: t.type,
-      amount: t.amount,
-      accountId: t.accountId,
-      fromAccountId: t.fromAccountId,
-      toAccountId: t.toAccountId,
-      categoryId: t.categoryId,
-      subcategoryId: t.subcategoryId,
-      note: t.note ?? '',
-      date: t.date,
-      time: t.time,
-      isSplit: t.isSplit,
-      splitAmount: t.splitAmount ?? 0,
-      deductMyShare: t.deductMyShare,
-      source: t.source,
-      paymentApp: t.paymentApp,
-      createdAt: t.createdAt,
-    })),
-    categories: {
-      expense: expense.map((c) => ({
-        id: c.id,
-        name: c.name,
-        icon: c.icon,
-        color: c.color,
-        subcategories: c.subcategories.map((s) => ({ id: s.id, name: s.name })),
-      })),
-      income: income.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color })),
-    },
-    plannedPayments: planned.map((p) => ({
-      id: p.id,
-      name: p.name,
-      amount: p.amount,
-      accountId: p.accountId,
-      categoryId: p.categoryId,
-      frequency: p.frequency,
-      nextDate: p.nextDate,
-      note: p.note ?? '',
-      enabled: p.enabled,
-      lastPaidDate: p.lastPaidDate,
-      createdAt: p.createdAt,
-    })),
-    splitLedger: splits.map((e) => ({
-      id: e.id,
-      type: e.type,
-      person: e.person,
-      amount: e.amount,
-      direction: e.direction,
-      note: e.note ?? '',
-      date: e.date,
-      transactionId: e.transactionId,
-      createdAt: e.createdAt,
-    })),
-  };
+  const snapshot = await readSnapshot(db, { includeSample: true });
+  return snapshotToFile(snapshot, { appVersion, exportedAt: new Date().toISOString() });
 }
 
 function csvCell(value: string | number | null | undefined): string {
@@ -148,41 +59,7 @@ export async function buildTransactionsCsv(db: SQLiteDatabase): Promise<string> 
 
 // ---- Import --------------------------------------------------------------------------------------
 
-type Raw = Record<string, unknown>;
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
-const ACCOUNT_TYPES: AccountType[] = ['bank', 'card', 'cash', 'wallet', 'custom'];
-const TXN_TYPES: TransactionType[] = ['expense', 'income', 'transfer'];
-const SOURCES: TransactionSource[] = ['manual', 'sms', 'import'];
-const FREQUENCIES: PlannedFrequency[] = ['once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
-const SPLIT_TYPES: SplitEntryType[] = ['split_paid', 'split_owed', 'settlement'];
-const SPLIT_MODES: SplitAmountMode[] = ['full', 'my_share'];
-const THEMES: ThemePreference[] = ['system', 'light', 'dark'];
-const HOME_VIEWS: HomeView[] = ['balance', 'expenses'];
-
-const isObject = (v: unknown): v is Raw => typeof v === 'object' && v !== null && !Array.isArray(v);
-const list = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter(isObject) : []);
-const text = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
-const num = (v: unknown): number | null => {
-  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number.parseFloat(v) : NaN;
-  return Number.isFinite(n) ? n : null;
-};
-const day = (v: unknown): number | null => {
-  const n = num(v);
-  return n !== null && n >= 1 && n <= 31 ? Math.round(n) : null;
-};
-const dateKey = (v: unknown): string | null => {
-  const s = text(v);
-  if (!s) return null;
-  if (DATE_RE.test(s)) return s;
-  return DATE_RE.test(s.slice(0, 10)) ? s.slice(0, 10) : null;
-};
-const oneOf = <T extends string>(v: unknown, options: T[]): T | null =>
-  options.includes(v as T) ? (v as T) : null;
-const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null);
-
-export class InvalidBackupError extends Error {}
 
 export interface ImportSummary {
   accounts: number;

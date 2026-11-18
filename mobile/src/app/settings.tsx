@@ -13,15 +13,18 @@ import { Text } from '@/components/ui/text';
 import { getCurrency } from '@/constants/currencies';
 import { resetAllData } from '@/db/reset';
 import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-data';
+import { getSyncState } from '@/db/sync';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { exportWithPrompt, importBackupWithPrompt } from '@/lib/backup-actions';
 import { showDialog } from '@/lib/dialog';
+import { disconnectDrive, useSyncStatus } from '@/lib/drive-sync';
 import { addDays, formatShortDate, toDateKey } from '@/lib/format';
 import { EMPTY_HISTORY_FILTERS, setHistoryFilters } from '@/lib/history-filters';
 import { clearPin } from '@/lib/lock';
 import { deleteProfilePhoto } from '@/lib/profile-photo';
+import { describeSync } from '@/lib/sync-status';
 
 const THEME_LABELS = { system: 'System', light: 'Light', dark: 'Dark' } as const;
 const WEB_APP_HOST = 'spendtrak.vercel.app';
@@ -40,7 +43,10 @@ export default function SettingsScreen() {
   const colors = useTheme();
   const settings = useSettings();
   const sampleLoaded = useDbQuery(hasSampleData, ['accounts']);
+  const syncState = useDbQuery(getSyncState, ['sync_state']);
+  const syncStatus = useSyncStatus();
   const currency = settings ? getCurrency(settings.currency) : undefined;
+  const drive = syncState?.account ? describeSync(syncState, syncStatus) : null;
 
   function confirmRemoveSample() {
     showDialog('Remove sample data?', 'The demo accounts, transactions, planned payments, and split entries will be deleted. Your own data stays.', [
@@ -88,6 +94,7 @@ export default function SettingsScreen() {
   async function resetEverything() {
     try {
       await clearPin();
+      await disconnectDrive(db);
       setHistoryFilters(EMPTY_HISTORY_FILTERS);
       deleteProfilePhoto(settings?.profilePhotoUri ?? null);
       await resetAllData(db);
@@ -101,7 +108,7 @@ export default function SettingsScreen() {
       <SectionHeader title="Preferences" />
       <Card flush>
         <ListRow
-          leading={<ProfileAvatar size={28} photoUri={settings?.profilePhotoUri} />}
+          leading={<ProfileAvatar size={28} photoUri={settings?.profilePhotoUri ?? syncState?.account?.photo} />}
           title="Name"
           subtitle={settings?.profileName ?? 'Not set'}
           onPress={() => router.push('/profile')}
@@ -176,6 +183,13 @@ export default function SettingsScreen() {
       <SectionHeader title="Backup" />
       <Card flush>
         <ListRow
+          leading={<Icon name={drive ? drive.icon : 'cloud'} color={colors.primary} />}
+          title="Google Drive"
+          subtitle={drive ? `${drive.title} · ${syncState?.account?.email}` : 'Back up and sync with the web app'}
+          onPress={() => router.push('/drive')}
+        />
+        <ListRow
+          divider
           leading={<Icon name="upload" color={colors.primary} />}
           title="Export"
           subtitle={`Data backup, Excel, PDF, or CSV · ${lastBackupText(settings?.lastBackupAt ?? null)}`}

@@ -21,7 +21,7 @@ npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint, typecheck, and `npm test` before declaring any task done. Tests use Node's built-in test runner (no extra packages): `*.test.ts` files next to the code, with `node:sqlite` standing in for expo-sqlite in database tests (see `src/db/sync.test.ts`).
 
 ## Navigation & Routing
 
@@ -78,6 +78,7 @@ src/
 
 - All SQL lives in `src/db/`. Screens never call `db.runAsync` directly; they call a function from `src/db/*` and read with `useDbQuery(fn, watchedTables, ...args)`, which re-runs automatically when a watched table changes. Don't add global state stores for database data.
 - Schema changes: append a new function to `MIGRATIONS` in `src/db/migrations.ts`. Never edit a shipped migration.
+- Change tracking (for Drive sync) is done by SQLite triggers: rows get `updated_at` when a tracked column changes, and deletes leave a row in `deleted_records`. Plain SQL writes are tracked automatically; to apply data from elsewhere, use `mergeIntoDb` (it writes with explicit `updated_at` so rows aren't re-stamped). An account's balance changing isn't an edit; `updateAccount` stamps manual corrections itself. A new synced table or column needs: triggers in a new migration, `SYNC_COLUMNS` and the file mapping in `src/lib/sync-format.ts`, and the same change in the web app's `src/utils/syncFormat.js`.
 - History's running balance (`getRunningBalances`) is derived the other way round: it starts from stored balances and undoes `balanceDeltas` newest-first, so it stays correct only while every balance change goes through those deltas.
 - Account balances are stored, not derived. Only `addTransaction` / `deleteTransaction` (or a new function that uses the same `applyBalance` logic inside `withTransactionAsync`) may change them. Editing a transaction = reverse the old effect, apply the new one, in one SQL transaction.
 - Never write `DELETE FROM table` without a `WHERE`: SQLite then truncates the table in one step and skips the change events `useDbQuery` relies on, so screens show stale data. Use `DELETE FROM table WHERE 1` to clear a table.
@@ -104,6 +105,7 @@ src/
 - The lock PIN or password (`settings.lockType`) is stored only as a salted SHA-256 hash in `expo-secure-store`, never in SQLite or backups.
 - Logos (Brandfetch) and feedback (EmailJS) read `EXPO_PUBLIC_BRANDFETCH_CLIENT_ID` and `EXPO_PUBLIC_EMAILJS_*` from the gitignored `mobile/.env.local` (same public keys as the web app's `.env.local`); without them the logo picker hides and feedback explains it isn't set up. EAS cloud builds need these as EAS environment variables. EmailJS rejects app requests unless "Allow EmailJS API for non-browser applications" is on in its dashboard, and "Use Private Key" must stay off (a private key can't be kept secret inside an app).
 - Exports go through `exportWithPrompt` in `src/lib/backup-actions.ts`: "Save to Files" writes into a `spendtrak-backup` folder in Downloads through the Storage Access Framework (Android doesn't allow picking the Downloads root itself, so the user picks or creates the subfolder once; its URI is remembered in `settings.backupFolderUri`), "Share to an app" opens the share sheet. Only the JSON data backup can be imported; reports (Excel, PDF, CSV) are read-only.
+- Google Drive sync (`src/lib/drive-sync.ts`, screen `src/app/drive.tsx`): one gzip JSON file, `spendtrak-sync.json.gz`, in the hidden Drive app folder, shared with the web app (`src/utils/driveSync.js` and `syncFormat.js` in the repo root, which must stay in step with `src/lib/sync-format.ts` / `sync-merge.ts`). Merges are record by record: newer `updatedAt` wins, newer deletions remove, balances are recomputed (`mergeSnapshots`). Automatic mode syncs 5 s after a change, on launch, on return to the app, and on leaving it; manual mode only on Back up now. Daily copies (7) stay in Drive and the last 3 pre-merge copies on the phone, for Restore an earlier version. Sample data (`sample_` IDs) never syncs. Sign-in is `@react-native-google-signin/google-signin` with the `drive.appdata` scope; it needs no config plugin on Android (the OAuth client is matched by package name and signing-key SHA-1 in the web app's Google Cloud project, so phone and web share one app folder). Sync progress lives in the device-only `sync_state` table.
 - Settings → About links to the web app (`spendtrak.vercel.app`, opened in the browser with `Linking`). The two apps don't sync; data moves between them only through the JSON data backup.
 - Profile photos (`src/lib/profile-photo.ts`) come from the system photo picker, or the file picker where it's missing, and are centre-cropped and saved as a 512 px JPEG in the app's documents folder. `profilePhotoUri` and `backupFolderUri` are device-only settings and are not part of backups.
 - Custom reminders: daily/weekly ones use repeating triggers; repeating (interval) ones are scheduled as individual dates for the next 24 hours, skipping Do Not Disturb, and are topped up whenever `syncReminders` runs (app launch, settings changes). Expo Go may fail to update the notification channel; `ensureChannel` tolerates that.
@@ -141,10 +143,10 @@ src/
    2. (done) Analytics sections: overview (avg daily spend, savings rate, transaction count, daily chart, spending by weekday, top 5 expenses), category month-vs-month comparison, credit cards (utilization, spend per card, bill payments), per-account analytics, 12-month trend.
    3. (done) Accounts: custom account types, reorder, credit card "Pay bill" (records a transfer), link to that account's analytics.
    4. (done) History: calendar view (dots and counts per day, tap to filter) and running balance toggle.
-7. Phase 7 (done except Drive sync, v1.5.0, data and sync):
+7. Phase 7 (done, v1.5.0 and v1.8.0, data and sync):
    1. (done) Migration adding `payment_app` to transactions and `logo_url` to accounts; round-trip them in `buildBackup` / `importBackup` so web backups lose nothing.
    2. (done) PDF export (`expo-print`) and Excel export (own minimal .xlsx writer on `fflate`; the npm `xlsx`/SheetJS build has known CVEs), shared through `withLockSuppressed`.
-   3. (deferred, do not start without being asked) Google Drive sync in the web app's appDataFolder format (push, pull with merge, delete cloud backup, last-sync time), so web and phone sync with each other. Needs an Android OAuth client tied to the signing key.
+   3. (done, v1.8.0) Google Drive sync with the web app: automatic (default) or manual, record-level merge with deletions, gzip file, daily copies and restore, delete Drive data, disconnect.
    4. (done) Backup reminder (every 7 days, via `syncReminders`) and "Reset everything".
 8. Phase 8 (done, v1.6.0, polish): multiple custom reminders (daily / weekly / repeating) with Do Not Disturb hours, profile photo (a default avatar for now; show the Google account photo through `ProfileAvatar`'s `photoUri` once Google sign-in exists), payment app / UPI field, bank logos (Brandfetch), feedback (EmailJS), optional password lock.
 9. v1.7.0 (done, tweaks): profile photo from the gallery, custom emoji category icons, drag-to-reorder subcategories, themed dialogs, PIN check before turning off the app lock, Export screen (data backup, Excel, PDF, CSV; save to Downloads or share) and Import, richer sample data (splits, planned payments, payment apps).

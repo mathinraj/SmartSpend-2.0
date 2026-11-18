@@ -83,7 +83,8 @@ export async function updateAccount(db: SQLiteDatabase, id: string, input: Accou
   await db.runAsync(
     `UPDATE accounts
         SET name = ?, type = ?, sub_type = ?, balance = ?, icon = ?, color = ?,
-            credit_limit = ?, billing_day = ?, due_day = ?, custom_type_id = ?, logo_url = ?
+            credit_limit = ?, billing_day = ?, due_day = ?, custom_type_id = ?, logo_url = ?,
+            updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE id = ?`,
     input.name,
     input.type,

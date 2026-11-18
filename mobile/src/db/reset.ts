@@ -18,6 +18,8 @@ export async function resetAllData(db: SQLiteDatabase) {
       DELETE FROM subcategories WHERE 1;
       DELETE FROM categories WHERE 1;
       DELETE FROM settings WHERE 1;
+      DELETE FROM deleted_records WHERE 1;
+      DELETE FROM sync_state WHERE 1;
     `);
     await seedDefaultCategories(db);
   });

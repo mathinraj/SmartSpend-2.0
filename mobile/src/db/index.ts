@@ -8,6 +8,7 @@ export type Table =
   | 'subcategories'
   | 'transactions'
   | 'planned_payments'
-  | 'split_entries';
+  | 'split_entries'
+  | 'sync_state';
 
 export { migrateDbIfNeeded } from './migrations';

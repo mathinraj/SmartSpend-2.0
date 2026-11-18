@@ -20,6 +20,7 @@ import { listAccounts } from '@/db/accounts';
 import { listPlanned } from '@/db/planned';
 import { loadSampleData } from '@/db/sample-data';
 import { getPersonBalances } from '@/db/splits';
+import { getSyncState } from '@/db/sync';
 import { getPeriodSummary, listTransactions } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
@@ -45,6 +46,7 @@ export default function HomeScreen() {
 
   const planned = useDbQuery(listPlanned, ['planned_payments', 'accounts', 'categories']);
   const balances = useDbQuery(getPersonBalances, ['split_entries'], settings?.splitPeople ?? []);
+  const syncState = useDbQuery(getSyncState, ['sync_state']);
 
   const privacy = useBalancePrivacy(settings?.hideBalances);
 
@@ -84,7 +86,7 @@ export default function HomeScreen() {
         hasFab
         headerLeft={
           <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={() => router.push('/profile')}>
-            <ProfileAvatar size={48} photoUri={settings?.profilePhotoUri} />
+            <ProfileAvatar size={48} photoUri={settings?.profilePhotoUri ?? syncState?.account?.photo} />
           </Pressable>
         }
         headerRight={

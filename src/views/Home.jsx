@@ -10,6 +10,7 @@ import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { formatDate, getAccountIcon, generateId } from '../utils/helpers';
 import { hasSampleData } from '../utils/sampleData';
 import * as gDrive from '../utils/googleDrive';
+import { isAutoSync, syncNow, useDriveSyncStatus } from '../utils/driveSync';
 import './Home.css';
 
 const BACKUP_MESSAGES = [
@@ -30,8 +31,9 @@ export default function Home() {
 
   const [showBackupHint, setShowBackupHint] = useState(false);
   const [backupMsg, setBackupMsg] = useState(null);
-  const [syncing, setSyncing] = useState(false);
-  const [showSyncMenu, setShowSyncMenu] = useState(false);
+  const syncStatus = useDriveSyncStatus();
+  const syncing = syncStatus.phase === 'syncing';
+  const syncProblem = syncStatus.phase === 'signin' || syncStatus.phase === 'error';
 
   useEffect(() => {
     if (settings.onboardStep < 3) return;
@@ -62,78 +64,8 @@ export default function Home() {
       toast('Connect Google Drive first in Backup & Sync', 'info');
       return;
     }
-    setSyncing(true);
-    try {
-      const token = await gDrive.ensureTokenSilently();
-      if (!token) {
-        toast('Google Drive session expired. Please reconnect in Preferences.', 'warning');
-        setSyncing(false);
-        return;
-      }
-      const payload = {
-        settings: { ...settings, onboardStep: undefined, gdriveEmail: undefined, gdriveName: undefined, gdrivePhoto: undefined, gdriveLastSync: undefined, balancePeekUntil: undefined },
-        accounts,
-        transactions,
-        categories: state.categories,
-        plannedPayments: state.plannedPayments,
-        splitLedger: state.splitLedger,
-      };
-      if (settings.syncProfilePhoto) {
-        const photo = typeof window !== 'undefined' ? localStorage.getItem('spendtraq_profile_photo') : null;
-        if (photo) payload.profilePhoto = photo;
-      }
-      await gDrive.uploadSyncData(payload);
-      dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
-      localStorage.setItem('spendtraq_last_backup_reminder', Date.now().toString());
-      toast('Synced to Google Drive!', 'success');
-      dismissBackupHint();
-    } catch (err) {
-      if (err.message === 'AUTH_EXPIRED') {
-        toast('Session expired. Reconnect Google Drive in Preferences.', 'warning');
-      } else {
-        console.error('Quick sync error:', err);
-        toast('Sync failed. Try again or use Preferences → Backup.', 'error');
-      }
-    }
-    setSyncing(false);
-  }
-
-  async function handleQuickPull() {
-    setShowSyncMenu(false);
-    setSyncing(true);
-    try {
-      const token = await gDrive.ensureTokenSilently();
-      if (!token) {
-        toast('Google Drive session expired. Please reconnect in Preferences.', 'warning');
-        setSyncing(false);
-        return;
-      }
-      const data = await gDrive.downloadSyncData();
-      if (!data) {
-        toast('No backup found in your Google Drive', 'info');
-        setSyncing(false);
-        return;
-      }
-      if (data.settings) {
-        const { onboardStep, gdriveEmail, gdriveName, gdrivePhoto, gdriveLastSync, ...restoredSettings } = data.settings;
-        dispatch({ type: 'UPDATE_SETTINGS', payload: restoredSettings });
-      }
-      if (data.profilePhoto) {
-        localStorage.setItem('spendtraq_profile_photo', data.profilePhoto);
-        dispatch({ type: 'UPDATE_SETTINGS', payload: { hasProfilePhoto: true } });
-      }
-      dispatch({ type: 'MERGE_IMPORT_DATA', payload: data });
-      dispatch({ type: 'UPDATE_SETTINGS', payload: { gdriveLastSync: new Date().toISOString() } });
-      toast('Data restored from Google Drive!', 'success');
-    } catch (err) {
-      if (err.message === 'AUTH_EXPIRED') {
-        toast('Session expired. Reconnect Google Drive in Preferences.', 'warning');
-      } else {
-        console.error('Quick pull error:', err);
-        toast('Pull failed. Try again in Preferences → Backup.', 'error');
-      }
-    }
-    setSyncing(false);
+    await syncNow({ manual: true });
+    dismissBackupHint();
   }
 
   const [showReminderHint, setShowReminderHint] = useState(false);
@@ -412,33 +344,18 @@ export default function Home() {
             <div className="home-sync-wrap">
               <button
                 className="home-sync-btn"
-                onClick={() => !syncing && setShowSyncMenu(!showSyncMenu)}
+                onClick={handleQuickSync}
                 disabled={syncing}
-                title="Google Drive Sync"
+                title={syncStatus.message || (isAutoSync(settings) ? 'Sync with Google Drive now' : 'Back up to Google Drive now')}
               >
-                {syncing ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-cloud" />}
+                {syncing ? (
+                  <i className="fa-solid fa-spinner fa-spin" />
+                ) : syncProblem ? (
+                  <i className="fa-solid fa-triangle-exclamation" style={{ color: 'var(--danger, #e74c3c)' }} />
+                ) : (
+                  <i className="fa-solid fa-cloud" />
+                )}
               </button>
-              {showSyncMenu && (
-                <>
-                  <div className="sync-menu-backdrop" onClick={() => setShowSyncMenu(false)} />
-                  <div className="sync-menu">
-                    <button className="sync-menu-item" onClick={() => { setShowSyncMenu(false); handleQuickSync(); }}>
-                      <i className="fa-solid fa-cloud-arrow-up" style={{ color: '#4285F4' }} />
-                      <div>
-                        <p className="sync-menu-title">Push to Drive</p>
-                        <p className="sync-menu-desc">Upload local data</p>
-                      </div>
-                    </button>
-                    <button className="sync-menu-item" onClick={handleQuickPull}>
-                      <i className="fa-solid fa-cloud-arrow-down" style={{ color: '#34A853' }} />
-                      <div>
-                        <p className="sync-menu-title">Pull from Drive</p>
-                        <p className="sync-menu-desc">Merge cloud data</p>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
             </div>
           )}
           <Link href="/preferences" className="home-settings-btn" title="Preferences">

@@ -27,7 +27,7 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Account filter** — multi-select accounts to filter all analytics data globally
 
 ### Export, Backup & Sync
-- **Google Drive Sync** — push/pull your data to your own Google Drive; connect with Google OAuth, sync across devices, private appDataFolder; quick sync button on the dashboard
+- **Google Drive Sync** — syncs automatically with your own Google Drive (or manual backup, if you prefer) and with the Android app; record-by-record merge that keeps edits and deletions from every device, private appDataFolder, daily copies for restoring an earlier version
 - **JSON backup** — full data export (accounts, transactions, settings, planned payments)
 - **CSV export** — transactions only, for Excel or Google Sheets
 - **PDF report** — formatted summary tables with chart screenshots from the analytics page
@@ -118,7 +118,7 @@ A personal finance tracker built with Next.js and React. Track expenses, income,
 - **Google Search Console** — sitemap submitted, verification meta tag added
 
 ### v2.0
-- **Google Drive Sync** — connect your Google account and push/pull data to your own Google Drive; private appDataFolder storage, session refresh, and cloud backup deletion
+- **Google Drive Sync** — automatic or manual sync with your own Google Drive, shared with the Android app (compressed sync file, record-level merge, daily copies, restore, delete)
 - **User profile** — add name and photo in Preferences; personalized "Welcome back, [name]" greeting with profile photo on the dashboard
 - **Inline category management** — add, edit, and delete categories directly from the Add Transaction page; dedicated Categories page removed from navigation
 - **Split entry editing** — edit amount, note, and date of existing split entries; delete entries from the person detail view
