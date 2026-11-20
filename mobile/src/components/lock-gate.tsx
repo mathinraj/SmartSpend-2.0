@@ -8,7 +8,7 @@ import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useLaunchFinished } from '@/lib/launch';
+import { useLaunchPlaying } from '@/lib/launch';
 import { authenticateWithBiometrics, biometricsAvailable, isLockSuppressed, verifyPin } from '@/lib/lock';
 import type { Settings } from '@/types/models';
 
@@ -60,7 +60,7 @@ function LockScreen({ biometric, password, onUnlock }: { biometric: boolean; pas
   const [canUseBiometrics, setCanUseBiometrics] = useState(false);
   const [typed, setTyped] = useState('');
   // The fingerprint prompt would otherwise pop up over the launch animation.
-  const launchFinished = useLaunchFinished();
+  const launchPlaying = useLaunchPlaying();
 
   async function promptBiometrics() {
     if (await authenticateWithBiometrics(password ? 'Use password' : 'Use PIN')) onUnlock();
@@ -71,7 +71,7 @@ function LockScreen({ biometric, password, onUnlock }: { biometric: boolean; pas
   });
 
   useEffect(() => {
-    if (!biometric || !launchFinished) return;
+    if (!biometric || launchPlaying) return;
     let active = true;
     biometricsAvailable().then((available) => {
       if (!active || !available) return;
@@ -81,7 +81,7 @@ function LockScreen({ biometric, password, onUnlock }: { biometric: boolean; pas
     return () => {
       active = false;
     };
-  }, [biometric, launchFinished]);
+  }, [biometric, launchPlaying]);
 
   // While locked, the back button must not reach the screens underneath.
   useEffect(() => {

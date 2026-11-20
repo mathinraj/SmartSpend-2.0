@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Cold-start state shared by the launch animation and the screens it covers: the animation waits for
- * `appReady`, and the lock screen waits for `finished` before showing the fingerprint prompt.
+ * Launch state shared by the launch animation and the screens it covers: the animation waits for
+ * `appReady` before leaving, and the lock screen holds its fingerprint prompt while `playing`.
+ * The animation plays at cold start and again each time the app comes back from the background.
  */
 let appReady = false;
-let finished = false;
+let playing = true;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -26,10 +27,9 @@ export function markAppReady() {
   emit();
 }
 
-/** The launch animation is gone and the app is fully visible. */
-export function markLaunchFinished() {
-  if (finished) return;
-  finished = true;
+export function setLaunchPlaying(value: boolean) {
+  if (playing === value) return;
+  playing = value;
   emit();
 }
 
@@ -37,6 +37,6 @@ export function useAppReady(): boolean {
   return useSyncExternalStore(subscribe, () => appReady);
 }
 
-export function useLaunchFinished(): boolean {
-  return useSyncExternalStore(subscribe, () => finished);
+export function useLaunchPlaying(): boolean {
+  return useSyncExternalStore(subscribe, () => playing);
 }

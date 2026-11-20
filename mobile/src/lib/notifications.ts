@@ -4,6 +4,7 @@ import { Linking } from 'react-native';
 
 import { showDialog } from '@/lib/dialog';
 import { addDays, formatCurrency, fromDateTimeKeys } from '@/lib/format';
+import { withLockSuppressed } from '@/lib/lock';
 import { inQuietHours, intervalTimes } from '@/lib/reminders';
 import type { PlannedPaymentListItem, Settings } from '@/types/models';
 
@@ -46,7 +47,7 @@ export async function ensureNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   if (!current.canAskAgain) return false;
-  return (await Notifications.requestPermissionsAsync()).granted;
+  return (await withLockSuppressed(() => Notifications.requestPermissionsAsync())).granted;
 }
 
 /** Asks for notification permission before turning a reminder on; explains how to fix it if denied. */

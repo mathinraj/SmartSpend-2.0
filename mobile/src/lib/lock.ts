@@ -56,8 +56,9 @@ export async function authenticateWithBiometrics(cancelLabel = 'Use PIN'): Promi
 let suppressCount = 0;
 
 /**
- * Runs a task that opens system UI (share sheet, file picker, biometric prompt). Android briefly sends
- * the app to the background for these, which must not count as leaving the app.
+ * Runs a task that opens system UI (share sheet, file picker, biometric prompt, permission dialog). Android
+ * briefly sends the app to the background for these, which must not count as leaving the app (for the app
+ * lock or the launch animation).
  */
 export async function withLockSuppressed<T>(task: () => Promise<T>): Promise<T> {
   suppressCount += 1;
