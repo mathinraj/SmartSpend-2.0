@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Fab } from '@/components/ui/fab';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { AccountAvatar } from '@/components/account-avatar';
+import { ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
@@ -19,6 +20,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { listAccounts } from '@/db/accounts';
 import { listPlanned } from '@/db/planned';
 import { loadSampleData } from '@/db/sample-data';
+import { countPendingSms } from '@/db/sms';
 import { getPersonBalances } from '@/db/splits';
 import { getSyncState } from '@/db/sync';
 import { getPeriodSummary, listTransactions } from '@/db/transactions';
@@ -49,6 +51,7 @@ export default function HomeScreen() {
   const balances = useDbQuery(getPersonBalances, ['split_entries'], settings?.splitPeople ?? []);
   const syncState = useDbQuery(getSyncState, ['sync_state']);
   const updateAvailable = useUpdateState().phase === 'available';
+  const smsPending = useDbQuery(countPendingSms, ['sms_messages']);
 
   const privacy = useBalancePrivacy(settings?.hideBalances);
 
@@ -156,6 +159,17 @@ export default function HomeScreen() {
             <Tile emoji="🤝" title="Split money" subtitle={splitSubtitle} onPress={() => router.push('/splits')} />
           ) : null}
         </View>
+
+        {settings?.smsImportEnabled && smsPending ? (
+          <Card flush>
+            <ListRow
+              leading={<Icon name="sms" color={colors.primary} />}
+              title={smsPending === 1 ? '1 bank transaction to review' : `${smsPending} bank transactions to review`}
+              subtitle="From your bank messages"
+              onPress={() => router.push('/sms')}
+            />
+          </Card>
+        ) : null}
 
         {duePlanned.length > 0 ? (
           <>

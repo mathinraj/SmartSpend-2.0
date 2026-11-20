@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { ActivityIndicator, Image, Linking, StyleSheet, View } from 'react-native';
 
 import { ProfileAvatar } from '@/components/profile-avatar';
+import { BetaBadge } from '@/components/sms/beta-badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
@@ -15,6 +16,7 @@ import { CONTRIBUTE_URL, DEVELOPER } from '@/constants/developer';
 import { Radius, Spacing } from '@/constants/theme';
 import { resetAllData } from '@/db/reset';
 import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-data';
+import { countPendingSms } from '@/db/sms';
 import { getSyncState } from '@/db/sync';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
@@ -25,6 +27,7 @@ import { disconnectDrive, useSyncStatus } from '@/lib/drive-sync';
 import { addDays, formatShortDate, toDateKey } from '@/lib/format';
 import { EMPTY_HISTORY_FILTERS, setHistoryFilters } from '@/lib/history-filters';
 import { clearPin } from '@/lib/lock';
+import { smsImportAvailable } from '@/lib/sms/scan';
 import { deleteProfilePhoto } from '@/lib/profile-photo';
 import { describeSync, formatSyncTime } from '@/lib/sync-status';
 import { checkForUpdatesWithDialog, downloadUpdate } from '@/lib/update-prompts';
@@ -49,6 +52,7 @@ export default function SettingsScreen() {
   const settings = useSettings();
   const sampleLoaded = useDbQuery(hasSampleData, ['accounts']);
   const syncState = useDbQuery(getSyncState, ['sync_state']);
+  const smsPending = useDbQuery(countPendingSms, ['sms_messages']);
   const syncStatus = useSyncStatus();
   const currency = settings ? getCurrency(settings.currency) : undefined;
   const drive = syncState?.account ? describeSync(syncState, syncStatus) : null;
@@ -157,6 +161,16 @@ export default function SettingsScreen() {
           subtitle="Who owes whom"
           onPress={() => router.push('/splits')}
         />
+        {smsImportAvailable ? (
+          <ListRow
+            divider
+            leading={<Icon name="sms" color={colors.primary} />}
+            title="Bank SMS import"
+            subtitle={settings?.smsImportEnabled ? (smsPending ? `On · ${smsPending} to review` : 'On') : 'Add transactions from bank messages'}
+            trailing={<BetaBadge />}
+            onPress={() => router.push(settings?.smsImportEnabled ? '/sms' : '/sms/settings')}
+          />
+        ) : null}
       </Card>
 
       <SectionHeader title="Security & reminders" />

@@ -9,6 +9,9 @@ export type Table =
   | 'transactions'
   | 'planned_payments'
   | 'split_entries'
-  | 'sync_state';
+  | 'sync_state'
+  | 'sms_messages'
+  | 'sms_account_hints'
+  | 'merchant_categories';
 
 export { migrateDbIfNeeded } from './migrations';

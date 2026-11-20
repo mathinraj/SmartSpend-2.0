@@ -4,7 +4,6 @@
  * that sync through one shared file.
  */
 import assert from 'node:assert/strict';
-import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { describe, test } from 'node:test';
 
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -12,49 +11,14 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { createAccount } from '@/db/accounts';
 import { importBackup } from '@/db/backup';
 import { deleteCategory, updateCategory } from '@/db/categories';
-import { migrateDbIfNeeded } from '@/db/migrations';
 import { loadSampleData } from '@/db/sample-data';
 import { getSettings, updateSettings } from '@/db/settings';
 import { mergeIntoDb, readSnapshot } from '@/db/sync';
+import { migratedTestDb } from '@/db/test-db';
 import { addTransaction, deleteTransaction, updateTransaction, type NewTransaction } from '@/db/transactions';
 import { parseSyncFile, snapshotToFile } from '@/lib/sync-format';
 
-/** The parts of expo-sqlite's async API the app uses, on top of node:sqlite. */
-function openTestDb(): SQLiteDatabase {
-  const raw = new DatabaseSync(':memory:');
-  const bind = (params: unknown[]): SQLInputValue[] => {
-    const values = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
-    return values.map((v) => (v === undefined ? null : typeof v === 'boolean' ? Number(v) : (v as SQLInputValue)));
-  };
-  const transaction = async (task: () => Promise<void>) => {
-    raw.exec('BEGIN');
-    try {
-      await task();
-      raw.exec('COMMIT');
-    } catch (error) {
-      raw.exec('ROLLBACK');
-      throw error;
-    }
-  };
-  const db = {
-    execAsync: async (sql: string) => raw.exec(sql),
-    runAsync: async (sql: string, ...params: unknown[]) => {
-      const result = raw.prepare(sql).run(...bind(params));
-      return { lastInsertRowId: Number(result.lastInsertRowid), changes: Number(result.changes) };
-    },
-    getAllAsync: async (sql: string, ...params: unknown[]) => raw.prepare(sql).all(...bind(params)),
-    getFirstAsync: async (sql: string, ...params: unknown[]) => raw.prepare(sql).get(...bind(params)) ?? null,
-    withTransactionAsync: transaction,
-    withExclusiveTransactionAsync: (task: (txn: unknown) => Promise<void>) => transaction(() => task(db)),
-  };
-  return db as unknown as SQLiteDatabase;
-}
-
-async function device(): Promise<SQLiteDatabase> {
-  const db = openTestDb();
-  await migrateDbIfNeeded(db);
-  return db;
-}
+const device = migratedTestDb;
 
 /** What one device uploads, as the other device would read it back. */
 async function upload(db: SQLiteDatabase) {

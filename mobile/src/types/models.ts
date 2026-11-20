@@ -217,4 +217,12 @@ export interface Settings {
   backupClockStart: string | null;
   /** Android folder (content URI) that "Save to Files" exports go to; chosen once, device-only. */
   backupFolderUri: string | null;
+  /** SMS import (beta): read bank messages and offer them as transactions. Device-only, like all `sms*` settings. */
+  smsImportEnabled: boolean;
+  /** Notify when a bank SMS arrives. */
+  smsNotify: boolean;
+  /** Add messages read with high confidence without asking (Undo for 24 hours). */
+  smsAutoAdd: boolean;
+  /** Sender codes (e.g. `HDFCBK`) whose messages are skipped. */
+  smsIgnoredSenders: string[];
 }

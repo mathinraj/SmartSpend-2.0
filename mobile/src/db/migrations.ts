@@ -180,6 +180,50 @@ const MIGRATIONS: ((db: SQLiteDatabase) => Promise<void>)[] = [
     }
     await db.execAsync(sql);
   },
+
+  // SMS import (device-only: no change tracking, not in backups or Drive sync).
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE sms_messages (
+        id             TEXT PRIMARY KEY NOT NULL,
+        sms_id         INTEGER,
+        msg_key        TEXT NOT NULL UNIQUE,
+        sender         TEXT NOT NULL,
+        sender_code    TEXT,
+        received_at    INTEGER NOT NULL,
+        body           TEXT,
+        result         TEXT NOT NULL CHECK (result IN ('parsed', 'ignored', 'unparsed')),
+        reason         TEXT,
+        parsed         TEXT,
+        confidence     REAL,
+        parser_version INTEGER NOT NULL,
+        status         TEXT NOT NULL,
+        duplicate_of   TEXT,
+        dup_score      REAL,
+        transaction_id TEXT,
+        created_at     TEXT NOT NULL,
+        updated_at     TEXT NOT NULL
+      );
+      CREATE INDEX idx_sms_status ON sms_messages (status, received_at DESC);
+      CREATE INDEX idx_sms_sms_id ON sms_messages (sms_id);
+      CREATE TABLE sms_account_hints (
+        institution TEXT NOT NULL,
+        digits      TEXT NOT NULL,
+        account_id  TEXT NOT NULL,
+        PRIMARY KEY (institution, digits)
+      );
+      CREATE TABLE merchant_categories (
+        merchant_key   TEXT PRIMARY KEY NOT NULL,
+        category_id    TEXT NOT NULL,
+        subcategory_id TEXT,
+        updated_at     TEXT NOT NULL
+      );
+      CREATE TABLE sms_state (
+        key   TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL
+      );
+    `);
+  },
 ];
 
 async function seedCategories(db: SQLiteDatabase, kind: 'expense' | 'income', seeds: CategorySeed[]) {

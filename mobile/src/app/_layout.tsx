@@ -14,6 +14,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useDriveSync } from '@/hooks/use-drive-sync';
 import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { useSettings } from '@/hooks/use-settings';
+import { useSmsImport } from '@/hooks/use-sms-import';
 import { useTheme } from '@/hooks/use-theme';
 import { useUpdateCheck } from '@/hooks/use-update-check';
 import { markAppReady } from '@/lib/launch';
@@ -66,6 +67,7 @@ function AppStack({ settings }: { settings: Settings }) {
   useReminderSync(settings);
   useDriveSync();
   useUpdateCheck();
+  useSmsImport(settings);
 
   useEffect(() => {
     Appearance.setColorScheme(settings.theme === 'system' ? 'auto' : settings.theme);
@@ -110,6 +112,11 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="lock-verify" options={{ title: 'Turn off app lock', presentation: 'modal' }} />
           <Stack.Screen name="reminders" options={{ title: 'Reminders' }} />
           <Stack.Screen name="reminder" options={{ title: 'Reminder', presentation: 'modal' }} />
+          <Stack.Screen name="sms/index" options={{ title: 'Bank transactions' }} />
+          <Stack.Screen name="sms/settings" options={{ title: 'SMS import' }} />
+          <Stack.Screen name="sms/messages" options={{ title: 'Messages looked at' }} />
+          <Stack.Screen name="sms/report" options={{ title: 'Report a message', presentation: 'modal' }} />
+          <Stack.Screen name="sms/reliable" options={{ title: 'Reliable alerts' }} />
         </Stack.Protected>
         <Stack.Protected guard={!settings.onboarded}>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />

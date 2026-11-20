@@ -20,6 +20,10 @@ export async function resetAllData(db: SQLiteDatabase) {
       DELETE FROM settings WHERE 1;
       DELETE FROM deleted_records WHERE 1;
       DELETE FROM sync_state WHERE 1;
+      DELETE FROM sms_messages WHERE 1;
+      DELETE FROM sms_account_hints WHERE 1;
+      DELETE FROM merchant_categories WHERE 1;
+      DELETE FROM sms_state WHERE 1;
     `);
     await seedDefaultCategories(db);
   });
