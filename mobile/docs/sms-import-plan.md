@@ -351,7 +351,7 @@ time, first-import start and parser version live in `sms_state`, so frequent sca
 
 ## Phases
 
-### Phase 1: beta (1.9.0)
+### Phase 1: beta (2.0.0)
 
 - The native module: permissions with the restricted-settings guide, inbox read, and the real-time receiver with
   its notification.
