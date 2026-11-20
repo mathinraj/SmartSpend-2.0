@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -6,6 +7,7 @@ import { Appearance } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { DialogHost } from '@/components/dialog-host';
+import { LaunchAnimation } from '@/components/launch-animation';
 import { LockGate } from '@/components/lock-gate';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -14,7 +16,11 @@ import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useUpdateCheck } from '@/hooks/use-update-check';
+import { markAppReady } from '@/lib/launch';
 import type { Settings } from '@/types/models';
+
+// LaunchAnimation hides the native splash itself, on the frame it takes over.
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -45,6 +51,7 @@ export default function RootLayout() {
         <DialogHost />
       </KeyboardProvider>
       <StatusBar style="auto" />
+      <LaunchAnimation />
     </ThemeProvider>
   );
 }
@@ -63,6 +70,8 @@ function AppStack({ settings }: { settings: Settings }) {
   useEffect(() => {
     Appearance.setColorScheme(settings.theme === 'system' ? 'auto' : settings.theme);
   }, [settings.theme]);
+
+  useEffect(markAppReady, []);
 
   return (
     <LockGate settings={settings}>
