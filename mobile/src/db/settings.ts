@@ -45,6 +45,10 @@ const DEFAULT_SETTINGS: Settings = {
   lastBackupAt: null,
   backupClockStart: null,
   backupFolderUri: null,
+  smsImportEnabled: false,
+  smsNotify: true,
+  smsAutoAdd: false,
+  smsIgnoredSenders: [],
 };
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {

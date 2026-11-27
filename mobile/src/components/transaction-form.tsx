@@ -53,9 +53,13 @@ export interface TransactionFormProps {
   /** The transaction being edited; omit to create a new one. */
   initial?: TransactionListItem;
   defaultType?: TransactionType;
+  /** Prefills a new transaction (e.g. from a bank SMS); its `source` and `sourceRef` are saved with it. */
+  draft?: Partial<NewTransaction>;
+  /** Runs after a new transaction is saved, before the screen closes. */
+  onSaved?: (id: string) => Promise<void>;
 }
 
-export function TransactionForm({ initial, defaultType = 'expense' }: TransactionFormProps) {
+export function TransactionForm({ initial, defaultType = 'expense', draft, onSaved }: TransactionFormProps) {
   const db = useSQLiteContext();
   const colors = useTheme();
   const settings = useSettings();
@@ -63,16 +67,17 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
   const expenseCategories = useDbQuery(listCategories, ['categories', 'subcategories'], 'expense');
   const incomeCategories = useDbQuery(listCategories, ['categories', 'subcategories'], 'income');
 
-  const [type, setType] = useState<TransactionType>(initial?.type ?? defaultType);
-  const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
-  const [accountId, setAccountId] = useState(initial?.accountId ?? null);
-  const [fromAccountId, setFromAccountId] = useState(initial?.fromAccountId ?? null);
-  const [toAccountId, setToAccountId] = useState(initial?.toAccountId ?? null);
-  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? null);
-  const [subcategoryId, setSubcategoryId] = useState(initial?.subcategoryId ?? null);
-  const [date, setDate] = useState(initial?.date ?? toDateKey(new Date()));
-  const [time, setTime] = useState(initial ? initial.time : toTimeKey(new Date()));
-  const [note, setNote] = useState(initial?.note ?? '');
+  const start = initial ?? draft;
+  const [type, setType] = useState<TransactionType>(start?.type ?? defaultType);
+  const [amount, setAmount] = useState(start?.amount ? String(start.amount) : '');
+  const [accountId, setAccountId] = useState(start?.accountId ?? null);
+  const [fromAccountId, setFromAccountId] = useState(start?.fromAccountId ?? null);
+  const [toAccountId, setToAccountId] = useState(start?.toAccountId ?? null);
+  const [categoryId, setCategoryId] = useState(start?.categoryId ?? null);
+  const [subcategoryId, setSubcategoryId] = useState(start?.subcategoryId ?? null);
+  const [date, setDate] = useState(start?.date ?? toDateKey(new Date()));
+  const [time, setTime] = useState(start?.time !== undefined ? start.time : toTimeKey(new Date()));
+  const [note, setNote] = useState(start?.note ?? '');
   const [splitWith, setSplitWith] = useState<string[]>([]);
   const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
   const [customShares, setCustomShares] = useState<Record<string, string>>({});
@@ -193,14 +198,17 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
       isSplit: initial?.isSplit ?? false,
       splitAmount: initial?.splitAmount ?? null,
       deductMyShare: initial?.deductMyShare ?? false,
-      source: initial?.source ?? 'manual',
-      sourceRef: initial?.sourceRef ?? null,
+      source: initial?.source ?? draft?.source ?? 'manual',
+      sourceRef: initial?.sourceRef ?? draft?.sourceRef ?? null,
       paymentApp: trackApp ? paymentApp : (initial?.paymentApp ?? null),
     };
     try {
-      if (initial) await updateTransaction(db, initial.id, input);
-      else if (shares.length > 0) await addSplitExpense(db, { ...input, deductMyShare }, shares);
-      else await addTransaction(db, input);
+      if (initial) {
+        await updateTransaction(db, initial.id, input);
+      } else {
+        const id = shares.length > 0 ? await addSplitExpense(db, { ...input, deductMyShare }, shares) : await addTransaction(db, input);
+        await onSaved?.(id);
+      }
       router.back();
     } catch (error) {
       setSaving(false);
@@ -235,7 +243,7 @@ export function TransactionForm({ initial, defaultType = 'expense' }: Transactio
             placeholderTextColor={colors.textMuted}
             cursorColor={colors.primary}
             keyboardType="decimal-pad"
-            autoFocus={!initial}
+            autoFocus={!start}
             style={[styles.amountText, styles.amountInput, { color: amountColor }]}
             accessibilityLabel="Amount"
           />

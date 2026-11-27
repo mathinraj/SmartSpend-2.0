@@ -65,6 +65,11 @@ const ICONS = {
   systemUpdate: { ios: 'arrow.down.app', android: 'system_update', web: 'system_update' },
   coffee: { ios: 'cup.and.saucer', android: 'coffee', web: 'coffee' },
   arrowForward: { ios: 'arrow.right', android: 'arrow_forward', web: 'arrow_forward' },
+  sms: { ios: 'message', android: 'sms', web: 'sms' },
+  battery: { ios: 'battery.100', android: 'battery_saver', web: 'battery_saver' },
+  flag: { ios: 'flag', android: 'flag', web: 'flag' },
+  verified: { ios: 'checkmark.shield', android: 'verified_user', web: 'verified_user' },
+  more: { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

@@ -1,6 +1,6 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, Image, StyleSheet, Text } from 'react-native';
 import Animated, {
   Easing,
@@ -48,6 +48,11 @@ const EXIT_MS = 400;
 /** Leave anyway if the app never reports ready, so a startup error can't hide behind the animation. */
 const FALLBACK_MS = 8000;
 
+function subscribeAppState(onChange: () => void) {
+  const subscription = AppState.addEventListener('change', onChange);
+  return () => subscription.remove();
+}
+
 let splashHidden = false;
 function hideNativeSplash() {
   if (splashHidden) return;
@@ -93,7 +98,9 @@ function LaunchIntro({ onDone }: { onDone: () => void }) {
   const appReady = useAppReady();
   const reduceMotion = useReducedMotion();
   const [laidOut, setLaidOut] = useState(false);
-  const [foreground, setForeground] = useState(AppState.currentState !== 'background');
+  // Read through useSyncExternalStore: an "active" event that lands between render and a useEffect
+  // subscription would otherwise be missed, leaving the layer waiting (blank) forever.
+  const foreground = useSyncExternalStore(subscribeAppState, () => AppState.currentState !== 'background');
   const [startAnyway, setStartAnyway] = useState(false);
   const [introDone, setIntroDone] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
@@ -110,13 +117,9 @@ function LaunchIntro({ onDone }: { onDone: () => void }) {
   const exit = useSharedValue(0);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => setForeground(state === 'active'));
     // The native splash must not stay up if layout never reports.
     const startTimer = setTimeout(() => setStartAnyway(true), 1000);
-    return () => {
-      subscription.remove();
-      clearTimeout(startTimer);
-    };
+    return () => clearTimeout(startTimer);
   }, []);
 
   const start = useEffectEvent(() => {
