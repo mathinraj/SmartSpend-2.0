@@ -5,7 +5,7 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import { getSettings, updateSettings } from '@/db/settings';
 import { getSmsState, pruneSms, setSmsState } from '@/db/sms';
 import { withLockSuppressed } from '@/lib/lock';
-import { ingestMessages, reparseStored, type IngestResult } from '@/lib/sms/ingest';
+import { autoAddReady, ingestMessages, reparseStored, type IngestResult } from '@/lib/sms/ingest';
 import { SmsReader } from '@/lib/sms/native';
 import { SMS_PARSER_VERSION } from '@/lib/sms/parser';
 
@@ -87,6 +87,8 @@ async function runScan(db: SQLiteDatabase): Promise<IngestResult | null> {
     if (messages.length < PAGE) break;
     since = messages[messages.length - 1].date;
   }
+  // Items read earlier may be ready now that more has been learned.
+  total.autoAdded += await autoAddReady(db);
   await setSmsState(db, 'lastScanAt', String(Math.max(newest, Date.now() - DAY)));
   await pruneSms(db);
   return total;

@@ -4,7 +4,7 @@ import { listAccounts } from '@/db/accounts';
 import { addSmsTransaction, getSmsMessage, listSmsReview, markSmsAdded, rememberChoice, type SmsMessage } from '@/db/sms';
 import { getTransaction, type NewTransaction } from '@/db/transactions';
 import { merchantKey } from '@/lib/sms/categorize';
-import { buildChoice, suggestFor, type SmsSuggestion } from '@/lib/sms/ingest';
+import { autoAddReady, buildChoice, suggestFor, type SmsSuggestion } from '@/lib/sms/ingest';
 
 export interface SmsDuplicateInfo {
   kind: 'sms' | 'txn';
@@ -87,8 +87,9 @@ export async function finishSmsDraft(db: SQLiteDatabase, message: SmsMessage, tr
   await db.withTransactionAsync(async () => {
     await markSmsAdded(db, message.id, transactionId);
     await rememberChoice(db, {
-      hint: t.accountHint && institution && accountId ? { institution, digits: t.accountHint, accountId } : null,
+      hint: institution && accountId ? { institution, digits: t.accountHint ?? '', accountId } : null,
       merchant: t.merchant && txn.categoryId ? { key: merchantKey(t.merchant), categoryId: txn.categoryId, subcategoryId: txn.subcategoryId } : null,
     });
   });
+  await autoAddReady(db);
 }

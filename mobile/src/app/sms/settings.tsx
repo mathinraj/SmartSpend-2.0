@@ -22,6 +22,7 @@ import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { showDialog } from '@/lib/dialog';
 import { ensureNotificationPermission } from '@/lib/notifications';
+import { autoAddReady } from '@/lib/sms/ingest';
 import { SmsReader } from '@/lib/sms/native';
 import { disableSmsImport, enableSmsImport, hasSmsPermission, requestSmsPermission, scanSmsInbox, smsImportAvailable } from '@/lib/sms/scan';
 
@@ -213,7 +214,10 @@ export default function SmsSettingsScreen() {
           title="Add confident ones automatically"
           subtitle="When the account and category are known. They stay in the list for a day, with Undo."
           value={settings.smsAutoAdd}
-          onValueChange={(value) => updateSettings(db, { smsAutoAdd: value })}
+          onValueChange={async (value) => {
+            await updateSettings(db, { smsAutoAdd: value });
+            if (value) await autoAddReady(db);
+          }}
           leading={<Icon name="sparkles" color={colors.primary} />}
         />
       </Card>

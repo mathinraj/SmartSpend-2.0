@@ -293,6 +293,8 @@ export async function getAccountHint(db: SQLiteDatabase, institution: string, di
   );
   const exact = rows.find((r) => r.digits === digits);
   if (exact) return exact.account_id;
+  // Empty digits: a bank's messages that never name the account ("Your A/c has been debited").
+  if (!digits) return null;
   const tail = digits.slice(-3);
   const close = rows.filter((r) => r.digits.slice(-3) === tail);
   return close.length === 1 ? close[0].account_id : null;

@@ -23,7 +23,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { accountEmoji } from '@/lib/accounts';
 import { showDialog } from '@/lib/dialog';
 import { formatCurrency, formatShortDate, formatTime } from '@/lib/format';
-import { buildChoice } from '@/lib/sms/ingest';
+import { autoAddReady, buildChoice } from '@/lib/sms/ingest';
 import type { SmsReviewItem } from '@/lib/sms/review';
 import type { Account, Category, Settings } from '@/types/models';
 
@@ -212,9 +212,19 @@ export function SmsReviewCard({ item, accounts, expenseCategories, incomeCategor
               ) : null}
               {pickCategory ? (
                 <>
-                  <Text variant="label" tone="secondary">
-                    Category
-                  </Text>
+                  <View style={styles.labelRow}>
+                    <Text variant="label" tone="secondary" style={styles.flex}>
+                      Category
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Manage categories"
+                      hitSlop={8}
+                      onPress={() => router.push({ pathname: '/categories', params: { kind: kind === 'income' ? 'income' : 'expense' } })}
+                      style={({ pressed }) => [styles.edit, { backgroundColor: `${colors.primary}1A` }, pressed && styles.pressed]}>
+                      <Icon name="edit" size={18} color={colors.primary} />
+                    </Pressable>
+                  </View>
                   <ChipGroup>
                     {categories.map((c) => (
                       <Chip
@@ -287,7 +297,10 @@ export function SmsReviewCard({ item, accounts, expenseCategories, incomeCategor
                 size="small"
                 disabled={!choice || busy}
                 onPress={() => run(async () => {
-                  if (choice) await addSmsTransaction(db, message.id, choice);
+                  if (!choice) return;
+                  await addSmsTransaction(db, message.id, choice);
+                  // Others from the same payee or account may now be ready to add by themselves.
+                  await autoAddReady(db);
                 })}
               />
             </View>
@@ -362,6 +375,23 @@ const styles = StyleSheet.create({
   },
   pickers: {
     gap: Spacing.sm,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  // Negative margins keep the button from making the label row taller than the label.
+  edit: {
+    width: 36,
+    height: 36,
+    marginVertical: -8,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.6,
   },
   summary: {
     flexDirection: 'row',

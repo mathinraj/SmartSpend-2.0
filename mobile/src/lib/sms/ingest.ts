@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
+import { getSettings } from '@/db/settings';
 import {
   addSmsTransaction,
   findManualMatch,
@@ -13,6 +14,7 @@ import {
   knownSmsIds,
   listDedupCandidates,
   listReparseCandidates,
+  listSmsReview,
   updateSmsParse,
   type SmsChoice,
   type SmsMessage,
@@ -153,11 +155,11 @@ export async function suggestFor(db: SQLiteDatabase, m: SmsMessage, accounts?: A
   const list = accounts ?? (await listAccounts(db));
 
   let accountId: string | null = null;
-  if (txn.accountHint) {
-    const institution = txn.institution ?? m.senderCode ?? '';
-    accountId = await getAccountHint(db, institution, txn.accountHint);
+  const institution = txn.institution ?? m.senderCode ?? '';
+  if (institution) accountId = await getAccountHint(db, institution, txn.accountHint ?? '');
+  if (!accountId && txn.accountHint) {
     // An account named "Axis 4821" or "HDFC card ••1234" is clearly the one.
-    accountId ??= list.find((a) => a.name.replace(/\D/g, '').endsWith(txn.accountHint!.slice(-4)))?.id ?? null;
+    accountId = list.find((a) => a.name.replace(/\D/g, '').endsWith(txn.accountHint!.slice(-4)))?.id ?? null;
   }
   if (accountId && !list.some((a) => a.id === accountId)) accountId = null;
 
@@ -240,9 +242,23 @@ export function buildChoice(m: SmsMessage, draft: SmsDraft): SmsChoice | null {
   const institution = txn.institution ?? m.senderCode;
   return {
     transaction,
-    hint: txn.accountHint && institution ? { institution, digits: txn.accountHint, accountId: draft.accountId } : null,
+    // No digits in the message: remember the account for that bank's digit-less messages.
+    hint: institution ? { institution, digits: txn.accountHint ?? '', accountId: draft.accountId } : null,
     merchant: txn.merchant && draft.categoryId ? { key: merchantKey(txn.merchant), categoryId: draft.categoryId, subcategoryId: draft.subcategoryId } : null,
   };
+}
+
+/**
+ * With automatic adding on, adds every waiting item that has become ready: for example other messages
+ * about the same payee or account, right after the user confirmed one. Returns how many were added.
+ */
+export async function autoAddReady(db: SQLiteDatabase): Promise<number> {
+  if (!(await getSettings(db)).smsAutoAdd) return 0;
+  let added = 0;
+  for (const m of await listSmsReview(db)) {
+    if (m.status === 'pending' && (await tryAutoAdd(db, m))) added += 1;
+  }
+  return added;
 }
 
 async function tryAutoAdd(db: SQLiteDatabase, m: SmsMessage): Promise<boolean> {

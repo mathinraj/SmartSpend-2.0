@@ -63,17 +63,27 @@ function hideNativeSplash() {
   SplashScreen.hide();
 }
 
+/** How long the app must be away before returning to it replays the animation. */
+const REPLAY_AFTER_MS = 30_000;
+
 /**
- * Plays the animated logo at cold start, and again whenever the app comes back from the background
- * (but not after the file picker, share sheet, biometric prompt and similar, see `withLockSuppressed`).
- * On leaving, the layer is put up straight away so the app isn't seen for a frame before the replay.
+ * Plays the animated logo at cold start, and again when the app comes back after at least 30 seconds
+ * away (not after the file picker, share sheet, biometric prompt and similar, see `withLockSuppressed`).
  */
 export function LaunchAnimation() {
   const [play, setPlay] = useState<number | null>(0);
+  const leftAt = useRef<number | null>(null);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'background' || isLockSuppressed()) return;
+      if (state === 'background') {
+        leftAt.current = isLockSuppressed() ? null : Date.now();
+        return;
+      }
+      if (state !== 'active') return;
+      const away = leftAt.current === null ? 0 : Date.now() - leftAt.current;
+      leftAt.current = null;
+      if (away < REPLAY_AFTER_MS) return;
       setLaunchPlaying(true);
       setPlay((current) => (current ?? 0) + 1);
     });

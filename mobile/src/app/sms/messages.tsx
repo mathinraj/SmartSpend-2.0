@@ -10,6 +10,7 @@ import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { showDialog } from '@/lib/dialog';
 import { formatCurrency, formatShortDate } from '@/lib/format';
+import { SmsReader } from '@/lib/sms/native';
 
 const REASONS: Record<string, string> = {
   promotion: 'promotion',
@@ -59,15 +60,17 @@ export default function SmsMessagesScreen() {
     );
   }
 
-  function open(m: SmsMessage) {
+  async function open(m: SmsMessage) {
+    // SpendTrak keeps the text only while an item waits; otherwise it's read from the inbox again.
+    let body = m.body;
+    if (!body && m.smsId !== null && SmsReader) body = await SmsReader.readMessage(m.smsId).catch(() => null);
     const parts = [
-      statusText(m),
-      m.parsed ? `${formatCurrency(m.parsed.amountMinor / 100, settings!.currency)} · ${m.parsed.merchant ?? m.parsed.kind}` : null,
-      m.body ?? (m.smsId !== null ? 'The text is no longer kept here, but it can still be read from your inbox to report it.' : null),
-    ].filter(Boolean);
-    showDialog(m.senderCode ?? m.sender, parts.join('\n\n'), [
+      body ?? 'This message is no longer in your inbox.',
+      `${statusText(m)}${m.parsed ? ` · ${formatCurrency(m.parsed.amountMinor / 100, settings!.currency)} · ${m.parsed.merchant ?? m.parsed.kind}` : ''}`,
+    ];
+    showDialog(`${m.senderCode ?? m.sender} · ${formatShortDate(dateKey(m.receivedAt))}`, parts.join('\n\n'), [
       { text: 'Close', style: 'cancel' },
-      { text: 'Report a problem', onPress: () => router.push({ pathname: '/sms/report', params: { id: m.id } }) },
+      ...(body ? [{ text: 'Report a problem', onPress: () => router.push({ pathname: '/sms/report', params: { id: m.id } }) }] : []),
     ]);
   }
 
@@ -83,7 +86,7 @@ export default function SmsMessagesScreen() {
             divider={i > 0}
             title={m.parsed ? `${formatCurrency(m.parsed.amountMinor / 100, settings.currency)} · ${m.parsed.merchant ?? m.parsed.institution ?? m.senderCode}` : (m.senderCode ?? m.sender)}
             subtitle={`${statusText(m)} · ${m.senderCode ?? m.sender} · ${formatShortDate(dateKey(m.receivedAt))}`}
-            onPress={() => open(m)}
+            onPress={() => void open(m)}
           />
         ))}
       </Card>

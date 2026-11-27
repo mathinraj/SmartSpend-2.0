@@ -1,15 +1,12 @@
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BetaBadge } from '@/components/sms/beta-badge';
 import { SmsReviewCard } from '@/components/sms/sms-review-card';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button, IconButton } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Icon } from '@/components/ui/icon';
-import { ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { Spacing } from '@/constants/theme';
@@ -17,7 +14,6 @@ import { listAccounts } from '@/db/accounts';
 import { listCategories } from '@/db/categories';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
-import { useTheme } from '@/hooks/use-theme';
 import { showDialog } from '@/lib/dialog';
 import { addAllReady, loadSmsReview } from '@/lib/sms/review';
 import { scanSmsInbox } from '@/lib/sms/scan';
@@ -25,7 +21,6 @@ import { scanSmsInbox } from '@/lib/sms/scan';
 /** Bank messages waiting to become transactions. Opened from Home, Settings, and the "new bank transaction" notification. */
 export default function SmsReviewScreen() {
   const db = useSQLiteContext();
-  const colors = useTheme();
   const settings = useSettings();
   const items = useDbQuery(loadSmsReview, ['sms_messages', 'accounts', 'categories', 'subcategories', 'sms_account_hints', 'merchant_categories', 'transactions']);
   const accounts = useDbQuery(listAccounts, ['accounts']);
@@ -74,6 +69,11 @@ export default function SmsReviewScreen() {
 
   return (
     <Screen variant="stack">
+      <Stack.Screen
+        options={{
+          headerRight: () => <IconButton icon="settings" accessibilityLabel="SMS import settings" onPress={() => router.push('/sms/settings')} />,
+        }}
+      />
       <View style={styles.heading}>
         <Text variant="caption" tone="secondary" style={styles.flex}>
           {waiting === 0 ? 'Nothing waiting' : `${waiting} waiting for you`}
@@ -104,21 +104,6 @@ export default function SmsReviewScreen() {
           />
         ))
       )}
-
-      <Card flush>
-        <ListRow
-          leading={<Icon name="history" color={colors.primary} />}
-          title="Messages SpendTrak looked at"
-          subtitle="What was added, ignored, and why"
-          onPress={() => router.push('/sms/messages')}
-        />
-        <ListRow
-          divider
-          leading={<Icon name="settings" color={colors.primary} />}
-          title="SMS import settings"
-          onPress={() => router.push('/sms/settings')}
-        />
-      </Card>
     </Screen>
   );
 }

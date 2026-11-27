@@ -8,7 +8,8 @@ import { createAccount, getAccount } from '@/db/accounts';
 import { addSmsTransaction, getSmsMessage, linkSmsToTransaction, listSmsLog, listSmsReview, undoSmsAdd } from '@/db/sms';
 import { migratedTestDb } from '@/db/test-db';
 import { addTransaction, listTransactions } from '@/db/transactions';
-import { buildChoice, ingestMessages, suggestFor } from '@/lib/sms/ingest';
+import { updateSettings } from '@/db/settings';
+import { autoAddReady, buildChoice, ingestMessages, suggestFor } from '@/lib/sms/ingest';
 import type { InboxSms } from '@/lib/sms/native';
 
 const options = { ignoredSenders: [], autoAdd: false };
@@ -149,6 +150,32 @@ describe('SMS import', () => {
     await linkSmsToTransaction(db, item.id, manual);
     assert.equal((await listSmsReview(db)).length, 0);
     assert.equal((await getAccount(db, bank))?.balance, 9550);
+  });
+
+  test('confirming one item auto-adds waiting ones from the same payee when automatic adding is on', async () => {
+    const { db, bank } = await setup();
+    await updateSettings(db, { smsAutoAdd: true });
+    const second = SWIGGY.replace('450.00', '120.00').replace('600000000303', '600000000777');
+    await ingestMessages(db, [sms('JD-AXISBK-S', SWIGGY, at(14, 8)), sms('JD-AXISBK-S', second, at(19))], options);
+    const items = await listSmsReview(db);
+    assert.equal(items.length, 2);
+    const first = items.find((m) => m.parsed?.amountMinor === 45000)!;
+    await addSmsTransaction(db, first.id, buildChoice(first, { ...(await suggestFor(db, first)), accountId: bank })!);
+    assert.equal(await autoAddReady(db), 1);
+    const left = await listSmsReview(db);
+    assert.deepEqual(left.map((m) => m.status), ['auto_added']);
+    assert.equal((await getAccount(db, bank))?.balance, 9430);
+  });
+
+  test("a bank's messages without account digits learn the account too", async () => {
+    const { db, bank } = await setup();
+    const body = (amount: string) => `Your A/c has been debited towards Google for INR ${amount} on 18-11-26. abcd@apl - Axis Bank`;
+    await ingestMessages(db, [sms('AD-AXISBK-S', body('469.00'), at(6))], options);
+    const [item] = await listSmsReview(db);
+    await addSmsTransaction(db, item.id, buildChoice(item, { ...(await suggestFor(db, item)), accountId: bank })!);
+    await ingestMessages(db, [sms('AD-AXISBK-S', body('129.00'), at(7))], options);
+    const [next] = await listSmsReview(db);
+    assert.equal((await suggestFor(db, next)).accountId, bank);
   });
 
   test('ignored senders are skipped', async () => {

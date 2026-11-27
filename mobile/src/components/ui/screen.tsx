@@ -47,11 +47,14 @@ export function Screen({ variant = 'tab', title, subtitle, headerRight, headerLe
 export function ScreenHeader({
   title,
   subtitle,
+  titleBadge,
   right,
   left,
 }: {
   title: string;
   subtitle?: string;
+  /** Shown right after the title, e.g. a count. */
+  titleBadge?: ReactNode;
   right?: ReactNode;
   left?: ReactNode;
 }) {
@@ -60,9 +63,12 @@ export function ScreenHeader({
       {left}
       <View style={styles.headerText}>
         {subtitle ? <Text tone="secondary">{subtitle}</Text> : null}
-        <Text variant="title" numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text variant="title" numberOfLines={1} style={styles.title}>
+            {title}
+          </Text>
+          {titleBadge}
+        </View>
       </View>
       {right}
     </View>
@@ -81,5 +87,13 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  title: {
+    flexShrink: 1,
   },
 });

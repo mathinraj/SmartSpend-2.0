@@ -184,7 +184,18 @@ export default function HistoryScreen() {
           <View style={styles.listHeader}>
             <ScreenHeader
               title="History"
-              subtitle={count === undefined ? undefined : `${count} transaction${count === 1 ? '' : 's'}`}
+              titleBadge={
+                count === undefined ? undefined : (
+                  <View style={[styles.countPill, { backgroundColor: `${colors.primary}1F` }]}>
+                    <Text variant="bodyStrong" tone="primary" numeric>
+                      {count}
+                    </Text>
+                    <Text variant="caption" tone="primary">
+                      {count === 1 ? 'transaction' : 'transactions'}
+                    </Text>
+                  </View>
+                )
+              }
               right={
                 <View style={styles.headerButtons}>
                   <IconButton
@@ -252,7 +263,7 @@ export default function HistoryScreen() {
             <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} />
 
             <ChipGroup>
-              <Chip label="Running balance" selected={showRunning} onPress={() => setShowRunning(!showRunning)} />
+              <Chip label="Show balances" selected={showRunning} onPress={() => setShowRunning(!showRunning)} />
               {chips.map((chip) => (
                 <Chip key={chip.key} label={chip.label} selected removable onPress={() => setHistoryFilters(chip.cleared)} />
               ))}
@@ -310,6 +321,14 @@ const styles = StyleSheet.create({
   listHeader: {
     gap: Spacing.md,
     marginBottom: Spacing.sm,
+  },
+  countPill: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
   },
   headerButtons: {
     flexDirection: 'row',
