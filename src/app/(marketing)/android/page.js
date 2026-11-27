@@ -41,6 +41,10 @@ const faqs = [
     a: 'Most phones from 2017 onward need the arm64-v8a APK. Older or budget phones may need armeabi-v7a. If you are not sure, the universal APK works on every phone; it is just a bigger download.',
   },
   {
+    q: 'Play Protect blocked the install. What do I do?',
+    a: 'From version 2.0, SpendTrak can read bank SMS (only if you turn that on). In India, Google Play Protect blocks apps that can read SMS when they are installed from a browser, so you may see "App blocked to protect your device" or "App not installed". The app is safe: messages are read only on your phone and never uploaded. To install: open the Play Store, tap your profile picture → Play Protect → the gear icon, turn off "Scan apps with Play Protect", install SpendTrak, then turn scanning back on. Updates install over your current version and keep your data. We have asked Google to review this.',
+  },
+  {
     q: 'Does the app need the internet?',
     a: 'No. Everything works offline and your data stays on your phone. The internet is only used if you turn on Google Drive sync, check for updates, or send feedback.',
   },

@@ -21,6 +21,9 @@ export const ANDROID_FEATURES = [
 export const ANDROID_INSTALL_STEPS = [
   { title: 'Open the latest release', desc: 'On your phone, open the GitHub release page from the button on this page.' },
   { title: 'Download the right file', desc: 'Most phones need the arm64-v8a APK. Not sure? The universal APK works on every phone.' },
-  { title: 'Install it', desc: 'Open the download. If Android asks, allow "Install unknown apps" for your browser, then tap Install.' },
+  {
+    title: 'Install it',
+    desc: 'Open the download. If Android asks, allow "Install unknown apps" for your browser, then tap Install. If Play Protect blocks it, see "Play Protect blocked the install" below.',
+  },
   { title: 'Bring your data', desc: 'In the app, open Settings → Google Drive and sign in with the same Google account you use here.' },
 ];
