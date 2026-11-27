@@ -14,14 +14,17 @@ import { MoveButtons } from '@/components/ui/move-buttons';
 import { Screen } from '@/components/ui/screen';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Text } from '@/components/ui/text';
-import { Spacing } from '@/constants/theme';
+import { Icon } from '@/components/ui/icon';
+import { Radius, Spacing } from '@/constants/theme';
 import { listAccounts, setAccountOrder } from '@/db/accounts';
 import { loadSampleData } from '@/db/sample-data';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { openAccountAnalytics, openAccountHistory } from '@/lib/account-links';
 import { ACCOUNT_TYPE_LABELS, isCreditCard, subTypeLabel } from '@/lib/accounts';
 import { useBalancePrivacy } from '@/lib/balance-privacy';
+import { showDialog } from '@/lib/dialog';
 import { formatCurrency } from '@/lib/format';
 import type { Account, CustomAccountType } from '@/types/models';
 
@@ -74,6 +77,15 @@ export default function AccountsScreen() {
   const assets = accounts?.filter((a) => a.balance >= 0).reduce((sum, a) => sum + a.balance, 0) ?? 0;
   const liabilities = accounts?.filter((a) => a.balance < 0).reduce((sum, a) => sum + a.balance, 0) ?? 0;
   const groups = groupAccounts(accounts ?? [], settings?.customAccountTypes ?? []);
+
+  function showAccountMenu(account: Account) {
+    showDialog(account.name, undefined, [
+      { text: 'View transactions', onPress: () => openAccountHistory(account.id) },
+      { text: 'View analytics', onPress: () => openAccountAnalytics(account.id) },
+      { text: 'Edit account', onPress: () => router.push(`/account/${account.id}`) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
 
   function move(group: AccountGroup, index: number, delta: -1 | 1) {
     const ids = group.accounts.map((a) => a.id);
@@ -161,20 +173,30 @@ export default function AccountsScreen() {
                         onMove={(delta) => move(group, i, delta)}
                       />
                     ) : (
-                      <View style={styles.trailing}>
-                        <Text variant="bodyStrong" tone={account.balance < 0 ? 'danger' : 'default'} numeric>
-                          {privacy.formatBalance(account.balance, currency)}
-                        </Text>
-                        {isCreditCard(account) && account.balance < 0 ? (
-                          <Pressable
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => router.push({ pathname: '/account/pay-bill', params: { id: account.id } })}>
-                            <Text variant="caption" tone="primary" style={styles.link}>
-                              Pay bill
-                            </Text>
-                          </Pressable>
-                        ) : null}
+                      <View style={styles.trailingRow}>
+                        <View style={styles.trailing}>
+                          <Text variant="bodyStrong" tone={account.balance < 0 ? 'danger' : 'default'} numeric>
+                            {privacy.formatBalance(account.balance, currency)}
+                          </Text>
+                          {isCreditCard(account) && account.balance < 0 ? (
+                            <Pressable
+                              accessibilityRole="button"
+                              hitSlop={8}
+                              onPress={() => router.push({ pathname: '/account/pay-bill', params: { id: account.id } })}>
+                              <Text variant="caption" tone="primary" style={styles.link}>
+                                Pay bill
+                              </Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`${account.name} options`}
+                          hitSlop={{ top: 12, bottom: 12, left: 6, right: 10 }}
+                          onPress={() => showAccountMenu(account)}
+                          style={({ pressed }) => [styles.more, pressed && { backgroundColor: colors.border }]}>
+                          <Icon name="more" size={20} color={colors.textSecondary} />
+                        </Pressable>
                       </View>
                     )
                   }
@@ -205,9 +227,22 @@ const styles = StyleSheet.create({
   group: {
     gap: Spacing.lg,
   },
+  trailingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
   trailing: {
     alignItems: 'flex-end',
     gap: 2,
+  },
+  more: {
+    width: 32,
+    height: 32,
+    marginRight: -Spacing.sm,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   link: {
     fontWeight: '700',

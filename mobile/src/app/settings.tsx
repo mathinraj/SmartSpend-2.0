@@ -15,7 +15,7 @@ import { getCurrency } from '@/constants/currencies';
 import { CONTRIBUTE_URL, DEVELOPER } from '@/constants/developer';
 import { Radius, Spacing } from '@/constants/theme';
 import { resetAllData } from '@/db/reset';
-import { hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-data';
+import { hasOwnData, hasSampleData, loadSampleData, removeSampleData } from '@/db/sample-data';
 import { countPendingSms } from '@/db/sms';
 import { getSyncState } from '@/db/sync';
 import { useDbQuery } from '@/hooks/use-db-query';
@@ -51,6 +51,7 @@ export default function SettingsScreen() {
   const colors = useTheme();
   const settings = useSettings();
   const sampleLoaded = useDbQuery(hasSampleData, ['accounts']);
+  const ownData = useDbQuery(hasOwnData, ['accounts', 'transactions']);
   const syncState = useDbQuery(getSyncState, ['sync_state']);
   const smsPending = useDbQuery(countPendingSms, ['sms_messages']);
   const syncStatus = useSyncStatus();
@@ -224,25 +225,32 @@ export default function SettingsScreen() {
         />
       </Card>
 
+      {sampleLoaded || ownData === false ? (
+        <>
+          <SectionHeader title="Experimental & optional" />
+          <Card flush>
+            {sampleLoaded ? (
+              <ListRow
+                leading={<Icon name="delete" color={colors.danger} />}
+                title="Remove sample data"
+                subtitle="Delete the demo accounts, transactions, planned payments, and splits"
+                onPress={confirmRemoveSample}
+              />
+            ) : (
+              <ListRow
+                leading={<Icon name="sparkles" color={colors.primary} />}
+                title="Load sample data"
+                subtitle="Explore with demo accounts, planned payments, and split expenses"
+                onPress={() => loadSampleData(db)}
+              />
+            )}
+          </Card>
+        </>
+      ) : null}
+
       <SectionHeader title="Data" />
       <Card flush>
-        {sampleLoaded ? (
-          <ListRow
-            leading={<Icon name="delete" color={colors.danger} />}
-            title="Remove sample data"
-            subtitle="Delete the demo accounts, transactions, planned payments, and splits"
-            onPress={confirmRemoveSample}
-          />
-        ) : (
-          <ListRow
-            leading={<Icon name="sparkles" color={colors.primary} />}
-            title="Load sample data"
-            subtitle="Explore with demo accounts, planned payments, and split expenses"
-            onPress={() => loadSampleData(db)}
-          />
-        )}
         <ListRow
-          divider
           leading={<Icon name="delete" color={colors.danger} />}
           title="Reset everything"
           subtitle="Delete all data on this phone and start over"

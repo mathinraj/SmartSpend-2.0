@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
@@ -37,6 +38,7 @@ function createDefaultReminder() {
 }
 
 export default function Preferences() {
+  const router = useRouter();
   const { state, dispatch } = useApp();
   const { settings, accounts, transactions } = state;
   const sampleLoaded = hasSampleData(accounts);
@@ -149,6 +151,8 @@ export default function Preferences() {
   function handleResetAll() {
     if (window.confirm('This will delete ALL your data and reset the app. Are you sure?')) {
       dispatch({ type: 'RESET_DATA' });
+      // Start over at Home, or onboarding would end on this Preferences URL.
+      router.replace('/');
     }
   }
 

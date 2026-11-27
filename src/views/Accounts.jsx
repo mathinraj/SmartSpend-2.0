@@ -396,7 +396,10 @@ export default function Accounts() {
               {maskAmount(formatCurrency(acc.balance, currency))}
             </p>
             <div className="account-card-actions">
-              <button className="account-analytics-btn" onClick={(e) => { e.stopPropagation(); router.push(`/analytics?account=${acc.id}`); }} title="View Analytics">
+              <button className="account-analytics-btn" onClick={(e) => { e.stopPropagation(); router.push(`/transactions?account=${acc.id}`); }} title="View Transactions" aria-label={`${acc.name} transactions`}>
+                <i className="fa-solid fa-list-ul" />
+              </button>
+              <button className="account-analytics-btn" onClick={(e) => { e.stopPropagation(); router.push(`/analytics?account=${acc.id}`); }} title="View Analytics" aria-label={`${acc.name} analytics`}>
                 <i className="fa-solid fa-chart-pie" />
               </button>
               {acc.type === 'card' && acc.subType === 'credit' && acc.balance < 0 && (

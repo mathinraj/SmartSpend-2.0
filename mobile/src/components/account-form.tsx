@@ -15,6 +15,7 @@ import { countTransactionsForAccount } from '@/db/transactions';
 import { useDbQuery } from '@/hooks/use-db-query';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { openAccountAnalytics, openAccountHistory } from '@/lib/account-links';
 import { ACCOUNT_SUBTYPES, ACCOUNT_TYPE_OPTIONS, CUSTOM_TYPE_ICONS, accountEmoji, isCreditCard } from '@/lib/accounts';
 import { showDialog } from '@/lib/dialog';
 import { parseAmount, sanitizeAmountInput } from '@/lib/format';
@@ -166,7 +167,13 @@ export function AccountForm({ initial }: AccountFormProps) {
   function openAnalytics() {
     if (!initial) return;
     router.back();
-    router.navigate({ pathname: '/analytics', params: { account: initial.id } });
+    openAccountAnalytics(initial.id);
+  }
+
+  function openHistory() {
+    if (!initial) return;
+    router.back();
+    openAccountHistory(initial.id);
   }
 
   return (
@@ -192,7 +199,10 @@ export function AccountForm({ initial }: AccountFormProps) {
             </View>
           ) : null}
           <View style={styles.flex}>
-            <Button label="View analytics" icon="chart" size="small" variant="secondary" onPress={openAnalytics} />
+            <Button label="History" icon="history" size="small" variant="secondary" onPress={openHistory} />
+          </View>
+          <View style={styles.flex}>
+            <Button label="Analytics" icon="chart" size="small" variant="secondary" onPress={openAnalytics} />
           </View>
         </View>
       ) : null}

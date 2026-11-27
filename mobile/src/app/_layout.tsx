@@ -17,7 +17,7 @@ import { useSettings } from '@/hooks/use-settings';
 import { useSmsImport } from '@/hooks/use-sms-import';
 import { useTheme } from '@/hooks/use-theme';
 import { useUpdateCheck } from '@/hooks/use-update-check';
-import { markAppReady } from '@/lib/launch';
+import { markAppReady, useIntroStarted } from '@/lib/launch';
 import type { Settings } from '@/types/models';
 
 // LaunchAnimation hides the native splash itself, on the frame it takes over.
@@ -59,7 +59,8 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const settings = useSettings();
-  if (!settings) return null;
+  const introStarted = useIntroStarted();
+  if (!settings || !introStarted) return null;
   return <AppStack settings={settings} />;
 }
 

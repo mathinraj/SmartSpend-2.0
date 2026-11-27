@@ -16,7 +16,7 @@ import Animated, {
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { setLaunchPlaying, useAppReady } from '@/lib/launch';
+import { markIntroStarted, setLaunchPlaying, useAppReady } from '@/lib/launch';
 import { isLockSuppressed } from '@/lib/lock';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -43,7 +43,7 @@ const TRAIL_LENGTH = 80;
 const LIFT = -38;
 const GLOW_SIZE = 340;
 /** How long the intro plays before the app may appear, even if it is ready sooner. */
-const INTRO_MS = 1250;
+const INTRO_MS = 1190;
 const EXIT_MS = 400;
 /** Leave anyway if the app never reports ready, so a startup error can't hide behind the animation. */
 const FALLBACK_MS = 8000;
@@ -136,6 +136,7 @@ function LaunchIntro({ onDone }: { onDone: () => void }) {
     if (started.current) return;
     started.current = true;
     hideNativeSplash();
+    markIntroStarted();
     setTimeout(() => setIntroDone(true), reduceMotion ? 0 : INTRO_MS);
     setTimeout(() => setTimedOut(true), FALLBACK_MS);
     if (reduceMotion) {
@@ -149,12 +150,13 @@ function LaunchIntro({ onDone }: { onDone: () => void }) {
     const out = Easing.out(Easing.cubic);
     pop.value = withSpring(1, { damping: 13, stiffness: 120, mass: 1 });
     glow.value = withTiming(1, { duration: 800, easing: out });
-    lilac.value = withDelay(60, withTiming(1, { duration: 340, easing: Easing.in(Easing.quad) }));
-    mint.value = withDelay(400, withTiming(1, { duration: 360, easing: Easing.out(Easing.quad) }));
-    finished.value = withDelay(720, withTiming(1, { duration: 220 }));
-    trail.value = withDelay(820, withTiming(1, { duration: 520, easing: Easing.inOut(Easing.cubic) }));
-    words.value = withDelay(620, withTiming(1, { duration: 420, easing: out }));
-    tagline.value = withDelay(800, withTiming(1, { duration: 400, easing: out }));
+    // The first stroke starts at full speed on the first frame, so the plain splash colour isn't held any longer.
+    lilac.value = withTiming(1, { duration: 340, easing: Easing.linear });
+    mint.value = withDelay(340, withTiming(1, { duration: 360, easing: Easing.out(Easing.quad) }));
+    finished.value = withDelay(660, withTiming(1, { duration: 220 }));
+    trail.value = withDelay(760, withTiming(1, { duration: 520, easing: Easing.inOut(Easing.cubic) }));
+    words.value = withDelay(560, withTiming(1, { duration: 420, easing: out }));
+    tagline.value = withDelay(740, withTiming(1, { duration: 400, easing: out }));
   });
 
   // Start once this layer is on screen and the app is in front (a replay is set up while it's away).

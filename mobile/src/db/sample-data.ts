@@ -95,6 +95,15 @@ export async function hasSampleData(db: SQLiteDatabase): Promise<boolean> {
   return (row?.n ?? 0) > 0;
 }
 
+/** Whether the user has added any accounts or transactions of their own (sample rows don't count). */
+export async function hasOwnData(db: SQLiteDatabase): Promise<boolean> {
+  const row = await db.getFirstAsync<{ n: number }>(
+    `SELECT (SELECT COUNT(*) FROM accounts WHERE id NOT LIKE $p) + (SELECT COUNT(*) FROM transactions WHERE id NOT LIKE $p) AS n`,
+    { $p: `${SAMPLE_PREFIX}%` }
+  );
+  return (row?.n ?? 0) > 0;
+}
+
 /** Sample account balances are already final, so transactions are inserted without touching them. */
 export async function loadSampleData(db: SQLiteDatabase) {
   if (await hasSampleData(db)) return;

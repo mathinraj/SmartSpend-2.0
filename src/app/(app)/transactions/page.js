@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Transactions from '../../../views/Transactions';
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function TransactionsPage() {
-  return <Transactions />;
+  return (
+    <Suspense>
+      <Transactions />
+    </Suspense>
+  );
 }

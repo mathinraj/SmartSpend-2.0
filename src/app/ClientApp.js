@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { AppProvider, useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useReminder } from '../hooks/useReminder';
@@ -15,30 +16,34 @@ import Welcome from '../views/Welcome';
 import NameSetup from '../views/NameSetup';
 import CurrencySetup from '../views/CurrencySetup';
 
+// The install offer only appears where someone is actively tracking, not on Home, Feedback or Preferences.
+const INSTALL_BANNER_PAGES = ['/add', '/transactions', '/accounts', '/analytics', '/splits', '/planned'];
+
 function InstallBanner() {
+  const { state } = useApp();
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     if (localStorage.getItem('spendtraq_install_dismissed')) return;
 
-    function handleBeforeInstall(e) {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    }
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    // The root layout captures the browser's prompt (it can fire before this mounts).
+    const pick = () => { if (window.__installPrompt) setDeferredPrompt(window.__installPrompt); };
+    pick();
+    window.addEventListener('spendtrak-installable', pick);
+    return () => window.removeEventListener('spendtrak-installable', pick);
   }, []);
 
   async function handleInstall() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
+    // A prompt can only be shown once.
+    window.__installPrompt = null;
+    setDeferredPrompt(null);
+    if (outcome !== 'accepted') localStorage.setItem('spendtraq_install_dismissed', Date.now().toString());
   }
 
   function handleDismiss() {
@@ -47,7 +52,8 @@ function InstallBanner() {
     setDeferredPrompt(null);
   }
 
-  if (!deferredPrompt || dismissed) return null;
+  const startedTracking = state.transactions.length > 0;
+  if (!deferredPrompt || dismissed || !startedTracking || !INSTALL_BANNER_PAGES.includes(pathname)) return null;
 
   return (
     <div className="install-banner">
@@ -234,6 +240,16 @@ function AppShell({ children }) {
     const timer = setTimeout(checkDuePayments, 3000);
     return () => clearTimeout(timer);
   }, [state.settings.onboardStep, state.settings.plannedEnabled, state.plannedPayments]);
+
+  // Finishing onboarding always lands on Home, whatever URL it started from (e.g. after a reset in Preferences).
+  const router = useRouter();
+  const pathname = usePathname();
+  const prevOnboardStep = useRef(state.settings.onboardStep);
+  useEffect(() => {
+    const prev = prevOnboardStep.current;
+    prevOnboardStep.current = state.settings.onboardStep;
+    if (prev < 3 && state.settings.onboardStep >= 3 && pathname !== '/') router.replace('/');
+  }, [state.settings.onboardStep, pathname, router]);
 
   const handleUnlock = useCallback(() => setLocked(false), []);
   useDriveAutoSync();

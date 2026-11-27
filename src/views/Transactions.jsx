@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { formatCurrency } from '../utils/currencies';
@@ -58,7 +58,16 @@ export default function Transactions() {
 
   // Advanced filters
   const [filterCategoryIds, setFilterCategoryIds] = useState(savedFilters.current?.filterCategoryIds || []);
-  const [filterAccountIds, setFilterAccountIds] = useState(savedFilters.current?.filterAccountIds || []);
+  // Opened from an account ("?account=<id>"): show that account's transactions.
+  const searchParams = useSearchParams();
+  const accountParam = searchParams.get('account');
+  const [filterAccountIds, setFilterAccountIds] = useState(
+    accountParam ? [accountParam] : savedFilters.current?.filterAccountIds || []
+  );
+  useEffect(() => {
+    // Drop the parameter so the filter doesn't come back after the user clears it.
+    if (accountParam) router.replace('/transactions', { scroll: false });
+  }, [accountParam, router]);
   const [filterDateFrom, setFilterDateFrom] = useState(savedFilters.current?.filterDateFrom || '');
   const [filterDateTo, setFilterDateTo] = useState(savedFilters.current?.filterDateTo || '');
   const [filterAmountMin, setFilterAmountMin] = useState(savedFilters.current?.filterAmountMin || '');

@@ -7,10 +7,29 @@ import { useSyncExternalStore } from 'react';
  */
 let appReady = false;
 let playing = true;
+let introStarted = false;
 const listeners = new Set<() => void>();
 
 function emit() {
   listeners.forEach((l) => l());
+}
+
+/** Mount the app anyway if the intro never starts (for example, the process started in the background). */
+const INTRO_START_FALLBACK_MS = 1500;
+setTimeout(() => markIntroStarted(), INTRO_START_FALLBACK_MS);
+
+/**
+ * The intro is on screen and the native splash is gone. The app tree waits for this so rendering it
+ * doesn't hold the plain splash on screen at cold start; it then renders behind the animation.
+ */
+export function markIntroStarted() {
+  if (introStarted) return;
+  introStarted = true;
+  emit();
+}
+
+export function useIntroStarted(): boolean {
+  return useSyncExternalStore(subscribe, () => introStarted);
 }
 
 function subscribe(listener: () => void) {

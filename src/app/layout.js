@@ -107,6 +107,10 @@ export const viewport = {
 
 // Runs before first paint: marks people who have started using the app, so the server-rendered landing
 // page stays hidden for them (see `.lp-prerender` and AppShell in ClientApp.js).
+// Keeps Chrome from showing its own install bar on any page; the app offers the saved prompt itself,
+// and only on tracking pages (see InstallBanner in ClientApp).
+const INSTALL_PROMPT_SCRIPT = `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event('spendtrak-installable'))});`;
+
 const RETURNING_VISITOR_SCRIPT = `try{var s=JSON.parse(localStorage.getItem('spendtraq_settings')||'null');if((s&&s.onboardStep>0)||localStorage.getItem('spendtraq_app_lock'))document.documentElement.setAttribute('data-returning','')}catch(e){}`;
 
 const jsonLd = [
@@ -195,6 +199,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: RETURNING_VISITOR_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_PROMPT_SCRIPT }} />
         <link rel="preconnect" href="https://kit.fontawesome.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ka-f.fontawesome.com" crossOrigin="anonymous" />
         <Script
