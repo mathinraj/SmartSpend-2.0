@@ -542,7 +542,8 @@
 }
 
 .pin-setup-input {
-  width: 120px;
+  width: 150px;
+  text-indent: 12px;
   text-align: center;
   font-size: 1.8rem;
   font-weight: 800;
@@ -587,9 +588,10 @@
 }
 
 .pin-setup-input-wide {
-  width: 200px;
+  width: 220px;
   font-size: 1rem;
   letter-spacing: 2px;
+  text-indent: 0;
 }
 
 .lock-type-tabs {
@@ -1124,6 +1126,26 @@
 .pref-lock-hint .pref-row-desc {
   margin-top: 0;
   line-height: 1.5;
+}
+
+.pin-setup-form {
+  text-align: center;
+  padding: 4px 0 8px;
+}
+
+.pin-setup-step {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.pin-setup-enter-hint {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-bottom: 14px;
 }
 
 .pin-setup-note {

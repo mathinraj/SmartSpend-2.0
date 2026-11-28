@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
+import Modal from '../components/Modal';
 import { hasSampleData } from '../utils/sampleData';
 import { generateId } from '../utils/helpers';
 import {
@@ -635,6 +636,11 @@ export default function Preferences() {
     { label: 'Hide balances', desc: 'Mask amounts with *** for privacy', checked: settings.hideBalances === true, onChange: (v) => updatePref('hideBalances', v) },
   ];
 
+  const lockInputValue = lockSetupType === 'pin'
+    ? (lockStep === 'new' ? newPin : confirmPin)
+    : (lockStep === 'new' ? newPassword : confirmPassword);
+  const lockInputValid = lockSetupType === 'pin' ? lockInputValue.length === 4 : lockInputValue.length >= 4;
+
   function openLockSetup(type) {
     setShowLockSetup(true);
     setLockSetupType(type);
@@ -1075,90 +1081,95 @@ export default function Preferences() {
               )}
             </div>
 
-            {showLockSetup && (
-              <div className="pin-setup-card">
+            <Modal
+              isOpen={showLockSetup}
+              onClose={resetLockSetup}
+              title={hasAppLock ? `Change ${currentLockType === 'password' ? 'password' : 'PIN'}` : 'Set up app lock'}
+            >
+              <form
+                className="pin-setup-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (lockInputValid) handleSetLock();
+                }}
+                onKeyDown={(e) => { if (e.key === 'Escape') resetLockSetup(); }}
+              >
                 <div className="lock-type-tabs">
-                  <button className={`lock-type-tab ${lockSetupType === 'pin' ? 'active' : ''}`} onClick={() => { setLockSetupType('pin'); setLockStep('new'); setNewPin(''); setConfirmPin(''); }}>
+                  <button type="button" className={`lock-type-tab ${lockSetupType === 'pin' ? 'active' : ''}`} onClick={() => { setLockSetupType('pin'); setLockStep('new'); setNewPin(''); setConfirmPin(''); }}>
                     <i className="fa-solid fa-grid-2" /> PIN
                   </button>
-                  <button className={`lock-type-tab ${lockSetupType === 'password' ? 'active' : ''}`} onClick={() => { setLockSetupType('password'); setLockStep('new'); setNewPassword(''); setConfirmPassword(''); }}>
+                  <button type="button" className={`lock-type-tab ${lockSetupType === 'password' ? 'active' : ''}`} onClick={() => { setLockSetupType('password'); setLockStep('new'); setNewPassword(''); setConfirmPassword(''); }}>
                     <i className="fa-solid fa-key" /> Password
                   </button>
                 </div>
 
-                {lockSetupType === 'pin' ? (
-                  <>
-                    <p className="pin-setup-title">
-                      {lockStep === 'new' ? 'Enter new 4-digit PIN' : 'Confirm your PIN'}
-                    </p>
-                    <div className="pin-setup-input-row">
-                      <input
-                        type="tel"
-                        className="pin-setup-input"
-                        maxLength={4}
-                        value={lockStep === 'new' ? newPin : confirmPin}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                          if (lockStep === 'new') setNewPin(val);
-                          else setConfirmPin(val);
-                        }}
-                        placeholder="••••"
-                        autoFocus
-                      />
-                    </div>
-                    <div className="pin-setup-dots">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <span key={i} className={`pin-dot ${i < (lockStep === 'new' ? newPin : confirmPin).length ? 'filled' : ''}`} />
-                      ))}
-                    </div>
-                    <div className="pin-setup-actions">
-                      <button className="btn btn-sm btn-outline" onClick={resetLockSetup}>Cancel</button>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={handleSetLock}
-                        disabled={(lockStep === 'new' ? newPin : confirmPin).length !== 4}
-                      >
-                        {lockStep === 'new' ? 'Next' : 'Set PIN'}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="pin-setup-title">
-                      {lockStep === 'new' ? 'Enter new password' : 'Confirm your password'}
-                    </p>
-                    <div className="pin-setup-input-row">
-                      <input
-                        type="password"
-                        className="pin-setup-input pin-setup-input-wide"
-                        value={lockStep === 'new' ? newPassword : confirmPassword}
-                        onChange={(e) => {
-                          if (lockStep === 'new') setNewPassword(e.target.value);
-                          else setConfirmPassword(e.target.value);
-                        }}
-                        placeholder={lockStep === 'new' ? 'Min 4 characters' : 'Re-enter password'}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="pin-setup-actions">
-                      <button className="btn btn-sm btn-outline" onClick={resetLockSetup}>Cancel</button>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={handleSetLock}
-                        disabled={(lockStep === 'new' ? newPassword : confirmPassword).length < 4}
-                      >
-                        {lockStep === 'new' ? 'Next' : 'Set Password'}
-                      </button>
-                    </div>
-                  </>
+                <p className="pin-setup-step">Step {lockStep === 'new' ? 1 : 2} of 2</p>
+                <p className="pin-setup-title">
+                  {lockSetupType === 'pin'
+                    ? (lockStep === 'new' ? 'Enter a 4-digit PIN' : 'Enter the same PIN again')
+                    : (lockStep === 'new' ? 'Enter a password' : 'Enter the same password again')}
+                </p>
+                <div className="pin-setup-input-row">
+                  {lockSetupType === 'pin' ? (
+                    <input
+                      key={`pin-${lockStep}`}
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      className="pin-setup-input"
+                      aria-label={lockStep === 'new' ? 'New PIN' : 'Confirm PIN'}
+                      maxLength={4}
+                      value={lockInputValue}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        if (lockStep === 'new') setNewPin(val);
+                        else setConfirmPin(val);
+                      }}
+                      placeholder="••••"
+                      autoFocus
+                    />
+                  ) : (
+                    <input
+                      key={`password-${lockStep}`}
+                      type="password"
+                      autoComplete="new-password"
+                      className="pin-setup-input pin-setup-input-wide"
+                      aria-label={lockStep === 'new' ? 'New password' : 'Confirm password'}
+                      value={lockInputValue}
+                      onChange={(e) => {
+                        if (lockStep === 'new') setNewPassword(e.target.value);
+                        else setConfirmPassword(e.target.value);
+                      }}
+                      placeholder={lockStep === 'new' ? 'At least 4 characters' : 'Re-enter password'}
+                      autoFocus
+                    />
+                  )}
+                </div>
+                {lockSetupType === 'pin' && (
+                  <div className="pin-setup-dots">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <span key={i} className={`pin-dot ${i < lockInputValue.length ? 'filled' : ''}`} />
+                    ))}
+                  </div>
                 )}
+                <p className="pin-setup-enter-hint">Press Enter to {lockStep === 'new' ? 'continue' : 'save'}</p>
+                <div className="pin-setup-actions">
+                  {lockStep === 'new' ? (
+                    <button type="button" className="btn btn-sm btn-outline" onClick={resetLockSetup}>Cancel</button>
+                  ) : (
+                    <button type="button" className="btn btn-sm btn-outline" onClick={() => { setLockStep('new'); setConfirmPin(''); setConfirmPassword(''); }}>Back</button>
+                  )}
+                  <button type="submit" className="btn btn-sm btn-primary" disabled={!lockInputValid}>
+                    {lockStep === 'new' ? 'Next' : lockSetupType === 'pin' ? 'Set PIN' : 'Set password'}
+                  </button>
+                </div>
                 {!hasAppLock && bioAvailable && (
                   <p className="pin-setup-note">
                     <i className="fa-solid fa-fingerprint" /> Next, you can turn on fingerprint unlock so you rarely need to type it.
                   </p>
                 )}
-              </div>
-            )}
+              </form>
+            </Modal>
 
             {hasAppLock && touchLockStore && <TouchLockCard store={touchLockStore} />}
           </Section>
