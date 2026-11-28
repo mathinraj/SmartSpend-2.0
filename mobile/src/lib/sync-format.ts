@@ -102,8 +102,19 @@ export function emptyTables(): Record<SyncTable, SyncRow[]> {
 
 const bySortOrder = (a: SyncRow, b: SyncRow) => Number(a.sort_order) - Number(b.sort_order);
 
+/**
+ * Which apps ('web', 'android') have ever synced through a file. `_source` only names the last writer,
+ * so `_clients` carries the full list forward; files from older versions only have `_source`.
+ */
+export function syncClients(file: unknown): string[] {
+  if (!isObject(file)) return [];
+  const clients = Array.isArray(file._clients) ? file._clients.filter((c): c is string => typeof c === 'string') : [];
+  if (typeof file._source === 'string') clients.push(file._source);
+  return [...new Set(clients)];
+}
+
 /** The file for a snapshot. `exportedAt` is left out of change detection by callers. */
-export function snapshotToFile(s: Snapshot, meta: { appVersion: string; exportedAt: string }) {
+export function snapshotToFile(s: Snapshot, meta: { appVersion: string; exportedAt: string; clients?: string[] }) {
   const { tables } = s;
   const subcategories = (categoryId: string) =>
     tables.subcategories
@@ -129,6 +140,7 @@ export function snapshotToFile(s: Snapshot, meta: { appVersion: string; exported
     _version: meta.appVersion,
     _format: SYNC_FORMAT,
     _source: 'android',
+    _clients: [...new Set([...(meta.clients ?? []), 'android'])].sort(),
     _exportedAt: meta.exportedAt,
     settingsUpdatedAt: s.settingsUpdatedAt,
     settings: { ...s.settings, splitEnabled: true, plannedEnabled: true },

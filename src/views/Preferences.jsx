@@ -570,7 +570,11 @@ export default function Preferences() {
       localStorage.setItem(LOCK_TYPE_KEY, 'password');
     }
     updatePref('appLockEnabled', true);
-    toast('App lock enabled!', 'success');
+    toast(
+      bioAvailable && !bioEnabled ? 'App lock is on. You can now turn on fingerprint unlock.' : 'App lock is on',
+      'success',
+      4000
+    );
     resetLockSetup();
   }
 
@@ -1013,7 +1017,7 @@ export default function Preferences() {
                   <p className="pref-row-desc">
                     {hasAppLock
                       ? `${currentLockType === 'password' ? 'Password' : 'PIN'} lock is on`
-                      : 'Lock SpendTrak with a PIN or password, then unlock with your fingerprint'}
+                      : 'Ask for a PIN or password when SpendTrak opens'}
                   </p>
                 </div>
                 {hasAppLock ? (
@@ -1026,6 +1030,16 @@ export default function Preferences() {
                   </button>
                 )}
               </div>
+
+              {!hasAppLock && bioAvailable !== false && (
+                <div className="pref-row pref-lock-hint">
+                  <i className="fa-solid fa-fingerprint pref-row-icon" />
+                  <p className="pref-row-desc">
+                    Touch ID, Windows Hello, or fingerprint unlock can be turned on here once you&apos;ve set a PIN or password.
+                    The PIN stays as a backup.
+                  </p>
+                </div>
+              )}
 
               {hasAppLock && (
                 <ToggleRow
@@ -1138,10 +1152,15 @@ export default function Preferences() {
                     </div>
                   </>
                 )}
+                {!hasAppLock && bioAvailable && (
+                  <p className="pin-setup-note">
+                    <i className="fa-solid fa-fingerprint" /> Next, you can turn on fingerprint unlock so you rarely need to type it.
+                  </p>
+                )}
               </div>
             )}
 
-            {touchLockStore && <TouchLockCard store={touchLockStore} />}
+            {hasAppLock && touchLockStore && <TouchLockCard store={touchLockStore} />}
           </Section>
 
           <Section id="backup" icon="fa-cloud-arrow-up" title="Backup & sync" desc="Your data lives in this browser. Back it up so clearing site data can't erase it.">

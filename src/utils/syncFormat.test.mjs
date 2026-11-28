@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { parseSyncFile, snapshotToFile as androidFile } from '../../mobile/src/lib/sync-format.ts';
+import { parseSyncFile, snapshotToFile as androidFile, syncClients as androidClients } from '../../mobile/src/lib/sync-format.ts';
 import { mergeSnapshots as androidMerge } from '../../mobile/src/lib/sync-merge.ts';
 import {
   EPOCH,
@@ -11,8 +11,28 @@ import {
   mergeSnapshots,
   snapshotToFile,
   stateToSnapshot,
+  syncClients,
   trackChanges,
 } from './syncFormat.js';
+
+describe('apps that use the sync file', () => {
+  test('both apps keep the list, so the web knows about the phone even after it writes last', () => {
+    const snapshot = stateToSnapshot(webState());
+    // Android 2.0.0 files only say who wrote them last.
+    const fromOldPhone = { ...androidFile(parseSyncFile(snapshotToFile(snapshot, { appVersion: 't', exportedAt: '' })), { appVersion: '2.0.0', exportedAt: '' }) };
+    delete fromOldPhone._clients;
+    assert.deepEqual(syncClients(fromOldPhone), ['android']);
+
+    const fromWeb = snapshotToFile(snapshot, { appVersion: 't', exportedAt: '', clients: syncClients(fromOldPhone) });
+    assert.deepEqual(fromWeb._clients, ['android', 'web']);
+    assert.equal(fromWeb._source, 'web');
+
+    const fromPhone = androidFile(parseSyncFile(fromWeb), { appVersion: 't', exportedAt: '', clients: androidClients(fromWeb) });
+    assert.deepEqual(fromPhone._clients, ['android', 'web']);
+    assert.deepEqual(syncClients({ _clients: ['web'] }), ['web']);
+    assert.deepEqual(syncClients(null), []);
+  });
+});
 
 const T1 = '2026-11-01T10:00:00.000Z';
 const T2 = '2026-11-02T10:00:00.000Z';

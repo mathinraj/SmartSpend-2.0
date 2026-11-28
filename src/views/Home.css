@@ -273,6 +273,15 @@
   font-size: 1.25rem;
 }
 
+.lock-promo {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.08));
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+.lock-promo .android-promo-icon {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+
 .android-promo-text {
   flex: 1;
   min-width: 0;

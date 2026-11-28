@@ -26,7 +26,7 @@ import {
   updateFile,
   type DriveFile,
 } from '@/lib/google-drive';
-import { InvalidBackupError, parseSyncFile, snapshotToFile, type Snapshot } from '@/lib/sync-format';
+import { InvalidBackupError, parseSyncFile, snapshotToFile, syncClients, type Snapshot } from '@/lib/sync-format';
 
 const SYNC_FILE = 'spendtrak-sync.json.gz';
 /** Written uncompressed by web app versions before sync format 3; merged in while it keeps changing. */
@@ -166,8 +166,9 @@ function hashString(text: string): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 
-function readFile(data: Uint8Array, compressed: boolean): Snapshot {
-  return parseSyncFile(JSON.parse(strFromU8(compressed ? gunzipSync(data) : data)));
+function readFile(data: Uint8Array, compressed: boolean): { snapshot: Snapshot; clients: string[] } {
+  const raw: unknown = JSON.parse(strFromU8(compressed ? gunzipSync(data) : data));
+  return { snapshot: parseSyncFile(raw), clients: syncClients(raw) };
 }
 
 /** Copies of this phone's data from just before a sync merged something in, newest first. */
@@ -223,14 +224,16 @@ async function runSync(db: SQLiteDatabase, manual: boolean) {
     const legacy = files.find((f) => f.name === LEGACY_FILE);
 
     // Read everything before changing anything, so an unreadable file leaves the data untouched.
-    const incoming: Snapshot[] = [];
+    const incoming: { snapshot: Snapshot; clients: string[] }[] = [];
     if (main && main.version !== state.remoteVersion) incoming.push(readFile(await drive((t) => downloadFile(t, main.id)), true));
     if (legacy && (!state.lastSyncAt || legacy.modifiedTime > state.lastSyncAt)) {
       incoming.push(readFile(await drive((t) => downloadFile(t, legacy.id)), false));
     }
-    for (const [i, remote] of incoming.entries()) await mergeRemote(db, remote, i === 0 && !state.lastSyncAt);
+    for (const [i, remote] of incoming.entries()) await mergeRemote(db, remote.snapshot, i === 0 && !state.lastSyncAt);
+    // Carried in the file so the web app knows this person uses the Android app (it hides its "Get the app" card).
+    const clients = [...new Set([...state.clients, ...incoming.flatMap((f) => f.clients), 'android'])];
 
-    const file = snapshotToFile(await readSnapshot(db), { appVersion: APP_VERSION, exportedAt: '' });
+    const file = snapshotToFile(await readSnapshot(db), { appVersion: APP_VERSION, exportedAt: '', clients });
     const hash = hashString(JSON.stringify(file));
     let { snapshotDate } = state;
     let fileId = main?.id ?? null;
@@ -251,7 +254,7 @@ async function runSync(db: SQLiteDatabase, manual: boolean) {
         await updateSettings(db, { lastBackupAt: today });
       }
     }
-    await updateSyncState(db, { fileId, remoteVersion, lastHash: hash, lastSyncAt: new Date().toISOString(), snapshotDate });
+    await updateSyncState(db, { fileId, remoteVersion, lastHash: hash, lastSyncAt: new Date().toISOString(), snapshotDate, clients });
     retryIndex = 0;
     setStatus('idle');
   } catch (error) {

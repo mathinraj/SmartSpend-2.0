@@ -1114,6 +1114,32 @@
   flex-shrink: 0;
 }
 
+.pref-lock-hint {
+  align-items: flex-start;
+  padding-top: 12px;
+  padding-bottom: 14px;
+  background: rgba(108, 92, 231, 0.04);
+}
+
+.pref-lock-hint .pref-row-desc {
+  margin-top: 0;
+  line-height: 1.5;
+}
+
+.pin-setup-note {
+  margin-top: 16px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pin-setup-note i {
+  color: var(--primary);
+}
+
 .pref-row-nested {
   padding-left: 34px;
 }

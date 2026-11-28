@@ -10,10 +10,13 @@ import { formatCurrency, getCurrencyEmoji } from '../utils/currencies';
 import { formatDate, getAccountIcon, generateId } from '../utils/helpers';
 import { hasSampleData } from '../utils/sampleData';
 import * as gDrive from '../utils/googleDrive';
-import { isAutoSync, syncNow, useDriveSyncStatus } from '../utils/driveSync';
+import { isAutoSync, syncNow, useDriveSyncStatus, usesAndroidApp } from '../utils/driveSync';
+import { LOCK_KEY } from '../utils/appLock';
+import { getTouchLockStore } from '../utils/touchLock';
 import './Home.css';
 
 const ANDROID_PROMO_KEY = 'spendtraq_android_promo_dismissed';
+const LOCK_PROMO_KEY = 'spendtraq_lock_promo_dismissed';
 
 const BACKUP_MESSAGES = [
   { icon: 'fa-solid fa-shield-halved', text: 'Your data is stored locally. Back it up to stay safe!', action: 'backup' },
@@ -71,14 +74,28 @@ export default function Home() {
   }
 
   const [showAndroidPromo, setShowAndroidPromo] = useState(false);
+  const [showLockPromo, setShowLockPromo] = useState(false);
+  const [touchLockStore, setTouchLockStore] = useState(null);
   useEffect(() => {
     if (!localStorage.getItem(ANDROID_PROMO_KEY)) setShowAndroidPromo(true);
+    if (!localStorage.getItem(LOCK_PROMO_KEY) && !localStorage.getItem(LOCK_KEY)) setShowLockPromo(true);
+    setTouchLockStore(getTouchLockStore());
   }, []);
 
   function dismissAndroidPromo() {
     setShowAndroidPromo(false);
     localStorage.setItem(ANDROID_PROMO_KEY, '1');
   }
+
+  function dismissLockPromo() {
+    setShowLockPromo(false);
+    localStorage.setItem(LOCK_PROMO_KEY, '1');
+  }
+
+  // One promo card at a time. The lock card waits until there's something to protect; the Android card
+  // is skipped for people whose Drive sync shows they already use the app.
+  const lockPromoVisible = showLockPromo && transactions.length > 0 && !settings.appLockEnabled;
+  const androidPromoVisible = !lockPromoVisible && showAndroidPromo && !usesAndroidApp();
 
   const [showReminderHint, setShowReminderHint] = useState(false);
   useEffect(() => {
@@ -282,7 +299,27 @@ export default function Home() {
         </div>
       )}
 
-      {showAndroidPromo && (
+      {lockPromoVisible && (
+        <div className="android-promo lock-promo">
+          <span className="android-promo-icon" aria-hidden="true">
+            <i className="fa-solid fa-fingerprint" />
+          </span>
+          <div className="android-promo-text">
+            <strong>Keep SpendTrak private</strong>
+            <span>
+              {touchLockStore
+                ? 'Lock it with a PIN and your fingerprint. TouchLock can lock your whole browser too.'
+                : 'Lock it with a PIN or password, then unlock with your fingerprint.'}
+            </span>
+          </div>
+          <Link href="/preferences#security" className="android-promo-btn">Set up lock</Link>
+          <button className="android-promo-dismiss" onClick={dismissLockPromo} aria-label="Hide the app lock card">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+      )}
+
+      {androidPromoVisible && (
         <div className="android-promo">
           <span className="android-promo-icon" aria-hidden="true">
             <i className="fa-brands fa-android" />

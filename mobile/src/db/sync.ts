@@ -162,6 +162,8 @@ export interface SyncState {
   lastHash: string | null;
   /** `YYYY-MM-DD` of the last daily copy kept in Drive. */
   snapshotDate: string | null;
+  /** Apps seen in the Drive file ('web', 'android'), written back as `_clients`. */
+  clients: string[];
 }
 
 const DEFAULT_SYNC_STATE: SyncState = {
@@ -172,6 +174,7 @@ const DEFAULT_SYNC_STATE: SyncState = {
   remoteVersion: null,
   lastHash: null,
   snapshotDate: null,
+  clients: [],
 };
 
 export async function getSyncState(db: SQLiteDatabase): Promise<SyncState> {

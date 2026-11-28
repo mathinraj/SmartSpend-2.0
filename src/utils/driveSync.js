@@ -7,7 +7,7 @@
 import { useSyncExternalStore } from 'react';
 import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';
 import * as gDrive from './googleDrive';
-import { InvalidSyncFileError, fileToSnapshot, mergeSnapshots, snapshotToFile, stateToSnapshot } from './syncFormat';
+import { InvalidSyncFileError, fileToSnapshot, mergeSnapshots, snapshotToFile, stateToSnapshot, syncClients } from './syncFormat';
 
 const SYNC_FILE = 'spendtrak-sync.json.gz';
 /** Written uncompressed by earlier versions; merged in while it keeps changing. */
@@ -19,6 +19,8 @@ const CHANGE_DELAY = 5000;
 const RESUME_INTERVAL = 60000;
 const RETRY_DELAYS = [30000, 120000, 600000];
 const STATE_KEY = 'spendtraq_drive_sync';
+// Apps seen in the Drive file ('web', 'android'). Kept after disconnecting: it means "uses the Android app".
+const CLIENTS_KEY = 'spendtraq_sync_clients';
 const PHOTO_KEY = 'spendtraq_profile_photo';
 const APP_VERSION = 'web';
 
@@ -170,6 +172,20 @@ async function keepDailyCopy(files, bytes) {
   for (const file of older) await gDrive.deleteAppFile(file.id);
 }
 
+function knownClients() {
+  try {
+    const list = JSON.parse(localStorage.getItem(CLIENTS_KEY) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+/** True once a Drive sync has shown that this person also uses the Android app. */
+export function usesAndroidApp() {
+  return typeof window !== 'undefined' && knownClients().includes('android');
+}
+
 async function runSync(manual) {
   if (!app) return;
   const { settings } = app.getState();
@@ -189,13 +205,16 @@ async function runSync(manual) {
 
     // Read everything before changing anything, so an unreadable file leaves the data untouched.
     const incoming = [];
-    if (main && main.version !== progress.remoteVersion) {
+    // Also read it once if this browser hasn't yet recorded which apps use the file.
+    if (main && (main.version !== progress.remoteVersion || !localStorage.getItem(CLIENTS_KEY))) {
       incoming.push(JSON.parse(strFromU8(gunzipSync(await gDrive.downloadFileBytes(main.id)))));
     }
     if (legacy && (!settings.gdriveLastSync || legacy.modifiedTime > settings.gdriveLastSync)) {
       incoming.push(JSON.parse(strFromU8(await gDrive.downloadFileBytes(legacy.id))));
     }
     const remotes = incoming.map(fileToSnapshot);
+    const clients = [...new Set([...knownClients(), ...incoming.flatMap(syncClients), 'web'])];
+    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
 
     let snapshot = stateToSnapshot(app.getState());
     remotes.forEach((remote, i) => {
@@ -212,7 +231,7 @@ async function runSync(manual) {
       }
     }
 
-    const file = snapshotToFile(snapshot, { appVersion: APP_VERSION, exportedAt: '' });
+    const file = snapshotToFile(snapshot, { appVersion: APP_VERSION, exportedAt: '', clients });
     if (settings.syncProfilePhoto && localStorage.getItem(PHOTO_KEY)) file.profilePhoto = localStorage.getItem(PHOTO_KEY);
     const hash = hashString(JSON.stringify(file));
     let { snapshotDate } = progress;

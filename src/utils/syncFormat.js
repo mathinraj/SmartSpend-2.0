@@ -84,8 +84,19 @@ export function stateToSnapshot(state) {
 
 const omit = (row, keys) => Object.fromEntries(Object.entries(row).filter(([k]) => !keys.includes(k)));
 
+/**
+ * Which apps ('web', 'android') have ever synced through a file. `_source` only names the last writer,
+ * so `_clients` carries the full list forward; files from older versions only have `_source`.
+ */
+export function syncClients(file) {
+  if (!isObject(file)) return [];
+  const clients = Array.isArray(file._clients) ? file._clients.filter((c) => typeof c === 'string') : [];
+  if (typeof file._source === 'string') clients.push(file._source);
+  return [...new Set(clients)];
+}
+
 /** The file for a snapshot, in the same shape the Android app writes. */
-export function snapshotToFile(snapshot, { appVersion, exportedAt }) {
+export function snapshotToFile(snapshot, { appVersion, exportedAt, clients = [] }) {
   const { tables } = snapshot;
   const byOrder = (a, b) => a.sortOrder - b.sortOrder;
   const subcategories = (categoryId) =>
@@ -100,6 +111,7 @@ export function snapshotToFile(snapshot, { appVersion, exportedAt }) {
     _version: appVersion,
     _format: SYNC_FORMAT,
     _source: 'web',
+    _clients: [...new Set([...clients, 'web'])].sort(),
     _exportedAt: exportedAt,
     settingsUpdatedAt: snapshot.settingsUpdatedAt,
     settings: { ...snapshot.settings, splitEnabled: true, plannedEnabled: true },
