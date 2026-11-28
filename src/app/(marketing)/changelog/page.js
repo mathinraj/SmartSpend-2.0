@@ -6,7 +6,7 @@ import './changelog.css';
 const SITE_URL = 'https://spendtrak.vercel.app';
 
 export const metadata = {
-  title: 'SpendTrak changelog — what’s new in the Android app',
+  title: { absolute: 'SpendTrak changelog — what’s new in the Android app' },
   description:
     'Every feature, improvement and fix in each version of SpendTrak for Android, the free, private expense tracker. Latest: Google Drive sync with the web app and in-app update checks.',
   alternates: { canonical: `${SITE_URL}/changelog` },

@@ -19,6 +19,7 @@ export default function MarketingFooter({ showCoindropButton }) {
             <Link href="/features">Features</Link>
             <Link href="/android">Android app</Link>
             <Link href="/changelog">What&apos;s new</Link>
+            <Link href="/blog">Blog</Link>
             <Link href="/faq">FAQ</Link>
             <Link href="/about">About</Link>
           </div>

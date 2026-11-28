@@ -89,6 +89,8 @@ function AppStack({ settings }: { settings: Settings }) {
           <Stack.Screen name="account/[id]" options={{ title: 'Edit account', presentation: 'modal' }} />
           <Stack.Screen name="account/pay-bill" options={{ title: 'Pay card bill', presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+          <Stack.Screen name="experimental" options={{ title: 'Experimental features' }} />
+          <Stack.Screen name="experimental" options={{ title: 'Experimental features' }} />
           <Stack.Screen name="customize" options={{ title: 'Customize' }} />
           <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
           <Stack.Screen name="developer" options={{ title: 'Meet the developer' }} />

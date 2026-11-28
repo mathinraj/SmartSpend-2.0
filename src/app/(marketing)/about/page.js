@@ -4,7 +4,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 const SITE_URL = 'https://spendtrak.vercel.app';
 
 export const metadata = {
-  title: 'About — SpendTrak',
+  title: 'About',
   description: 'Learn about SpendTrak, the free privacy-first expense tracker. Built by Mathinraj with a mission to make personal finance management accessible, private, and completely free.',
   alternates: { canonical: `${SITE_URL}/about` },
   openGraph: {

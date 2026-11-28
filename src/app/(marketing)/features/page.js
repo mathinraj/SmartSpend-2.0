@@ -4,7 +4,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 const SITE_URL = 'https://spendtrak.vercel.app';
 
 export const metadata = {
-  title: 'Features — SpendTrak',
+  title: 'Features',
   description: 'Explore all SpendTrak features: smart analytics, Google Drive sync, multi-account management, bill splitting, planned payments, data export, reminders, and privacy-first security.',
   alternates: { canonical: `${SITE_URL}/features` },
   openGraph: {
@@ -40,6 +40,11 @@ const features = [
     desc: 'Use SpendTrak as a native Android app with fingerprint or face unlock, reminders and bill alerts as real notifications, and exports saved straight to your phone. It syncs with the web app automatically through your Google Drive.',
   },
   {
+    icon: '💬',
+    title: 'Bank SMS Import (Android, beta)',
+    desc: 'On Android, SpendTrak reads the transaction messages your bank and UPI apps already send and turns them into ready-to-add entries with the amount, account, and merchant filled in. You review each one, it learns your categories, and messages are parsed on your phone without being uploaded.',
+  },
+  {
     icon: '🏦',
     title: 'Multi-Account Management',
     desc: 'Manage bank accounts, credit cards, cash wallets, and UPI apps all in one place. Track real-time balances across every account and see your complete financial picture at a glance.',
@@ -67,7 +72,7 @@ const features = [
   {
     icon: '🔒',
     title: 'Privacy First',
-    desc: 'Protect your finances with PIN or password lock, hide balances with a single tap, and rest easy knowing your profile and data never leave your device. No servers, no tracking, no compromise.',
+    desc: 'Protect your finances with a PIN or password lock and unlock with your fingerprint, on the web (Touch ID, Windows Hello, or your phone’s sensor) and on Android. Hide balances with a single tap, and rest easy knowing your data never leaves your device. No servers, no tracking, no compromise.',
   },
 ];
 

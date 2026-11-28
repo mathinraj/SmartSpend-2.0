@@ -9,6 +9,7 @@ import './MarketingNav.css';
 const navLinks = [
   { href: '/features', label: 'Features' },
   { href: '/android', label: 'Android' },
+  { href: '/blog', label: 'Blog' },
   { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About' },
 ];
@@ -41,7 +42,7 @@ export default function MarketingNav({ onGetStarted }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`marketing-nav-link ${pathname === link.href ? 'active' : ''}`}
+              className={`marketing-nav-link ${pathname === link.href || pathname?.startsWith(`${link.href}/`) ? 'active' : ''}`}
               onClick={() => setMenuOpen(false)}
             >
               {link.label}

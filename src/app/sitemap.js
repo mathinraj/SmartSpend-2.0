@@ -1,3 +1,5 @@
+import { POSTS } from '../content/blog';
+
 export default function sitemap() {
   const baseUrl = 'https://spendtrak.vercel.app';
 
@@ -5,6 +7,7 @@ export default function sitemap() {
     { path: '/', priority: 1.0, changeFrequency: 'daily' },
     { path: '/features', priority: 0.8, changeFrequency: 'monthly' },
     { path: '/android', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/blog', priority: 0.7, changeFrequency: 'weekly' },
     { path: '/changelog', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/faq', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
@@ -18,10 +21,18 @@ export default function sitemap() {
     { path: '/feedback', priority: 0.3, changeFrequency: 'monthly' },
   ];
 
-  return routes.map((route) => ({
-    url: `${baseUrl}${route.path}`,
-    lastModified: new Date(),
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-  }));
+  return [
+    ...routes.map((route) => ({
+      url: `${baseUrl}${route.path}`,
+      lastModified: new Date(),
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+    })),
+    ...POSTS.map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: new Date(`${post.date}T00:00:00Z`),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    })),
+  ];
 }

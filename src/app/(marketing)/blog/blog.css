@@ -1,0 +1,151 @@
+/* ─── Blog index and articles (marketing tokens from SiteTheme.css) ─── */
+.blog-list {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 56px;
+}
+
+.blog-card {
+  padding: 24px;
+  background: var(--st-surface);
+  border: 1px solid var(--st-line);
+  border-radius: var(--st-radius-lg);
+  transition: border-color 150ms var(--st-ease), transform 150ms var(--st-ease);
+}
+
+.blog-card:hover {
+  border-color: var(--st-accent);
+  transform: translateY(-1px);
+}
+
+.blog-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--st-ink-faint);
+  margin-bottom: 10px;
+}
+
+.blog-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--st-accent-soft);
+  color: var(--st-accent);
+  font-weight: 600;
+}
+
+.blog-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.blog-card-title a {
+  color: var(--st-ink);
+  text-decoration: none;
+}
+
+.blog-card-title a:hover {
+  color: var(--st-accent);
+}
+
+.blog-card-desc {
+  font-size: 0.98rem;
+  color: var(--st-ink-soft);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.blog-read-more {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--st-accent);
+  text-decoration: none;
+}
+
+.blog-article {
+  max-width: 68ch;
+}
+
+.blog-article-header {
+  margin-bottom: 32px;
+}
+
+.blog-body section {
+  margin-bottom: 28px;
+}
+
+.blog-body h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.blog-body p,
+.blog-body li {
+  font-size: 1.05rem;
+  color: var(--st-ink-soft);
+  line-height: 1.75;
+}
+
+.blog-body p + p {
+  margin-top: 14px;
+}
+
+.blog-body ul {
+  margin: 12px 0 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+  list-style: disc;
+}
+
+.blog-body li::marker {
+  color: var(--st-accent);
+}
+
+.blog-body .blog-section-link a {
+  color: var(--st-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.blog-body .blog-section-link a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blog-article-footer {
+  margin: 40px 0 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--st-line);
+  font-size: 0.95rem;
+  color: var(--st-ink-faint);
+}
+
+.blog-article-footer a {
+  color: var(--st-accent);
+  font-weight: 600;
+}
+
+.blog-related h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.blog-related .blog-card-title {
+  font-size: 1.05rem;
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .blog-related .blog-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

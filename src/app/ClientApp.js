@@ -7,6 +7,7 @@ import { useIsDesktop } from '../hooks/useMediaQuery';
 import { useReminder } from '../hooks/useReminder';
 import { useDriveAutoSync } from '../hooks/useDriveSync';
 import { getCurrencySymbol } from '../utils/currencies';
+import { LOCK_KEY } from '../utils/appLock';
 import { ToastProvider } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
 import Sidebar from '../components/Sidebar';
@@ -83,12 +84,13 @@ function AppShell({ children }) {
   const [locked, setLocked] = useState(false);
   useReminder();
 
-  const hasLock = typeof window !== 'undefined' && !!localStorage.getItem('spendtraq_app_lock');
+  const hasLock = typeof window !== 'undefined' && !!localStorage.getItem(LOCK_KEY);
 
   useEffect(() => {
     setMounted(true);
-    if (hasLock) setLocked(true);
-  }, [hasLock]);
+    // Lock when the app opens; setting a PIN in Preferences shouldn't lock you out on the spot.
+    if (localStorage.getItem(LOCK_KEY)) setLocked(true);
+  }, []);
 
   useEffect(() => {
     const theme = state.settings.theme || 'light';

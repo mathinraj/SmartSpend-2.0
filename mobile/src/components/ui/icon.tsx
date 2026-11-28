@@ -70,6 +70,7 @@ const ICONS = {
   flag: { ios: 'flag', android: 'flag', web: 'flag' },
   verified: { ios: 'checkmark.shield', android: 'verified_user', web: 'verified_user' },
   more: { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' },
+  science: { ios: 'flask', android: 'science', web: 'science' },
 } as const satisfies Record<string, SymbolViewProps['name']>;
 
 export type IconName = keyof typeof ICONS;

@@ -126,17 +126,39 @@
 }
 
 .pref-section {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  scroll-margin-top: 72px;
+}
+
+.pref-section-head {
+  margin-bottom: 12px;
 }
 
 .pref-section-title {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.pref-section-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.pref-subhead {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .pref-section-title i {
@@ -869,5 +891,326 @@
 .pref-bmc-avatar {
   background: #FFDD00 !important;
   padding: 6px;
+}
+
+/* ─── Page layout: profile card, section menu, sections ─────────────────── */
+.pref-profile-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-top: 4px solid var(--primary);
+}
+
+.pref-profile-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 18px;
+}
+
+.pref-profile-card .profile-photo-area {
+  position: relative;
+  border: none;
+  padding: 0;
+  background: none;
+  overflow: visible;
+}
+
+.pref-profile-card .profile-photo,
+.pref-profile-card .profile-photo-placeholder {
+  overflow: hidden;
+}
+
+.profile-photo-edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--primary);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+}
+
+.pref-profile-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.pref-profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.pref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.pref-chip:hover {
+  border-color: var(--primary);
+}
+
+.pref-chip.on {
+  background: rgba(0, 184, 148, 0.1);
+  border-color: rgba(0, 184, 148, 0.3);
+  color: var(--success);
+}
+
+.pref-profile-extra {
+  border-top: 1px solid var(--border);
+}
+
+/* Section menu: horizontal chips on mobile, a sticky sidebar on desktop */
+.pref-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px 16px;
+  padding: 10px 16px;
+  background: var(--bg);
+}
+
+.pref-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.pref-nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pref-nav-item i {
+  font-size: 0.75rem;
+}
+
+.pref-nav-item.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.app-layout.desktop .pref-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.app-layout.desktop .pref-nav {
+  top: 20px;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: none;
+}
+
+.app-layout.desktop .pref-nav-item {
+  justify-content: flex-start;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.85rem;
+}
+
+.app-layout.desktop .pref-nav-item i {
+  width: 18px;
+  text-align: center;
+  color: var(--text-light);
+}
+
+.app-layout.desktop .pref-nav-item:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.app-layout.desktop .pref-nav-item.active {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--primary);
+}
+
+.app-layout.desktop .pref-nav-item.active i {
+  color: var(--primary);
+}
+
+.app-layout.desktop .pref-section {
+  scroll-margin-top: 20px;
+}
+
+/* Lists of rows separated by inset hairlines (no divider elements needed) */
+.pref-list > * + * {
+  position: relative;
+}
+
+.pref-list > * + *::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: var(--border);
+}
+
+.pref-row-toggle {
+  cursor: pointer;
+}
+
+.pref-row-toggle:hover {
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+
+.pref-row-toggle.disabled {
+  cursor: default;
+}
+
+.pref-row-toggle.disabled .pref-toggle {
+  opacity: 0.5;
+}
+
+.pref-row-icon {
+  color: var(--primary);
+  font-size: 1.15rem;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pref-row-nested {
+  padding-left: 34px;
+}
+
+.pref-card-gap {
+  margin-top: 12px;
+}
+
+.pref-card-spaced {
+  margin-bottom: 14px;
+}
+
+.pref-danger-zone {
+  border: 1.5px solid rgba(255, 107, 107, 0.35);
+  box-shadow: none;
+}
+
+.pref-about-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.pref-about-grid .pref-developer-card {
+  margin-top: 0;
+}
+
+.app-layout.desktop .pref-about-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.pref-app-avatar {
+  background: none;
+  object-fit: contain;
+}
+
+.pref-card-chevron {
+  color: var(--text-light);
+  font-size: 0.75rem;
+}
+
+/* TouchLock promotion */
+.pref-touchlock {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.pref-touchlock-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.pref-touchlock-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6366f1;
+}
+
+.pref-touchlock-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.pref-touchlock-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.pref-touchlock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pref-touchlock-actions a {
+  text-decoration: none;
+}
+
+.pref-touchlock-cta {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+}
+
+.pref-touchlock-cta:hover {
+  opacity: 0.9;
 }
 

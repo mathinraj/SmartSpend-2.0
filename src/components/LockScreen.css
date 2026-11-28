@@ -202,3 +202,33 @@
 .lock-unlock-btn:active:not(:disabled) {
   opacity: 0.8;
 }
+
+.lock-bio-btn {
+  margin-top: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.lock-bio-btn i {
+  font-size: 1.1rem;
+}
+
+.lock-bio-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.lock-bio-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

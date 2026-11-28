@@ -7,7 +7,7 @@ import { ANDROID_FEATURES, ANDROID_INSTALL_STEPS, ANDROID_RELEASES_URL } from '.
 const SITE_URL = 'https://spendtrak.vercel.app';
 
 export const metadata = {
-  title: 'SpendTrak for Android — free, private expense tracker app',
+  title: { absolute: 'SpendTrak for Android — free, private expense tracker app' },
   description:
     'Download SpendTrak for Android: the free, offline, privacy-first expense tracker. Fingerprint lock, reminders, exports, and automatic Google Drive sync with the SpendTrak web app.',
   alternates: { canonical: `${SITE_URL}/android` },

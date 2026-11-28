@@ -5,7 +5,7 @@ import FAQAccordion from '../../../components/FAQAccordion';
 const SITE_URL = 'https://spendtrak.vercel.app';
 
 export const metadata = {
-  title: 'FAQ — SpendTrak',
+  title: 'FAQ',
   description: 'Frequently asked questions about SpendTrak. Learn about pricing, offline support, data privacy, Google Drive sync, export options, multi-currency support, and more.',
   alternates: { canonical: `${SITE_URL}/faq` },
   openGraph: {
@@ -42,12 +42,20 @@ const faqs = [
     a: 'Your data never leaves your device. SpendTrak stores everything in your browser\'s local storage with no cloud servers involved. You can also set a PIN or password lock for extra security, and hide your balances with one tap.',
   },
   {
+    q: 'Can I unlock SpendTrak with my fingerprint on the web?',
+    a: 'Yes. Set a PIN or password in Preferences → Security & privacy, then turn on "Unlock with fingerprint". It uses your device\'s own sensor (Touch ID on a Mac, Windows Hello on Windows, or your phone\'s fingerprint or face unlock) through the browser\'s standard security API, so your fingerprint never leaves the device. Your PIN always works as a fallback.',
+  },
+  {
+    q: 'Can SpendTrak add transactions from my bank SMS?',
+    a: 'Yes, on Android (beta). SpendTrak reads transaction alerts from your bank and UPI apps on your phone, fills in the amount, account, and merchant, and lets you review each one before it is added. Messages are parsed on the phone and never uploaded. Turn it on in Settings → Bank SMS import.',
+  },
+  {
     q: 'Can I sync my data across devices?',
     a: 'Yes! Connect Google Drive in Preferences and SpendTrak syncs automatically: each change is saved to your own Drive within seconds and picked up by your other browsers and the Android app. Prefer to decide when? Switch to manual backup. Your data goes directly between your device and your Google Drive — no middleman servers.',
   },
   {
     q: 'Is there an Android app?',
-    a: 'Yes. SpendTrak for Android is free and has every web feature plus fingerprint unlock, real notifications, and exports to your phone. Download the APK from the Android page; it syncs with the web app through your Google Drive.',
+    a: 'Yes. SpendTrak for Android is free and has every web feature plus bank SMS import (beta), real notifications, and exports to your phone. Download the APK from the Android page; it syncs with the web app through your Google Drive.',
   },
   {
     q: 'What happens if I clear my browser data?',
@@ -71,7 +79,7 @@ const faqs = [
   },
   {
     q: 'Does SpendTrak support multiple currencies?',
-    a: 'Yes. During onboarding you pick your primary currency, and you can change it anytime in Preferences. SpendTrak supports a wide range of world currencies with proper symbol formatting.',
+    a: 'Yes. During onboarding you pick your primary currency, and you can change it anytime in Preferences → General. SpendTrak supports a wide range of world currencies with proper symbol formatting.',
   },
   {
     q: 'How do planned payments work?',
@@ -126,7 +134,7 @@ export default function FAQPage() {
         <div className="mkt-cross-links">
           <Link href="/features" className="mkt-cross-link">See all features</Link>
           <Link href="/android" className="mkt-cross-link">Get the Android app</Link>
-          <Link href="/about" className="mkt-cross-link">Learn more about SpendTrak</Link>
+          <Link href="/blog" className="mkt-cross-link">Read the guides</Link>
         </div>
       </section>
     </main>

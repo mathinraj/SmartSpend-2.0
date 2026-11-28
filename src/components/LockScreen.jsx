@@ -1,33 +1,27 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { hashValue, hasBiometric, isBiometricAvailable, LOCK_KEY, LOCK_TYPE_KEY, verifyBiometric } from '../utils/appLock';
 import './LockScreen.css';
 
 const PIN_LENGTH = 4;
-
-function hashValue(val) {
-  let hash = 0;
-  for (let i = 0; i < val.length; i++) {
-    const char = val.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return 'pin_' + Math.abs(hash).toString(36);
-}
 
 export default function LockScreen({ onUnlock }) {
   const [pin, setPin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [shake, setShake] = useState(false);
+  const [bioReady, setBioReady] = useState(false);
+  const [bioWaiting, setBioWaiting] = useState(false);
   const inputRef = useRef(null);
   const passwordRef = useRef(null);
+  const bioTried = useRef(false);
 
   const storedHash = typeof window !== 'undefined'
-    ? localStorage.getItem('spendtraq_app_lock')
+    ? localStorage.getItem(LOCK_KEY)
     : null;
   const lockType = typeof window !== 'undefined'
-    ? (localStorage.getItem('spendtraq_lock_type') || 'pin')
+    ? (localStorage.getItem(LOCK_TYPE_KEY) || 'pin')
     : 'pin';
 
   const isPassword = lockType === 'password';
@@ -36,6 +30,31 @@ export default function LockScreen({ onUnlock }) {
     if (isPassword) passwordRef.current?.focus();
     else inputRef.current?.focus();
   }, [isPassword]);
+
+  const unlockWithFingerprint = useCallback(async () => {
+    setBioWaiting(true);
+    try {
+      if (await verifyBiometric()) onUnlock();
+    } catch {
+      // Cancelled, timed out, or not allowed without a click (Safari): the button and PIN stay available.
+    }
+    setBioWaiting(false);
+  }, [onUnlock]);
+
+  useEffect(() => {
+    if (!hasBiometric()) return;
+    let cancelled = false;
+    isBiometricAvailable().then((available) => {
+      if (cancelled || !available) return;
+      setBioReady(true);
+      // Ask once automatically; browsers refuse the prompt for a page that isn't focused.
+      if (!bioTried.current && document.hasFocus()) {
+        bioTried.current = true;
+        unlockWithFingerprint();
+      }
+    });
+    return () => { cancelled = true; };
+  }, [unlockWithFingerprint]);
 
   const triggerError = useCallback((msg) => {
     setError(msg);
@@ -84,7 +103,9 @@ export default function LockScreen({ onUnlock }) {
         </div>
         <h2 className="lock-title">SpendTrak</h2>
         <p className="lock-subtitle">
-          {isPassword ? 'Enter your password to unlock' : 'Enter your PIN to unlock'}
+          {bioReady
+            ? `Use your fingerprint or enter your ${isPassword ? 'password' : 'PIN'}`
+            : isPassword ? 'Enter your password to unlock' : 'Enter your PIN to unlock'}
         </p>
 
         {isPassword ? (
@@ -145,6 +166,13 @@ export default function LockScreen({ onUnlock }) {
               autoFocus
             />
           </>
+        )}
+
+        {bioReady && (
+          <button type="button" className="lock-bio-btn" onClick={unlockWithFingerprint} disabled={bioWaiting}>
+            <i className="fa-solid fa-fingerprint" />
+            {bioWaiting ? 'Waiting for fingerprint…' : 'Use fingerprint'}
+          </button>
         )}
       </div>
     </div>
