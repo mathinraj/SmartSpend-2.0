@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ANDROID_HIGHLIGHTS, ANDROID_RELEASES_URL, ANDROID_REQUIREMENTS } from '../utils/androidApp';
+import { ANDROID_HIGHLIGHTS, ANDROID_RELEASES_URL, ANDROID_REQUIREMENTS, SHOT_QUALITY } from '../utils/androidApp';
 import './SiteTheme.css';
 import './AndroidShowcase.css';
 
@@ -10,10 +10,10 @@ export default function AndroidShowcase({ showDetailsLink = false }) {
     <div className="android-showcase">
       <div className="android-showcase-shots" aria-hidden="true">
         <div className="st-phone android-shot-back">
-          <Image src="/screens/android-planned.jpg" alt="" width={576} height={1280} sizes="230px" />
+          <Image src="/screens/android-planned.jpg" alt="" width={576} height={1280} quality={SHOT_QUALITY} sizes="230px" />
         </div>
         <div className="st-phone android-shot-front">
-          <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} sizes="260px" />
+          <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} quality={SHOT_QUALITY} sizes="260px" />
         </div>
       </div>
       <div className="android-showcase-body">

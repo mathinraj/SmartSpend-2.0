@@ -1,6 +1,8 @@
 /** The Android app is published as GitHub releases (APKs), not on the Play Store yet. */
 export const ANDROID_RELEASES_URL = 'https://github.com/mathinraj/SmartSpend-2.0/releases/latest';
 export const ANDROID_REQUIREMENTS = 'Free · Android 7.0 or newer · about 19 MB';
+/** next/image quality for the app screenshots: indistinguishable from 75 at their size, ~30% smaller. Listed in next.config `qualities`. */
+export const SHOT_QUALITY = 60;
 
 export const ANDROID_HIGHLIGHTS = [
   { icon: 'fa-solid fa-arrows-rotate', text: 'Syncs automatically with this web app through your Google Drive' },

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import MarketingNav from '../components/MarketingNav';
 import MarketingFooter from '../components/MarketingFooter';
-import { ANDROID_RELEASES_URL } from '../utils/androidApp';
+import { ANDROID_RELEASES_URL, SHOT_QUALITY } from '../utils/androidApp';
 import { siteFont } from '../utils/siteFont';
 import '../components/SiteTheme.css';
 import './Welcome.css';
@@ -190,10 +190,11 @@ export default function Welcome() {
             <div className="lp-hero-stage" ref={stageRef} aria-hidden="true">
               <div className="lp-hero-glow" />
               <div className="st-phone lp-hero-back">
-                <Image src="/screens/android-categories.jpg" alt="" width={576} height={1280} sizes="250px" />
+                {/* Priority too: on wide screens this tilted phone is the largest thing in view (the LCP element). */}
+                <Image src="/screens/android-categories.jpg" alt="" width={576} height={1280} quality={SHOT_QUALITY} sizes="250px" priority fetchPriority="high" />
               </div>
               <div className="st-phone lp-hero-front">
-                <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} sizes="280px" priority fetchPriority="high" />
+                <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} quality={SHOT_QUALITY} sizes="280px" priority fetchPriority="high" />
               </div>
             </div>
           </div>
@@ -238,7 +239,7 @@ export default function Welcome() {
                     ))}
                   </ul>
                   <div className="st-phone lp-step-shot">
-                    <Image src={step.shot} alt={step.alt} width={576} height={1280} sizes="240px" />
+                    <Image src={step.shot} alt={step.alt} width={576} height={1280} quality={SHOT_QUALITY} sizes="240px" />
                   </div>
                 </article>
               ))}
@@ -252,6 +253,7 @@ export default function Welcome() {
                     alt=""
                     width={576}
                     height={1280}
+                    quality={SHOT_QUALITY}
                     sizes="260px"
                     className={activeStep === i ? 'is-on' : ''}
                   />
@@ -298,13 +300,13 @@ export default function Welcome() {
                   <i /><i /><i />
                   <span className="st-browser-url">spendtrak.vercel.app</span>
                 </div>
-                <Image src="/screens/web-analytics.jpg" alt="" width={1600} height={1000} sizes="(min-width: 960px) 640px, 92vw" />
+                <Image src="/screens/web-analytics.jpg" alt="" width={1600} height={1000} quality={SHOT_QUALITY} sizes="(min-width: 960px) 640px, 92vw" />
               </div>
               <span className="lp-sync-badge">
                 <i className="fa-solid fa-cloud" /> Synced just now
               </span>
               <div className="st-phone lp-sync-phone">
-                <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} sizes="190px" />
+                <Image src="/screens/android-home.jpg" alt="" width={576} height={1280} quality={SHOT_QUALITY} sizes="190px" />
               </div>
             </div>
           </div>
